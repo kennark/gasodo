@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.util.Calendar
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,34 +53,44 @@ class OverviewScreenViewModel @Inject constructor(
     @OptIn(ExperimentalMaterial3Api::class)
     val dateRangePickerState = DateRangePickerState(
         locale = CalendarLocale.getDefault(),
-        initialSelectedStartDate = LocalDate.of(Calendar.YEAR, Calendar.MONTH, 1),
+        initialSelectedStartDate = LocalDate.of(
+            LocalDate.now().year,
+            LocalDate.now().monthValue,
+            1
+        ),
         initialSelectedEndDate = LocalDate.now()
-        )
+    )
 
     init {
-        loadRefuelData(0, Long.MAX_VALUE)
+        loadRefuelData(
+            dateRangePickerState.selectedStartDateMillis,
+            dateRangePickerState.selectedEndDateMillis
+        )
     }
 
-    fun onDateSelected(start: Long?, end: Long?) {
-        if (start != null && end != null)
-            loadRefuelData(start, end)
+    fun onDateSelected() {
+        loadRefuelData(
+            dateRangePickerState.selectedStartDateMillis,
+            dateRangePickerState.selectedEndDateMillis
+        )
     }
 
-    private fun loadRefuelData(start: Long, end: Long) {
+    private fun loadRefuelData(start: Long?, end: Long?) {
         viewModelScope.launch {
             _isLoading.value = true
-            refuelRepository.getAllWithinTime(start, end)
-                .catch { _ ->
-                    _refuelData.value = emptyList()
-                }
-                .collect { data ->
-                    _refuelData.value = data
-                    calculateRefuelStatistics(_refuelData.value)
-                    _isLoading.value = false
-                }
+            if (start != null && end != null) {
+                refuelRepository.getAllWithinTime(start, end)
+                    .catch { _ ->
+                        _refuelData.value = emptyList()
+                    }
+                    .collect { data ->
+                        _refuelData.value = data
+                        calculateRefuelStatistics(_refuelData.value)
+                        _isLoading.value = false
+                    }
+            }
         }
     }
-
 
 
     private fun calculateRefuelStatistics(data: List<RefuelEvent>) {

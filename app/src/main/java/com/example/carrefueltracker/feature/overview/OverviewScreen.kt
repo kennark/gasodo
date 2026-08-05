@@ -70,7 +70,7 @@ fun OverviewScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun YearMonthSelectorCard(
-    dateRangePickerState: DateRangePickerState, onDateSelected: (Long?, Long?) -> Unit
+    dateRangePickerState: DateRangePickerState, onDateSelected: () -> Unit
 ) {
 
     Card(
@@ -110,21 +110,20 @@ fun YearMonthSelectorCard(
                     },
             )
             if (showModal) {
-                DatePickerDialog(onDismissRequest = { showModal = false }, confirmButton = {
-                    TextButton(onClick = {
-                        onDateSelected(
-                            dateRangePickerState.selectedStartDateMillis,
-                            dateRangePickerState.selectedEndDateMillis
-                        )
-                        showModal = false
+                DatePickerDialog(
+                    onDismissRequest = { showModal = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            onDateSelected()
+                            showModal = false
+                        }) {
+                            Text("OK")
+                        }
+                    }, dismissButton = {
+                        TextButton(onClick = { showModal = false }) {
+                            Text("Cancel")
+                        }
                     }) {
-                        Text("OK")
-                    }
-                }, dismissButton = {
-                    TextButton(onClick = { showModal = false }) {
-                        Text("Cancel")
-                    }
-                }) {
                     DateRangePicker(state = dateRangePickerState)
                 }
             }
@@ -195,7 +194,10 @@ fun RefuelStatsCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(modifier = Modifier.padding(2.dp)) {
-                    Icon(imageVector = local_gas_station, contentDescription = local_gas_station.name)
+                    Icon(
+                        imageVector = local_gas_station,
+                        contentDescription = local_gas_station.name
+                    )
                 }
                 Text(
                     text = "Refuel Statistics",
@@ -242,7 +244,8 @@ fun RefuelStatsCard(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = "Total Mileage Travelled", style = MaterialTheme.typography.bodySmall
+                            text = "Total Mileage Travelled",
+                            style = MaterialTheme.typography.bodySmall
                         )
                         Text(
                             text = totalMileage.toString(),

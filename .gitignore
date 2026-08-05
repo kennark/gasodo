@@ -18,8 +18,6 @@ local.properties
 .gradle/
 build/
 
-# Local configuration file (sdk path, etc)
-local.properties
 
 # Log/OS Files
 *.log
@@ -32,8 +30,6 @@ captures/
 *.apk
 output-metadata.json
 
-# IntelliJ
-*.iml
 .idea/
 misc.xml
 deploymentTargetDropDown.xml

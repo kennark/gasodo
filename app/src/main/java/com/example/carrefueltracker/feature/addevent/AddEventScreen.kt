@@ -155,13 +155,11 @@ fun BaseForm(
                 singleLine = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
             )
-            // TODO example https://developer.android.com/reference/kotlin/androidx/compose/material3/ExposedDropdownMenuBox.composable
+            // Example https://developer.android.com/reference/kotlin/androidx/compose/material3/ExposedDropdownMenuBox.composable
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                // todo shape
-                val optionCount = EventType.entries.size
                 EventType.entries.forEach { eventType ->
                     DropdownMenuItem(
                         text = { Text(eventType.toString()) },
@@ -358,8 +356,6 @@ fun RefuelForm(
                 expanded = paymentExpanded,
                 onDismissRequest = { paymentExpanded = false }
             ) {
-                // todo shape
-                val optionCount = EventType.entries.size
                 PaymentMethod.entries.forEach { method ->
                     DropdownMenuItem(
                         text = { Text(method.toString()) },

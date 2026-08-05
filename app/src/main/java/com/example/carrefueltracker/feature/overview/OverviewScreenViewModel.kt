@@ -1,10 +1,8 @@
 package com.example.carrefueltracker.feature.overview
 
-import android.util.Log
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.DateRangePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.platform.LocalLocale
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.carrefueltracker.core.database.entity.RefuelEvent
@@ -14,7 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Calendar
@@ -24,10 +21,6 @@ import javax.inject.Inject
 class OverviewScreenViewModel @Inject constructor(
     private val refuelRepository: RefuelRepository,
 ) : ViewModel() {
-
-    // Selected year and month state
-    private val _selectedYearMonth = MutableStateFlow(Pair(Calendar.getInstance().get(Calendar.YEAR), Calendar.getInstance().get(Calendar.MONTH)))
-    val selectedYearMonth: StateFlow<Pair<Int, Int>> = _selectedYearMonth.asStateFlow()
 
     // Refuel data for the selected period
     private val _refuelData = MutableStateFlow<List<RefuelEvent>>(emptyList())
@@ -78,7 +71,7 @@ class OverviewScreenViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             refuelRepository.getAllWithinTime(start, end)
-                .catch { e ->
+                .catch { _ ->
                     _refuelData.value = emptyList()
                 }
                 .collect { data ->

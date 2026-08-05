@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
  */
 
 @Suppress("CheckReturnValue")
-public val local_gas_station: ImageVector
+val local_gas_station: ImageVector
     get() {
         if (_local_gas_station != null) {
             return _local_gas_station!!
@@ -38,7 +38,7 @@ public val local_gas_station: ImageVector
                         strokeLineCap = StrokeCap.Butt,
                         strokeLineJoin = StrokeJoin.Bevel,
                         strokeLineMiter = 1f,
-                        pathFillType = PathFillType.Companion.NonZero,
+                        pathFillType = PathFillType.NonZero,
                     ) {
                         moveTo(4f, 21f)
                         verticalLineTo(5f)
@@ -113,7 +113,7 @@ public val local_gas_station: ImageVector
 private var _local_gas_station: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val expand_circle_down: ImageVector
+val expand_circle_down: ImageVector
     get() {
         if (_expand_circle_down != null) {
             return _expand_circle_down!!
@@ -185,7 +185,7 @@ public val expand_circle_down: ImageVector
 private var _expand_circle_down: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val calendar_today: ImageVector
+val calendar_today: ImageVector
     get() {
         if (_calendar_today != null) {
             return _calendar_today!!
@@ -257,7 +257,7 @@ public val calendar_today: ImageVector
 private var _calendar_today: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val check_box: ImageVector
+val check_box: ImageVector
     get() {
         if (_check_box != null) {
             return _check_box!!
@@ -323,7 +323,7 @@ public val check_box: ImageVector
 private var _check_box: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val check_box_outline_blank: ImageVector
+val check_box_outline_blank: ImageVector
     get() {
         if (_check_box_outline_blank != null) {
             return _check_box_outline_blank!!

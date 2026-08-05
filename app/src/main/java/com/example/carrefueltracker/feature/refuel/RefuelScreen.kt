@@ -1,10 +1,5 @@
 package com.example.carrefueltracker.feature.refuel
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -12,32 +7,24 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -118,94 +105,41 @@ fun RefuelEventRow(
                 .animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            /*// Date row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Absolute.Left,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(imageVector = calendar_today, contentDescription = calendar_today.name)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        // Convert the date from epoch milliseconds to epoch days
-                        val dateString = LocalDate.ofEpochDay(refuelEvent.base.date?.div(86400000) ?: 0).toString()
-                        Text(
-                            text = dateString,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        if (refuelEvent.base.mileage != null) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = refuelEvent.base.mileage.toString(),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text(
-                                    text = "km",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    }
-            }
-
-            */
-
             // Amount and Price row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row {
-                    /*
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(imageVector = calendar_today, contentDescription = calendar_today.name)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = "Date",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Medium
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // Convert the date from epoch milliseconds to epoch days
+                    val dateString =
+                        LocalDate.ofEpochDay(refuelEvent.base.date?.div(86400000) ?: 0)
+                            .toString()
+                    Text(
+                        text = dateString,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
 
-                     */
-                    Column {
-                        Text(
-                            text = "Date",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        // Convert the date from epoch milliseconds to epoch days
-                        val dateString =
-                            LocalDate.ofEpochDay(refuelEvent.base.date?.div(86400000) ?: 0)
-                                .toString()
-                        Text(
-                            text = dateString,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        if (refuelEvent.base.mileage != null) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = refuelEvent.base.mileage.toString(),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text(
-                                    text = "km",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+                    if (refuelEvent.base.mileage != null) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = refuelEvent.base.mileage.toString(),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = "km",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                     }
                 }
@@ -276,7 +210,6 @@ fun RefuelEventRow(
             }
 
             // Full fill-up indicator row
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -317,13 +250,6 @@ fun RefuelEventRow(
                 }
             }
 
-
-            // Expanded section with additional fuel consumption information
-//            AnimatedVisibility(
-//                visible = isExpanded.value,
-//                enter = expandVertically(),
-//                exit = shrinkVertically()
-//            ) {
             if (isExpanded.value) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -526,7 +452,6 @@ fun RefuelCardPreview() {
             base = BaseColumns(
                 date = 1000000000000,
                 mileage = 123543,
-
                 ),
             amountLiters = 10.0,
             pricePerLiter = 1.599,

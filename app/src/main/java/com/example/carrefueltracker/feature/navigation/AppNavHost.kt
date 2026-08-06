@@ -25,7 +25,7 @@ fun AppNavHost(
                 when (destination) {
                     Destinations.OVERVIEW -> OverviewScreen()
                     Destinations.REFUELS -> RefuelScreen()
-                    Destinations.ADD -> AddEventScreen()
+                    Destinations.ADD -> AddEventScreen({ navController.popBackStack() })
                 }
             }
         }

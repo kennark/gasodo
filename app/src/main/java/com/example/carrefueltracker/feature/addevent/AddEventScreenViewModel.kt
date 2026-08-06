@@ -2,10 +2,8 @@ package com.example.carrefueltracker.feature.addevent
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.CalendarLocale
-import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SelectableDates
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.carrefueltracker.core.database.BaseColumns
@@ -32,11 +30,14 @@ class AddEventScreenViewModel @Inject constructor(
     private val inspectionRepository: InspectionRepository,
     private val maintenanceRepository: MaintenanceRepository
 ) : ViewModel() {
+
+    private val _showConfirmation = MutableStateFlow(false)
     private val _baseUiState = MutableStateFlow(AddEventTypeFormState())
     private val _refuelUiState = MutableStateFlow(RefuelEventFormState())
     private val _maintenanceUiState = MutableStateFlow(MaintenanceEventFormState())
     private val _inspectionUiState = MutableStateFlow(InspectionEventFormState())
 
+    val showConfirmation: StateFlow<Boolean> = _showConfirmation.asStateFlow()
     val baseUiState: StateFlow<AddEventTypeFormState> = _baseUiState.asStateFlow()
     val refuelUiState: StateFlow<RefuelEventFormState> = _refuelUiState.asStateFlow()
     val maintenanceUiState: StateFlow<MaintenanceEventFormState> = _maintenanceUiState.asStateFlow()
@@ -105,7 +106,7 @@ class AddEventScreenViewModel @Inject constructor(
                 val amountValue = amountTextField.text.toString().toDoubleOrNull()
                 var costValue: Double?
                 var pricePerLiterValue: Double?
-                
+
                 if (state.calculateCost) {
                     pricePerLiterValue = pricePerLiterTextField.text.toString().toDoubleOrNull()
                     costValue = amountValue?.times(pricePerLiterValue ?: 0.00)
@@ -113,7 +114,7 @@ class AddEventScreenViewModel @Inject constructor(
                     costValue = costTextField.text.toString().toDoubleOrNull()
                     pricePerLiterValue = amountValue?.div(costValue ?: 0.00) // todo: 0.00 division
                 }
-                
+
                 val updatedRefuelState = state.copy(
                     amount = amountValue,
                     cost = costValue,
@@ -129,7 +130,8 @@ class AddEventScreenViewModel @Inject constructor(
                 }
             } else if (updatedBaseState.type == EventType.MAINTENANCE) {
                 val state = _maintenanceUiState.value
-                val providerNameValue = providerNameField.text.toString().ifEmpty { state.providerName }
+                val providerNameValue =
+                    providerNameField.text.toString().ifEmpty { state.providerName }
                 val updatedMaintenanceState = state.copy(
                     providerName = providerNameValue
                 )
@@ -157,7 +159,10 @@ class AddEventScreenViewModel @Inject constructor(
         return true
     }
 
-    private fun storeRefuelEvent(refuelState: RefuelEventFormState, baseState: AddEventTypeFormState) {
+    private fun storeRefuelEvent(
+        refuelState: RefuelEventFormState,
+        baseState: AddEventTypeFormState
+    ) {
         val baseColumns = BaseColumns(
             date = baseState.date,
             mileage = baseState.mileage,
@@ -184,15 +189,27 @@ class AddEventScreenViewModel @Inject constructor(
         )
         viewModelScope.launch {
             refuelRepository.insert(event)
+
+            showConfirmation()
         }
     }
 
-    private fun storeInspectionEvent(inspectionState: InspectionEventFormState, baseState: AddEventTypeFormState) {
+    private fun storeInspectionEvent(
+        inspectionState: InspectionEventFormState,
+        baseState: AddEventTypeFormState
+    ) {
         // TODO: Implement inspection event storage
     }
 
-    private fun storeMaintenanceEvent(maintenanceState: MaintenanceEventFormState, baseState: AddEventTypeFormState) {
+    private fun storeMaintenanceEvent(
+        maintenanceState: MaintenanceEventFormState,
+        baseState: AddEventTypeFormState
+    ) {
         // TODO: Implement maintenance event storage
+    }
+
+    private fun showConfirmation() {
+        _showConfirmation.value = true
     }
 }
 

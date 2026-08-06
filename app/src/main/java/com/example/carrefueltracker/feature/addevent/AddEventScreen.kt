@@ -1,5 +1,9 @@
 package com.example.carrefueltracker.feature.addevent
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -22,21 +26,26 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.getSelectedDate
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.carrefueltracker.core.database.entity.SavedLocation
@@ -45,16 +54,26 @@ import com.example.carrefueltracker.core.enums.InspectionStatus
 import com.example.carrefueltracker.core.enums.PaymentMethod
 
 
-
 @Composable
 fun AddEventScreen(
+    onNavigationBack: () -> Unit,
     viewModel: AddEventScreenViewModel = hiltViewModel<AddEventScreenViewModel>()
 ) {
     val baseState by viewModel.baseUiState.collectAsStateWithLifecycle()
     val refuelState by viewModel.refuelUiState.collectAsStateWithLifecycle()
     val inspectionState by viewModel.inspectionUiState.collectAsStateWithLifecycle()
     val maintenanceState by viewModel.maintenanceUiState.collectAsStateWithLifecycle()
+    val showConfirmation by viewModel.showConfirmation.collectAsState()
 
+
+    AnimatedVisibility(
+        visible = showConfirmation,
+        enter = fadeIn(animationSpec = tween(durationMillis = 300)),
+        exit = fadeOut(animationSpec = tween(durationMillis = 300)),
+        modifier = Modifier.zIndex(1f)
+    ) {
+        AddEventConfirmationOverlay(baseState.type.toString(), onNavigationBack)
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -113,12 +132,11 @@ fun AddEventScreen(
                 horizontalArrangement = Arrangement.End
             ) {
                 Button(
-                onClick = viewModel::onSubmit,
+                    onClick = viewModel::onSubmit,
                 ) {
                     Text("Save Event")
                 }
             }
-
         }
     }
 }
@@ -146,7 +164,8 @@ fun BaseForm(
             onExpandedChange = { expanded = it }
         ) {
             OutlinedTextField(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                 value = state.type.displayName,
                 onValueChange = {},
@@ -190,7 +209,8 @@ fun BaseForm(
             label = { Text("Date") },
             readOnly = true,
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .pointerInput(datePickerState) {
                     awaitEachGesture {
                         // Modifier.clickable doesn't work for text fields, so we use Modifier.pointerInput
@@ -259,7 +279,10 @@ fun RefuelForm(
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Refuel Details", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+        Text(
+            "Refuel Details",
+            style = MaterialTheme.typography.titleMedium
+        )
 
         // Amount Field (Liters)
         OutlinedTextField(
@@ -300,7 +323,8 @@ fun RefuelForm(
                 // Display calculated total cost (read-only)
                 OutlinedTextField(
                     value = amountState.text.toString().toDoubleOrNull()?.times(
-                        pricePerLiterState.text.toString().toDoubleOrNull() ?: 0.0)?.toString()
+                        pricePerLiterState.text.toString().toDoubleOrNull() ?: 0.0
+                    )?.toString()
                         ?: "0.0",
                     onValueChange = {},
                     label = { Text("Total Cost") },
@@ -326,7 +350,8 @@ fun RefuelForm(
                 // Display calculated price per liter (read-only)
                 OutlinedTextField(
                     value = costState.text.toString().toDoubleOrNull()?.div(
-                        amountState.text.toString().toDoubleOrNull() ?: 1.0)?.toString()
+                        amountState.text.toString().toDoubleOrNull() ?: 1.0
+                    )?.toString()
                         ?: "0.0",
                     onValueChange = {},
                     label = { Text("Price per Liter") },
@@ -342,16 +367,17 @@ fun RefuelForm(
         ExposedDropdownMenuBox(
             expanded = paymentExpanded,
             onExpandedChange = { paymentExpanded = !paymentExpanded }) {
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth()
-                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                    value = state.paymentMethod?.displayName ?: "",
-                    onValueChange = {},
-                    label = { Text("Payment Method") },
-                    readOnly = true,
-                    singleLine = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentExpanded) }
-                )
+            OutlinedTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                value = state.paymentMethod?.displayName ?: "",
+                onValueChange = {},
+                label = { Text("Payment Method") },
+                readOnly = true,
+                singleLine = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentExpanded) }
+            )
             ExposedDropdownMenu(
                 expanded = paymentExpanded,
                 onDismissRequest = { paymentExpanded = false }
@@ -381,7 +407,10 @@ fun InspectionForm(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Inspection Details", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+        Text(
+            "Inspection Details",
+            style = MaterialTheme.typography.titleMedium
+        )
 
         // Status Selector (Radio buttons)
         state.status?.let { currentStatus ->
@@ -411,7 +440,10 @@ fun MaintenanceForm(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Maintenance Details", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+        Text(
+            "Maintenance Details",
+            style = MaterialTheme.typography.titleMedium
+        )
 
         OutlinedTextField(
             state = providerState,
@@ -431,7 +463,7 @@ fun RowOfTextAndSwitch(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text)
         Switch(checked = checked, onCheckedChange = onCheckedChange)
@@ -450,9 +482,9 @@ fun <T> RadioGroup(
         options.forEach { option ->
             Row(
                 horizontalArrangement = Arrangement.Start,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                androidx.compose.material3.RadioButton(
+                RadioButton(
                     selected = selectedOption == option,
                     onClick = { onSelectionChanged(option) }
                 )

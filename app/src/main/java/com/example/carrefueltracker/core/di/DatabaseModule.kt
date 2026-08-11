@@ -3,6 +3,7 @@ package com.example.carrefueltracker.core.di
 import android.content.Context
 import androidx.room.Room
 import com.example.carrefueltracker.core.database.AppDatabase
+import com.example.carrefueltracker.core.database.dao.EventDao
 import com.example.carrefueltracker.core.database.dao.InspectionEventDao
 import com.example.carrefueltracker.core.database.dao.MaintenanceEventDao
 import com.example.carrefueltracker.core.database.dao.RefuelEventDao
@@ -25,7 +26,10 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "car_refuel_tracker.db"
-        ).build()
+        )
+            // Drop all data on database updates
+            .fallbackToDestructiveMigration(true)
+            .build()
 
     @Provides
     fun provideSavedLocationDao(database: AppDatabase): SavedLocationDao =
@@ -42,4 +46,8 @@ object DatabaseModule {
     @Provides
     fun provideInspectionEventDao(database: AppDatabase): InspectionEventDao =
         database.inspectionEventDao()
+
+    @Provides
+    fun provideEventDao(database: AppDatabase): EventDao =
+        database.eventDao()
 }

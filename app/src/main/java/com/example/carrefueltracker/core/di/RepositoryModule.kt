@@ -1,5 +1,7 @@
 package com.example.carrefueltracker.core.di
 
+import com.example.carrefueltracker.core.database.repository.EventRepository
+import com.example.carrefueltracker.core.database.repository.EventRepositoryImpl
 import com.example.carrefueltracker.core.database.repository.InspectionRepository
 import com.example.carrefueltracker.core.database.repository.InspectionRepositoryImpl
 import com.example.carrefueltracker.core.database.repository.MaintenanceRepository
@@ -41,4 +43,10 @@ abstract class RepositoryModule {
     abstract fun bindSavedLocationRepository(
         impl: SavedLocationRepositoryImpl
     ): SavedLocationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindEventRepository(
+        impl: EventRepositoryImpl
+    ): EventRepository
 }

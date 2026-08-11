@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.carrefueltracker.core.database.BaseColumns
 import com.example.carrefueltracker.core.database.entity.RefuelEvent
 import com.example.carrefueltracker.core.database.entity.SavedLocation
+import com.example.carrefueltracker.core.database.repository.EventRepository
 import com.example.carrefueltracker.core.database.repository.InspectionRepository
 import com.example.carrefueltracker.core.database.repository.MaintenanceRepository
 import com.example.carrefueltracker.core.database.repository.RefuelRepository
@@ -28,16 +29,19 @@ import javax.inject.Inject
 class AddEventScreenViewModel @Inject constructor(
     private val refuelRepository: RefuelRepository,
     private val inspectionRepository: InspectionRepository,
-    private val maintenanceRepository: MaintenanceRepository
+    private val maintenanceRepository: MaintenanceRepository,
+    private val eventRepository: EventRepository
 ) : ViewModel() {
 
     private val _showConfirmation = MutableStateFlow(false)
+    private val _hasError = MutableStateFlow(false)
     private val _baseUiState = MutableStateFlow(AddEventTypeFormState())
     private val _refuelUiState = MutableStateFlow(RefuelEventFormState())
     private val _maintenanceUiState = MutableStateFlow(MaintenanceEventFormState())
     private val _inspectionUiState = MutableStateFlow(InspectionEventFormState())
 
     val showConfirmation: StateFlow<Boolean> = _showConfirmation.asStateFlow()
+    val hasError: StateFlow<Boolean> = _hasError.asStateFlow()
     val baseUiState: StateFlow<AddEventTypeFormState> = _baseUiState.asStateFlow()
     val refuelUiState: StateFlow<RefuelEventFormState> = _refuelUiState.asStateFlow()
     val maintenanceUiState: StateFlow<MaintenanceEventFormState> = _maintenanceUiState.asStateFlow()
@@ -98,52 +102,78 @@ class AddEventScreenViewModel @Inject constructor(
             date = dateValue
         )
 
-        if (validateBaseValues(updatedBaseState)) {
+        viewModelScope.launch {
+            if (validateBaseValues(updatedBaseState)) {
 
-            if (updatedBaseState.type == EventType.REFUEL) {
-                val state = _refuelUiState.value
-                // Extract refuel text values from TextFieldStates
-                val amountValue = amountTextField.text.toString().toDoubleOrNull()
-                var costValue: Double?
-                var pricePerLiterValue: Double?
+                if (updatedBaseState.type == EventType.REFUEL) {
 
-                if (state.calculateCost) {
-                    pricePerLiterValue = pricePerLiterTextField.text.toString().toDoubleOrNull()
-                    costValue = amountValue?.times(pricePerLiterValue ?: 0.00)
-                } else {
-                    costValue = costTextField.text.toString().toDoubleOrNull()
-                    pricePerLiterValue = amountValue?.div(costValue ?: 0.00) // todo: 0.00 division
-                }
+                    val updatedRefuelState = formatRefuelEventData()
 
-                val updatedRefuelState = state.copy(
-                    amount = amountValue,
-                    cost = costValue,
-                    pricePerLiter = pricePerLiterValue
-                )
-                if (validateRefuelValues(updatedRefuelState)) {
-                    storeRefuelEvent(updatedRefuelState, updatedBaseState)
+                    if (validateRefuelValues(updatedRefuelState)) {
+                        storeRefuelEvent(updatedRefuelState, updatedBaseState)
+                    }
+                } else if (updatedBaseState.type == EventType.INSPECTION) {
+                    val state = _inspectionUiState.value
+                    if (validateInspectionValues(state)) {
+                        storeInspectionEvent(state, updatedBaseState)
+                    }
+                } else if (updatedBaseState.type == EventType.MAINTENANCE) {
+                    val state = _maintenanceUiState.value
+                    val providerNameValue =
+                        providerNameField.text.toString().ifEmpty { state.providerName }
+                    val updatedMaintenanceState = state.copy(
+                        providerName = providerNameValue
+                    )
+                    if (validateMaintenanceValues(updatedMaintenanceState)) {
+                        storeMaintenanceEvent(updatedMaintenanceState, updatedBaseState)
+                    }
                 }
-            } else if (updatedBaseState.type == EventType.INSPECTION) {
-                val state = _inspectionUiState.value
-                if (validateInspectionValues(state)) {
-                    storeInspectionEvent(state, updatedBaseState)
-                }
-            } else if (updatedBaseState.type == EventType.MAINTENANCE) {
-                val state = _maintenanceUiState.value
-                val providerNameValue =
-                    providerNameField.text.toString().ifEmpty { state.providerName }
-                val updatedMaintenanceState = state.copy(
-                    providerName = providerNameValue
-                )
-                if (validateMaintenanceValues(updatedMaintenanceState)) {
-                    storeMaintenanceEvent(updatedMaintenanceState, updatedBaseState)
-                }
+            } else {
+                _hasError.value = true
             }
         }
     }
 
-    private fun validateBaseValues(baseState: AddEventTypeFormState): Boolean {
-        // Example: Validate, that event date and mileage are in order, so future dates don't have a smaller mileage than previous events
+    private fun formatRefuelEventData(): RefuelEventFormState {
+        val state = _refuelUiState.value
+        // Extract refuel text values from TextFieldStates
+        val amountValue = amountTextField.text.toString().toDoubleOrNull()
+        var costValue: Double?
+        var pricePerLiterValue: Double?
+
+        if (state.calculateCost) {
+            pricePerLiterValue = pricePerLiterTextField.text.toString().toDoubleOrNull()
+            costValue = amountValue?.times(pricePerLiterValue ?: 0.00)
+        } else {
+            costValue = costTextField.text.toString().toDoubleOrNull()
+            pricePerLiterValue =
+                amountValue?.div(costValue ?: 0.00) // todo: 0.00 division
+        }
+
+        val updatedRefuelState = state.copy(
+            amount = amountValue,
+            cost = costValue,
+            pricePerLiter = pricePerLiterValue
+        )
+        return updatedRefuelState
+    }
+
+    private suspend fun validateBaseValues(baseState: AddEventTypeFormState): Boolean {
+
+        // Validate, that there does not exist any event with higher mileage, but past date (give error on it)
+        if (baseState.date != null && baseState.mileage != null) {
+            val higherEvent = eventRepository.getDateWithHigherMileage(baseState.mileage)
+            if (higherEvent != null) {
+                if (higherEvent.date < baseState.date)
+                    return false
+            }
+            val lowerEvent = eventRepository.getDateWithLowerMileage(baseState.mileage)
+            if (lowerEvent != null) {
+                if (lowerEvent.date > baseState.date)
+                    return false
+            }
+        }
+
         return true
     }
 
@@ -159,7 +189,7 @@ class AddEventScreenViewModel @Inject constructor(
         return true
     }
 
-    private fun storeRefuelEvent(
+    private suspend fun storeRefuelEvent(
         refuelState: RefuelEventFormState,
         baseState: AddEventTypeFormState
     ) {
@@ -170,15 +200,7 @@ class AddEventScreenViewModel @Inject constructor(
             notes = baseState.notes
 
         )
-//        var pricePerLiter: Double? = null
-//        var totalCost: Double? = null
-//        if (refuelState.calculateCost && refuelState.pricePerLiter != null) {
-//            pricePerLiter = refuelState.pricePerLiter
-//            totalCost = refuelState.amount?.times(pricePerLiter)
-//        } else if (refuelState.amount != null) {
-//            totalCost = refuelState.cost
-//            pricePerLiter = totalCost?.div(refuelState.amount)
-//        }
+
         val event = RefuelEvent(
             base = baseColumns,
             amountLiters = refuelState.amount,
@@ -187,11 +209,10 @@ class AddEventScreenViewModel @Inject constructor(
             paymentMethod = refuelState.paymentMethod,
             fullFillUp = refuelState.fullFillUp,
         )
-        viewModelScope.launch {
-            refuelRepository.insert(event)
 
-            showConfirmation()
-        }
+        refuelRepository.insert(event)
+
+        showConfirmation()
     }
 
     private fun storeInspectionEvent(

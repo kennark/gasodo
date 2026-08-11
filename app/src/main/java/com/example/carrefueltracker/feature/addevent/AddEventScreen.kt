@@ -26,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -34,7 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.getSelectedDate
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +52,7 @@ import com.example.carrefueltracker.core.database.entity.SavedLocation
 import com.example.carrefueltracker.core.enums.EventType
 import com.example.carrefueltracker.core.enums.InspectionStatus
 import com.example.carrefueltracker.core.enums.PaymentMethod
+import com.example.carrefueltracker.ui.icons.error
 
 
 @Composable
@@ -63,7 +64,8 @@ fun AddEventScreen(
     val refuelState by viewModel.refuelUiState.collectAsStateWithLifecycle()
     val inspectionState by viewModel.inspectionUiState.collectAsStateWithLifecycle()
     val maintenanceState by viewModel.maintenanceUiState.collectAsStateWithLifecycle()
-    val showConfirmation by viewModel.showConfirmation.collectAsState()
+    val showConfirmation by viewModel.showConfirmation.collectAsStateWithLifecycle()
+    val hasError by viewModel.hasError.collectAsStateWithLifecycle()
 
 
     AnimatedVisibility(
@@ -129,8 +131,22 @@ fun AddEventScreen(
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.spacedBy(3.dp, alignment = Alignment.End),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                if (hasError) {
+                    Icon(
+                        imageVector = error,
+                        contentDescription = error.name,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = "Validation error",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(end = 2.dp)
+                    )
+                }
                 Button(
                     onClick = viewModel::onSubmit,
                 ) {

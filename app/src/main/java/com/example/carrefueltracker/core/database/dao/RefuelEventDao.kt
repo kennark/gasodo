@@ -8,6 +8,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.carrefueltracker.core.database.entity.RefuelEvent
+import com.example.carrefueltracker.core.database.projections.DateMileage
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
@@ -40,4 +41,10 @@ interface RefuelEventDao {
 
     @Query("SELECT * FROM refuel_events WHERE date BETWEEN :startRange AND :endRange ORDER BY mileage DESC")
     fun getAllInDateRange(startRange: Long, endRange: Long): Flow<List<RefuelEvent>>
+
+    @Query("SELECT date, mileage FROM refuel_events WHERE mileage >= :mileage ORDER BY mileage ASC LIMIT 1")
+    suspend fun getDateWithHigherMileage(mileage: Long): DateMileage?
+
+    @Query("SELECT date, mileage FROM refuel_events WHERE mileage <= :mileage ORDER BY mileage DESC LIMIT 1")
+    suspend fun getDateWithLowerMileage(mileage: Long): DateMileage?
 }

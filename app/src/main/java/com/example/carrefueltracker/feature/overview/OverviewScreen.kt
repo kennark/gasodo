@@ -39,7 +39,9 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.carrefueltracker.core.utils.toDisplayString
 import com.example.carrefueltracker.ui.icons.local_gas_station
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -197,12 +199,12 @@ fun EmptyRefuelState() {
 
 @Composable
 fun RefuelStatsCard(
-    totalCost: Double,
-    totalLiters: Double,
+    totalCost: BigDecimal,
+    totalLiters: BigDecimal,
     showMileageStatistics: Boolean,
     totalMileage: Long,
-    fuelConsumption: Double,
-    fuelCost: Double
+    fuelConsumption: BigDecimal,
+    fuelCost: BigDecimal
 
 ) {
     Card(
@@ -240,7 +242,7 @@ fun RefuelStatsCard(
                         text = "Total Refuel Cost", style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = totalCost.toString(),
+                        text = totalCost.toDisplayString(2),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -254,7 +256,7 @@ fun RefuelStatsCard(
                         text = "Total Refuelled", style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = totalLiters.toString(),
+                        text = totalLiters.toDisplayString(2),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -287,7 +289,7 @@ fun RefuelStatsCard(
                             text = "Fuel Consumption", style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            text = fuelConsumption.toString(),
+                            text = fuelConsumption.toDisplayString(2),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -304,7 +306,7 @@ fun RefuelStatsCard(
                             text = "Fuel cost per 100", style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            text = fuelCost.toString(),
+                            text = fuelCost.toDisplayString(2),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )

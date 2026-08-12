@@ -7,12 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.carrefueltracker.core.database.entity.RefuelEvent
 import com.example.carrefueltracker.core.database.repository.RefuelRepository
+import com.example.carrefueltracker.core.utils.BigDecimalUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -25,11 +27,11 @@ class OverviewScreenViewModel @Inject constructor(
     private val _refuelData = MutableStateFlow<List<RefuelEvent>>(emptyList())
     val refuelData: StateFlow<List<RefuelEvent>> = _refuelData.asStateFlow()
 
-    private val _totalCost = MutableStateFlow<Double>(0.00)
-    val totalCost: StateFlow<Double> = _totalCost.asStateFlow()
+    private val _totalCost = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
+    val totalCost: StateFlow<BigDecimal> = _totalCost.asStateFlow()
 
-    private val _totalLiters = MutableStateFlow<Double>(0.00)
-    val totalLiters: StateFlow<Double> = _totalLiters.asStateFlow()
+    private val _totalLiters = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
+    val totalLiters: StateFlow<BigDecimal> = _totalLiters.asStateFlow()
 
     private val _mileageStatisticsCanBeCalculated = MutableStateFlow(false)
     val mileageStatisticsCanBeCalculated = _mileageStatisticsCanBeCalculated.asStateFlow()
@@ -38,11 +40,11 @@ class OverviewScreenViewModel @Inject constructor(
     val totalMileage = _totalMileage.asStateFlow()
 
     // L per 100km
-    private val _fuelConsumption = MutableStateFlow(0.0)
+    private val _fuelConsumption = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
     val fuelConsumption = _fuelConsumption.asStateFlow()
 
     // € per 100km
-    private val _fuelCost = MutableStateFlow(0.0)
+    private val _fuelCost = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
     val fuelCost = _fuelCost.asStateFlow()
 
 
@@ -95,14 +97,28 @@ class OverviewScreenViewModel @Inject constructor(
 
     private fun calculateRefuelStatistics(data: List<RefuelEvent>) {
         if (data.isNotEmpty()) {
-            _totalCost.value = data.sumOf { it.totalCost ?: 0.0 }
-            _totalLiters.value = data.sumOf { it.amountLiters ?: 0.0 }
+            _totalCost.value = data.sumOf { it.totalCost ?: BigDecimal.ZERO }
+            _totalLiters.value = data.sumOf { it.amountLiters ?: BigDecimal.ZERO }
 
             if (data.size > 1) {
                 _totalMileage.value =
                     data.first().base.mileage?.minus(data.last().base.mileage ?: 0) ?: 0
-                _fuelConsumption.value = _totalLiters.value.div(_totalMileage.value).times(100)
-                _fuelCost.value = _totalCost.value.div(_totalMileage.value).times(100)
+                _fuelConsumption.value = _totalLiters.value.divide(
+                    BigDecimal(_totalMileage.value),
+                    BigDecimalUtils.CONTEXT
+                )
+                    .multiply(
+                        BigDecimal(100),
+                        BigDecimalUtils.CONTEXT
+                    )
+                _fuelCost.value = _totalCost.value.divide(
+                    BigDecimal(_totalMileage.value),
+                    BigDecimalUtils.CONTEXT
+                )
+                    .multiply(
+                        BigDecimal(100),
+                        BigDecimalUtils.CONTEXT
+                    )
                 _mileageStatisticsCanBeCalculated.value = true
             } else {
                 _mileageStatisticsCanBeCalculated.value = false

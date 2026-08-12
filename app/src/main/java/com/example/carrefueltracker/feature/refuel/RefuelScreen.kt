@@ -29,20 +29,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import java.util.Locale
-
-import com.example.carrefueltracker.core.database.entity.RefuelEvent
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.example.carrefueltracker.core.database.BaseColumns
+import com.example.carrefueltracker.core.database.entity.RefuelEvent
+import com.example.carrefueltracker.core.enums.PaymentMethod
+import com.example.carrefueltracker.core.utils.toDisplayString
 import com.example.carrefueltracker.ui.icons.check_box
 import com.example.carrefueltracker.ui.icons.check_box_outline_blank
-import java.time.LocalDate
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.carrefueltracker.core.database.BaseColumns
-import com.example.carrefueltracker.core.enums.PaymentMethod
 import com.example.carrefueltracker.ui.icons.expand_circle_down
+import java.math.BigDecimal
+import java.time.LocalDate
+import java.util.Locale
 
 @Composable
 fun RefuelScreen(
@@ -151,13 +152,23 @@ fun RefuelEventRow(
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    val amount = refuelEvent.amountLiters ?: 0.0
-                    Text(
-                        text = String.format(Locale.US, "%.2f L", amount),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    val amount = refuelEvent.amountLiters ?: BigDecimal.ZERO
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = amount.toDisplayString(2),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "L",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
 
                 Column {
@@ -169,12 +180,12 @@ fun RefuelEventRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    val total = refuelEvent.totalCost ?: 0.0
+                    val total = refuelEvent.totalCost ?: BigDecimal.ZERO
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "%.2f".format(total),
+                            text = total.toDisplayString(2),
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.Bold
                             ),
@@ -189,12 +200,12 @@ fun RefuelEventRow(
                         )
                     }
 
-                    val price = refuelEvent.pricePerLiter ?: 0.0
+                    val price = refuelEvent.pricePerLiter ?: BigDecimal.ZERO
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "%.3f".format(price),
+                            text = price.toDisplayString(3),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -453,9 +464,9 @@ fun RefuelCardPreview() {
                 date = 1000000000000,
                 mileage = 123543,
                 ),
-            amountLiters = 10.0,
-            pricePerLiter = 1.599,
-            totalCost = 12.22,
+            amountLiters = BigDecimal.TEN,
+            pricePerLiter = BigDecimal("1.599"),
+            totalCost = BigDecimal("12.22"),
             paymentMethod = PaymentMethod.CARD,
             fullFillUp = true
         )

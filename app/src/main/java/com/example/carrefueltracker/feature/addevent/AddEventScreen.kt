@@ -52,7 +52,10 @@ import com.example.carrefueltracker.core.database.entity.SavedLocation
 import com.example.carrefueltracker.core.enums.EventType
 import com.example.carrefueltracker.core.enums.InspectionStatus
 import com.example.carrefueltracker.core.enums.PaymentMethod
+import com.example.carrefueltracker.core.utils.BigDecimalUtils
+import com.example.carrefueltracker.core.utils.toDisplayString
 import com.example.carrefueltracker.ui.icons.error
+import java.math.BigDecimal
 
 
 @Composable
@@ -338,10 +341,10 @@ fun RefuelForm(
 
                 // Display calculated total cost (read-only)
                 OutlinedTextField(
-                    value = amountState.text.toString().toDoubleOrNull()?.times(
-                        pricePerLiterState.text.toString().toDoubleOrNull() ?: 0.0
-                    )?.toString()
-                        ?: "0.0",
+                    value = amountState.text.toString().toBigDecimalOrNull()?.multiply(
+                        pricePerLiterState.text.toString().toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    )?.toDisplayString(2)
+                        ?: "0.00",
                     onValueChange = {},
                     label = { Text("Total Cost") },
                     readOnly = true,
@@ -365,10 +368,11 @@ fun RefuelForm(
 
                 // Display calculated price per liter (read-only)
                 OutlinedTextField(
-                    value = costState.text.toString().toDoubleOrNull()?.div(
-                        amountState.text.toString().toDoubleOrNull() ?: 1.0
-                    )?.toString()
-                        ?: "0.0",
+                    value = costState.text.toString().toBigDecimalOrNull()?.divide(
+                        amountState.text.toString().toBigDecimalOrNull() ?: BigDecimal("1.000"),
+                        BigDecimalUtils.SCALE, BigDecimalUtils.ROUNDING_MODE
+                    )?.toDisplayString(3)
+                        ?: "0.000",
                     onValueChange = {},
                     label = { Text("Price per Liter") },
                     readOnly = true,

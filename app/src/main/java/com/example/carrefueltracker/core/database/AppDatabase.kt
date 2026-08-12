@@ -13,7 +13,7 @@ import com.example.carrefueltracker.core.database.entity.MaintenanceEvent
 import com.example.carrefueltracker.core.database.entity.RefuelEvent
 import com.example.carrefueltracker.core.database.entity.SavedLocation
 import com.example.carrefueltracker.core.database.views.AllEventsBaseColumnsView
-import com.example.carrefueltracker.core.utils.ConverterUtils
+import com.example.carrefueltracker.core.utils.DbConverterUtils
 
 @Database(
     entities = [
@@ -25,10 +25,10 @@ import com.example.carrefueltracker.core.utils.ConverterUtils
     views = [
         AllEventsBaseColumnsView::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
-@TypeConverters(ConverterUtils::class)
+@TypeConverters(DbConverterUtils::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun savedLocationDao(): SavedLocationDao

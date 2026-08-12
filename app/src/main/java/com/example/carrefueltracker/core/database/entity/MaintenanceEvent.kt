@@ -7,6 +7,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.example.carrefueltracker.core.database.BaseColumns
+import java.math.BigDecimal
 import java.util.UUID
 
 /**
@@ -31,5 +32,5 @@ data class MaintenanceEvent(
     @ColumnInfo("service_types") val serviceTypes: List<String>,
     @ColumnInfo("provider_name") val providerName: String?,
     @ColumnInfo("parts_used") val partsUsed: List<String>?,
-    @ColumnInfo("total_cost") val totalCost: Double?
+    @ColumnInfo("total_cost") val totalCost: BigDecimal?
 )

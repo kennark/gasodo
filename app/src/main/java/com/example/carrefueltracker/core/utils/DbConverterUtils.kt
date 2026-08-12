@@ -1,6 +1,7 @@
 package com.example.carrefueltracker.core.utils
 
 import androidx.room.TypeConverter
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
@@ -8,7 +9,7 @@ import java.util.UUID
 /**
  * Type converters for Room to handle types that are not directly supported.
  */
-class ConverterUtils {
+class DbConverterUtils {
 
     // UUID ↔ String
     @TypeConverter
@@ -37,4 +38,10 @@ class ConverterUtils {
 
     @TypeConverter
     fun toStringList(value: String): List<String> = value.takeIf { it.isNotEmpty() }?.split(",") ?: emptyList()
+
+    @TypeConverter
+    fun fromBigDecimal(value: BigDecimal?): String? = value?.setScale(3)?.toPlainString()
+
+    @TypeConverter
+    fun toBigDecimal(value: String?): BigDecimal? = value?.let { BigDecimal(it) }
 }

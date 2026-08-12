@@ -8,6 +8,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.example.carrefueltracker.core.database.BaseColumns
 import com.example.carrefueltracker.core.enums.PaymentMethod
+import java.math.BigDecimal
 import java.util.UUID
 
 /**
@@ -29,9 +30,9 @@ data class RefuelEvent(
     @PrimaryKey val id: UUID = UUID.randomUUID(),
     @Embedded val base: BaseColumns,
 
-    @ColumnInfo("amount_liters") val amountLiters: Double?,
-    @ColumnInfo("price_per_liter") val pricePerLiter: Double?,
-    @ColumnInfo("total_cost") val totalCost: Double?,
+    @ColumnInfo("amount_liters") val amountLiters: BigDecimal?,
+    @ColumnInfo("price_per_liter") val pricePerLiter: BigDecimal?,
+    @ColumnInfo("total_cost") val totalCost: BigDecimal?,
     @ColumnInfo("payment_method") val paymentMethod: PaymentMethod?,
     @ColumnInfo("full_fill_up") val fullFillUp: Boolean
 )

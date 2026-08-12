@@ -16,12 +16,14 @@ import com.example.carrefueltracker.core.database.repository.RefuelRepository
 import com.example.carrefueltracker.core.enums.EventType
 import com.example.carrefueltracker.core.enums.InspectionStatus
 import com.example.carrefueltracker.core.enums.PaymentMethod
+import com.example.carrefueltracker.core.utils.BigDecimalUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -137,17 +139,26 @@ class AddEventScreenViewModel @Inject constructor(
     private fun formatRefuelEventData(): RefuelEventFormState {
         val state = _refuelUiState.value
         // Extract refuel text values from TextFieldStates
-        val amountValue = amountTextField.text.toString().toDoubleOrNull()
-        var costValue: Double?
-        var pricePerLiterValue: Double?
+        val amountValue = amountTextField.text.toString().toBigDecimalOrNull()
+        var costValue: BigDecimal? = null
+        var pricePerLiterValue: BigDecimal? = null
 
         if (state.calculateCost) {
-            pricePerLiterValue = pricePerLiterTextField.text.toString().toDoubleOrNull()
-            costValue = amountValue?.times(pricePerLiterValue ?: 0.00)
-        } else {
-            costValue = costTextField.text.toString().toDoubleOrNull()
+            // Calculate total cost
             pricePerLiterValue =
-                amountValue?.div(costValue ?: 0.00) // todo: 0.00 division
+                pricePerLiterTextField.text.toString().toBigDecimalOrNull()
+            if (pricePerLiterValue != null)
+                costValue = amountValue?.multiply(pricePerLiterValue)
+        } else {
+            // Calculate price per liter
+            costValue =
+                costTextField.text.toString().toBigDecimalOrNull()
+            if (costValue != null)
+                pricePerLiterValue = amountValue?.divide(
+                    costValue,
+                    BigDecimalUtils.SCALE,
+                    BigDecimalUtils.ROUNDING_MODE
+                )
         }
 
         val updatedRefuelState = state.copy(
@@ -244,11 +255,11 @@ data class AddEventTypeFormState(
 )
 
 data class RefuelEventFormState(
-    val amount: Double? = null,
+    val amount: BigDecimal? = null,
     // Cost if false, price per liter if true
     val calculateCost: Boolean = false,
-    val cost: Double? = null,
-    val pricePerLiter: Double? = null,
+    val cost: BigDecimal? = null,
+    val pricePerLiter: BigDecimal? = null,
     val paymentMethod: PaymentMethod? = null,
     val fullFillUp: Boolean = true
 )

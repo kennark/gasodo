@@ -12,7 +12,7 @@ import com.example.carrefueltracker.feature.refuel.RefuelScreen
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    startDestination: Destinations,
+    startDestination: BottomBarDestinations,
     modifier: Modifier
 ) {
     NavHost(
@@ -20,11 +20,17 @@ fun AppNavHost(
         startDestination = startDestination.route,
         modifier = modifier
     ) {
+        BottomBarDestinations.entries.forEach { destination ->
+            composable(destination.route) {
+                when (destination) {
+                    BottomBarDestinations.OVERVIEW -> OverviewScreen()
+                    BottomBarDestinations.REFUELS -> RefuelScreen()
+                }
+            }
+        }
         Destinations.entries.forEach { destination ->
             composable(destination.route) {
                 when (destination) {
-                    Destinations.OVERVIEW -> OverviewScreen()
-                    Destinations.REFUELS -> RefuelScreen()
                     Destinations.ADD -> AddEventScreen({ navController.popBackStack() })
                 }
             }

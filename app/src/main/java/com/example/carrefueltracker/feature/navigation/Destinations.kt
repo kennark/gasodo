@@ -1,22 +1,24 @@
 package com.example.carrefueltracker.feature.navigation
 
-import com.example.carrefueltracker.R
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.carrefueltracker.ui.icons.local_gas_station
+import com.example.carrefueltracker.ui.icons.overview
 
 
 enum class BottomBarDestinations(
     val route: String,
     val label: String,
-    val icon: Int
+    val icon: ImageVector
 ) {
     OVERVIEW(
         "overview",
         "Overview",
-        R.drawable.overview
+        overview
     ),
     REFUELS(
         "refuels",
         "Refuels",
-        R.drawable.local_gas_station_24px
+        local_gas_station
     )
 }
 

@@ -5,10 +5,10 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.example.carrefueltracker.core.database.dao.RefuelEventDao
 import com.example.carrefueltracker.core.database.entity.RefuelEvent
-import javax.inject.Inject
-import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
+import java.util.UUID
+import javax.inject.Inject
 
 /**
  * Implementation of [RefuelRepository] using Room DAO.
@@ -29,10 +29,13 @@ class RefuelRepositoryImpl @Inject constructor(
     }
 
     override fun getAllByYearMonth(year: Int, month: Int): Flow<List<RefuelEvent>> {
-        val startDate = LocalDate.of(year, month, 0)
-        val endDate = LocalDate.of(year, month + 1, 0)
+        val startDate = LocalDate.of(year, month, 1)
+        val endDate = LocalDate.of(year, month + 1, 1)
 
-        return dao.getAllInDateRange(startDate.toEpochDay(), endDate.toEpochDay())
+        return getAllWithinTime(
+            startDate.toEpochDay().times(86400000L),
+            endDate.toEpochDay().times(86400000L)
+        )
     }
 
     override fun getAllWithinTime(

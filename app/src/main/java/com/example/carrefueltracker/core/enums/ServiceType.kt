@@ -6,6 +6,7 @@ package com.example.carrefueltracker.core.enums
 enum class ServiceType(val displayName: String) {
     BRAKE_DISKS("Brake Disks"),
     BRAKE_PADS("Brake Pads"),
-    OIL_CHANGE("Oil Change"),
+    OIL_CHANGE("Oil Change");
 
+    override fun toString(): String = displayName
 }

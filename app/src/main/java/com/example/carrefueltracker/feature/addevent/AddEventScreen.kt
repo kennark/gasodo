@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.byValue
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -217,7 +219,11 @@ fun BaseForm(
             lineLimits = TextFieldLineLimits.SingleLine,
             modifier = Modifier.fillMaxWidth(),
             trailingIcon = { Text("km") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            inputTransformation = InputTransformation.byValue { current, proposed ->
+                if ("""\D""".toRegex() in proposed) current else proposed
+            }
+
         )
 
         // Date Picker
@@ -307,9 +313,13 @@ fun RefuelForm(
         OutlinedTextField(
             state = amountState,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            label = { Text("Amount (Liters)") },
+            label = { Text("Amount") },
             lineLimits = TextFieldLineLimits.SingleLine,
             modifier = Modifier.fillMaxWidth(),
+            trailingIcon = { Text("L") },
+            inputTransformation = InputTransformation.byValue { current, proposed ->
+                if ("""[^0-9,.]""".toRegex() in proposed) current else proposed
+            }
         )
 
         // Full Fill-Up Toggle
@@ -337,6 +347,10 @@ fun RefuelForm(
                     label = { Text("Price per Liter") },
                     lineLimits = TextFieldLineLimits.SingleLine,
                     modifier = Modifier.weight(2f),
+                    trailingIcon = { Text("€/L") },
+                    inputTransformation = InputTransformation.byValue { current, proposed ->
+                        if ("""[^0-9,.]""".toRegex() in proposed) current else proposed
+                    }
                 )
 
                 // Display calculated total cost (read-only)
@@ -364,12 +378,16 @@ fun RefuelForm(
                     lineLimits = TextFieldLineLimits.SingleLine,
                     modifier = Modifier.weight(2f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    trailingIcon = { Text("€") },
+                    inputTransformation = InputTransformation.byValue { current, proposed ->
+                        if ("""[^0-9,.]""".toRegex() in proposed) current else proposed
+                    }
                 )
 
                 // Display calculated price per liter (read-only)
                 OutlinedTextField(
                     value = costState.text.toString().toBigDecimalOrNull()?.divide(
-                        amountState.text.toString().toBigDecimalOrNull() ?: BigDecimal("1.000"),
+                        amountState.text.toString().toBigDecimalOrNull() ?: BigDecimal.ONE,
                         BigDecimalUtils.SCALE, BigDecimalUtils.ROUNDING_MODE
                     )?.toDisplayString(3)
                         ?: "0.000",

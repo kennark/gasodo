@@ -75,7 +75,7 @@ class AddEventScreenViewModelTest {
     }
 
     @Test
-    fun `onSubmit with Refuel form, calculateCost true and all data correct`() {
+    fun `onSubmit with Refuel form, calculateCost true and all data correct`() = runTest {
         val higherEvent =
             DateMileage(LocalDate.now().plusDays(1).toEpochDay().times(86400000L), 1235)
         val lowerEvent =

@@ -109,7 +109,7 @@ class AddEventScreenViewModel @Inject constructor(
 
                 if (updatedBaseState.type == EventType.REFUEL) {
 
-                    val updatedRefuelState = formatRefuelEventData()
+                    val updatedRefuelState = calculateRefuelEventData()
 
                     if (validateRefuelValues(updatedRefuelState)) {
                         storeRefuelEvent(updatedRefuelState, updatedBaseState)
@@ -136,7 +136,7 @@ class AddEventScreenViewModel @Inject constructor(
         }
     }
 
-    private fun formatRefuelEventData(): RefuelEventFormState {
+    internal fun calculateRefuelEventData(): RefuelEventFormState {
         val state = _refuelUiState.value
         // Extract refuel text values from TextFieldStates
         val amountValue = amountTextField.text.toString().toBigDecimalOrNull()
@@ -153,9 +153,9 @@ class AddEventScreenViewModel @Inject constructor(
             // Calculate price per liter
             costValue =
                 costTextField.text.toString().toBigDecimalOrNull()
-            if (costValue != null)
-                pricePerLiterValue = amountValue?.divide(
-                    costValue,
+            if (amountValue != null)
+                pricePerLiterValue = costValue?.divide(
+                    amountValue,
                     BigDecimalUtils.SCALE,
                     BigDecimalUtils.ROUNDING_MODE
                 )
@@ -169,7 +169,7 @@ class AddEventScreenViewModel @Inject constructor(
         return updatedRefuelState
     }
 
-    private suspend fun validateBaseValues(baseState: AddEventTypeFormState): Boolean {
+    internal suspend fun validateBaseValues(baseState: AddEventTypeFormState): Boolean {
 
         // Validate, that there does not exist any event with higher mileage, but past date (give error on it)
         if (baseState.date != null && baseState.mileage != null) {
@@ -200,7 +200,7 @@ class AddEventScreenViewModel @Inject constructor(
         return true
     }
 
-    private suspend fun storeRefuelEvent(
+    internal suspend fun storeRefuelEvent(
         refuelState: RefuelEventFormState,
         baseState: AddEventTypeFormState
     ) {

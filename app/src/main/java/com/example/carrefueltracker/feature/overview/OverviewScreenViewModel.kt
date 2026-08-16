@@ -33,19 +33,19 @@ class OverviewScreenViewModel @Inject constructor(
     private val _totalLiters = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
     val totalLiters: StateFlow<BigDecimal> = _totalLiters.asStateFlow()
 
-    private val _mileageStatisticsCanBeCalculated = MutableStateFlow(false)
-    val mileageStatisticsCanBeCalculated = _mileageStatisticsCanBeCalculated.asStateFlow()
-
-    private val _totalMileage = MutableStateFlow(0L)
+    private val _totalMileage = MutableStateFlow<Long?>(null)
     val totalMileage = _totalMileage.asStateFlow()
 
     // L per 100km
-    private val _fuelConsumption = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
+    private val _fuelConsumption = MutableStateFlow<BigDecimal?>(null)
     val fuelConsumption = _fuelConsumption.asStateFlow()
 
     // € per 100km
-    private val _fuelCost = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
+    private val _fuelCost = MutableStateFlow<BigDecimal?>(null)
     val fuelCost = _fuelCost.asStateFlow()
+
+    private val _averagePricePerLiter = MutableStateFlow<BigDecimal?>(null)
+    val averagePricePerLiter = _averagePricePerLiter.asStateFlow()
 
 
     // Loading state
@@ -79,8 +79,8 @@ class OverviewScreenViewModel @Inject constructor(
 
     private fun loadRefuelData(start: Long?, end: Long?) {
         viewModelScope.launch {
-            _isLoading.value = true
             if (start != null && end != null) {
+                _isLoading.value = true
                 refuelRepository.getAllWithinTime(start, end)
                     .catch { _ ->
                         _refuelData.value = emptyList()
@@ -99,29 +99,70 @@ class OverviewScreenViewModel @Inject constructor(
         if (data.isNotEmpty()) {
             _totalCost.value = data.sumOf { it.totalCost ?: BigDecimal.ZERO }
             _totalLiters.value = data.sumOf { it.amountLiters ?: BigDecimal.ZERO }
+            _averagePricePerLiter.value = data.sumOf { it.pricePerLiter ?: BigDecimal.ZERO }
+                .let {
+                    if (it == BigDecimal.ZERO)
+                        return else
+                        it.divide(
+                            BigDecimal(data.count { event -> event.pricePerLiter != null }),
+                            2, BigDecimalUtils.ROUNDING_MODE
+                        )
+                }
+
 
             if (data.size > 1) {
                 _totalMileage.value =
-                    data.first().base.mileage?.minus(data.last().base.mileage ?: 0) ?: 0
-                _fuelConsumption.value = _totalLiters.value.divide(
-                    BigDecimal(_totalMileage.value),
-                    BigDecimalUtils.CONTEXT
-                )
-                    .multiply(
-                        BigDecimal(100),
-                        BigDecimalUtils.CONTEXT
+                    data.first { event -> event.base.mileage != null }.base.mileage?.minus(
+                        data.last { event -> event.base.mileage != null }.base.mileage ?: 0
                     )
-                _fuelCost.value = _totalCost.value.divide(
-                    BigDecimal(_totalMileage.value),
-                    BigDecimalUtils.CONTEXT
-                )
-                    .multiply(
-                        BigDecimal(100),
-                        BigDecimalUtils.CONTEXT
-                    )
-                _mileageStatisticsCanBeCalculated.value = true
-            } else {
-                _mileageStatisticsCanBeCalculated.value = false
+
+                val firstFullDataEntry =
+                    data.indexOfFirst { event -> event.fullFillUp && event.base.mileage != null && event.amountLiters != null }
+                val lastFullDataEntry =
+                    data.indexOfLast { event -> event.fullFillUp && event.base.mileage != null && event.amountLiters != null }
+
+                val eventsBetweenFullFills =
+                    data.subList(firstFullDataEntry, lastFullDataEntry + 1)
+                        .sortedBy { event -> event.base.mileage }
+
+                if (eventsBetweenFullFills.size > 1) {
+                    val fullFillMileage =
+                        eventsBetweenFullFills.last().base.mileage!!.minus(
+                            eventsBetweenFullFills.first().base.mileage!!
+                        )
+                    if (eventsBetweenFullFills.all { event -> event.amountLiters != null }) {
+                        val fullFillAmount =
+                            eventsBetweenFullFills.subList(1, eventsBetweenFullFills.size)
+                                .sumOf { event -> event.amountLiters!! }
+                        _fuelConsumption.value = fullFillAmount.divide(
+                            BigDecimal(fullFillMileage),
+                            BigDecimalUtils.CONTEXT
+                        )
+                            .multiply(
+                                BigDecimal(100)
+                            )
+                            .setScale(
+                                2,
+                                BigDecimalUtils.ROUNDING_MODE
+                            )
+                    }
+                    if (eventsBetweenFullFills.all { event -> event.totalCost != null }) {
+                        val fullFillCost =
+                            eventsBetweenFullFills.subList(1, eventsBetweenFullFills.size)
+                                .sumOf { event -> event.totalCost!! }
+                        _fuelCost.value = fullFillCost.divide(
+                            BigDecimal(fullFillMileage),
+                            BigDecimalUtils.CONTEXT
+                        )
+                            .multiply(
+                                BigDecimal(100)
+                            )
+                            .setScale(
+                                2,
+                                BigDecimalUtils.ROUNDING_MODE
+                            )
+                    }
+                }
             }
         }
     }

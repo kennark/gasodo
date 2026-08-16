@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,17 +15,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DateRangePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.getSelectedEndDate
 import androidx.compose.material3.getSelectedStartDate
 import androidx.compose.runtime.Composable
@@ -37,11 +39,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.carrefueltracker.core.utils.toDisplayString
+import com.example.carrefueltracker.ui.icons.error
 import com.example.carrefueltracker.ui.icons.local_gas_station
 import java.math.BigDecimal
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,8 +58,8 @@ fun OverviewScreen(
     val refuelData by viewModel.refuelData.collectAsState()
 
     val totalCost by viewModel.totalCost.collectAsState()
+    val averageCost by viewModel.averagePricePerLiter.collectAsState()
     val totalLiters by viewModel.totalLiters.collectAsState()
-    val showMileageStatistics by viewModel.mileageStatisticsCanBeCalculated.collectAsState()
     val totalMileage by viewModel.totalMileage.collectAsState()
     val fuelConsumption by viewModel.fuelConsumption.collectAsState()
     val fuelCost by viewModel.fuelCost.collectAsState()
@@ -71,26 +77,31 @@ fun OverviewScreen(
             dateRangePickerState = viewModel.dateRangePickerState,
             onDateSelected = viewModel::onDateSelected
         )
+        HorizontalDivider()
 
-        // Loading State
-        if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(48.dp), color = MaterialTheme.colorScheme.primary
-            )
-        } else if (refuelData.isEmpty()) {
-            // Empty State
-            EmptyRefuelState()
+        if (viewModel.dateRangePickerState.selectedEndDateMillis != null) {
+            // Loading State
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(48.dp), color = MaterialTheme.colorScheme.primary
+                )
+            } else if (refuelData.isEmpty()) {
+                // Empty State
+                EmptyRefuelState()
+            } else {
+                // Statistics Cards
+                RefuelStatsCard(
+                    totalCost = totalCost,
+                    averageCost = averageCost,
+                    totalLiters = totalLiters,
+                    totalMileage = totalMileage,
+                    fuelConsumption = fuelConsumption,
+                    fuelCost = fuelCost
+                )
+
+            }
         } else {
-            // Statistics Cards
-            RefuelStatsCard(
-                totalCost = totalCost,
-                totalLiters = totalLiters,
-                showMileageStatistics = showMileageStatistics,
-                totalMileage = totalMileage,
-                fuelConsumption = fuelConsumption,
-                fuelCost = fuelCost
-            )
-
+            MissingEndDateCard()
         }
     }
 }
@@ -100,99 +111,118 @@ fun OverviewScreen(
 fun YearMonthSelectorCard(
     dateRangePickerState: DateRangePickerState, onDateSelected: () -> Unit
 ) {
-
-    Card(
-        modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-        ), shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-
-            var showModal by remember { mutableStateOf(false) }
-            TextField(
-                value = dateRangePickerState.getSelectedStartDate()
-                    .toString() + " - " + dateRangePickerState.getSelectedEndDate().toString(),
-                onValueChange = {},
-                label = { Text("Date range") },
-                readOnly = true,
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .pointerInput(dateRangePickerState) {
-                        awaitEachGesture {
-                            // Modifier.clickable doesn't work for text fields, so we use Modifier.pointerInput
-                            // in the Initial pass to observe events before the text field consumes them
-                            // in the Main pass.
-                            awaitFirstDown(pass = PointerEventPass.Initial)
-                            val upEvent = waitForUpOrCancellation(pass = PointerEventPass.Initial)
-                            if (upEvent != null) {
-                                showModal = true
-                            }
-                        }
-                    },
-            )
-            if (showModal) {
-                DatePickerDialog(
-                    onDismissRequest = { showModal = false },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            onDateSelected()
-                            showModal = false
-                        }) {
-                            Text("OK")
-                        }
-                    }, dismissButton = {
-                        TextButton(onClick = { showModal = false }) {
-                            Text("Cancel")
-                        }
-                    }) {
-                    DateRangePicker(state = dateRangePickerState)
+    var showModal by remember { mutableStateOf(false) }
+    TextField(
+        value = dateRangePickerState.getSelectedStartDate()
+            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+                + " - " + (dateRangePickerState.getSelectedEndDate()
+            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) ?: "?"),
+        onValueChange = {},
+        label = { Text("Time Period") },
+        readOnly = true,
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .pointerInput(dateRangePickerState) {
+                awaitEachGesture {
+                    // Modifier.clickable doesn't work for text fields, so we use Modifier.pointerInput
+                    // in the Initial pass to observe events before the text field consumes them
+                    // in the Main pass.
+                    awaitFirstDown(pass = PointerEventPass.Initial)
+                    val upEvent = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                    if (upEvent != null) {
+                        showModal = true
+                    }
                 }
-            }
+            },
+    )
+    if (showModal) {
+        DatePickerDialog(
+            onDismissRequest = { showModal = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDateSelected()
+                    showModal = false
+                }) {
+                    Text("OK")
+                }
+            }, dismissButton = {
+                TextButton(onClick = { showModal = false }) {
+                    Text("Cancel")
+                }
+            }) {
+            DateRangePicker(
+                state = dateRangePickerState,
+                showModeToggle = false
+            )
         }
     }
 }
 
+
+@Preview
 @Composable
 fun EmptyRefuelState() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp), contentAlignment = Alignment.Center
+    Card(
+        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
     ) {
-        Card(
-            modifier = Modifier.padding(16.dp), colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-            ), shape = RoundedCornerShape(12.dp)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Icon(
-                    imageVector = local_gas_station,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(48.dp)
-                )
-                Text(
-                    text = "No refuels found",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "Select a different month to see your refuel history",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
+            Icon(
+                imageVector = local_gas_station,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(48.dp)
+            )
+            Text(
+                text = "No refuels found",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Select a different period to see your refuel history",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun MissingEndDateCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = error,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(48.dp)
+            )
+            Text(
+                text = "Time period not set",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Select an end date to see statistics",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
         }
     }
 }
@@ -200,12 +230,11 @@ fun EmptyRefuelState() {
 @Composable
 fun RefuelStatsCard(
     totalCost: BigDecimal,
+    averageCost: BigDecimal?,
     totalLiters: BigDecimal,
-    showMileageStatistics: Boolean,
-    totalMileage: Long,
-    fuelConsumption: BigDecimal,
-    fuelCost: BigDecimal
-
+    totalMileage: Long?,
+    fuelConsumption: BigDecimal?,
+    fuelCost: BigDecimal?
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -219,7 +248,7 @@ fun RefuelStatsCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(modifier = Modifier.padding(2.dp)) {
                     Icon(
@@ -229,90 +258,213 @@ fun RefuelStatsCard(
                 }
                 Text(
                     text = "Refuel Statistics",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium
                 )
             }
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = "Total Refuel Cost", style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        text = totalCost.toDisplayString(2),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = "Total Refuelled", style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        text = totalLiters.toDisplayString(2),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-
-            if (showMileageStatistics) {
-                Row(
-                    modifier = Modifier.fillMaxWidth()
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Column(
-                        modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = "Total Mileage Travelled",
+                            text = "Total Refuel Cost",
                             style = MaterialTheme.typography.bodySmall
                         )
-                        Text(
-                            text = totalMileage.toString(),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = totalCost.toDisplayString(2),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "€",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
+
+
                     Column(
-                        modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = "Fuel Consumption", style = MaterialTheme.typography.bodySmall
+                            text = "Total Refuelled", style = MaterialTheme.typography.bodySmall
                         )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = totalLiters.toDisplayString(2),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "L",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
                         Text(
-                            text = fuelConsumption.toDisplayString(2),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            text = "Average Fuel Price",
+                            style = MaterialTheme.typography.bodySmall
                         )
+                        if (averageCost != null) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = averageCost.toDisplayString(2),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "€/L",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        } else {
+                            NoDataText()
+                        }
                     }
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth()
+                VerticalDivider()
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Column(
-                        modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = "Fuel cost per 100", style = MaterialTheme.typography.bodySmall
+                            text = "Total Distance Travelled",
+                            style = MaterialTheme.typography.bodySmall
                         )
+
+                        if (totalMileage != null) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = totalMileage.toString(),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "km",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        } else {
+                            NoDataText()
+                        }
+                    }
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
                         Text(
-                            text = fuelCost.toDisplayString(2),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            text = "Average Fuel Consumption",
+                            style = MaterialTheme.typography.bodySmall
                         )
+                        if (fuelConsumption != null) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = fuelConsumption.toDisplayString(2),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "L/100 km",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        } else {
+                            NoDataText()
+                        }
+                    }
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = "Average Fuel Cost",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        if (fuelCost != null) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = fuelCost.toDisplayString(2),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "€/100 km",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        } else {
+                            NoDataText()
+                        }
                     }
                 }
             }
         }
     }
 }
+
+
+@Composable
+fun NoDataText() {
+    Text(
+        text = "-",
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+
+@Preview
+@Composable
+fun RefuelStatsCardPreview() {
+    RefuelStatsCard(
+        totalCost = BigDecimal("10.00"),
+        averageCost = BigDecimal("1.23"),
+        totalLiters = BigDecimal("123.45"),
+        totalMileage = 934085L,
+        fuelConsumption = BigDecimal("5.46"),
+        fuelCost = BigDecimal("9.99")
+    )
+}
+
+@Preview
+@Composable
+fun RefuelStatsCardEmptyPreview() {
+    RefuelStatsCard(
+        totalCost = BigDecimal("10.00"),
+        averageCost = null,
+        totalLiters = BigDecimal("123.45"),
+        totalMileage = null,
+        fuelConsumption = null,
+        fuelCost = null
+    )
+}
+

@@ -36,6 +36,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
-          path: '**/build/test-results/tests/**'
+          path: '**/build/reports/tests/testDebugUnitTest/'
           retention-days: 5
           if-no-files-found: warn

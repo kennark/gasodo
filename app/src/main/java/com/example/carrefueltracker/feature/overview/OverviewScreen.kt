@@ -273,69 +273,35 @@ fun RefuelStatsCard(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(
-                            text = "Total Refuel Cost",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        LabelText("Total Refuel Cost")
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(
-                                text = totalCost.toDisplayString(2),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "€",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
-
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(
-                            text = "Total Refuelled", style = MaterialTheme.typography.bodySmall
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = totalLiters.toDisplayString(2),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "L",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            ValueText(totalCost.toDisplayString(2))
+                            ValueText("€")
                         }
                     }
                     Column(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(
-                            text = "Average Fuel Price",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        LabelText("Total Refuelled")
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            ValueText(totalLiters.toDisplayString(2))
+                            ValueText("L")
+                        }
+                    }
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        LabelText("Average Fuel Price")
                         if (averageCost != null) {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Text(
-                                    text = averageCost.toDisplayString(2),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "€/L",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                ValueText(averageCost.toDisplayString(2))
+                                ValueText("€/L")
                             }
                         } else {
                             NoDataText()
@@ -350,25 +316,13 @@ fun RefuelStatsCard(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(
-                            text = "Total Distance Travelled",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-
+                        LabelText("Total Distance Travelled")
                         if (totalMileage != null) {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Text(
-                                    text = totalMileage.toString(),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "km",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                ValueText(totalMileage.toString())
+                                ValueText("km")
                             }
                         } else {
                             NoDataText()
@@ -378,24 +332,13 @@ fun RefuelStatsCard(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(
-                            text = "Average Fuel Consumption",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        LabelText("Average Fuel Consumption")
                         if (fuelConsumption != null) {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Text(
-                                    text = fuelConsumption.toDisplayString(2),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "L/100 km",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                ValueText(fuelConsumption.toDisplayString(2))
+                                ValueText("L/100 km")
                             }
                         } else {
                             NoDataText()
@@ -404,22 +347,11 @@ fun RefuelStatsCard(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(
-                            text = "Average Fuel Cost",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        LabelText("Average Fuel Cost")
                         if (fuelCost != null) {
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    text = fuelCost.toDisplayString(2),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "€/100 km",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                ValueText(fuelCost.toDisplayString(2))
+                                ValueText("€/100 km")
                             }
                         } else {
                             NoDataText()
@@ -434,10 +366,23 @@ fun RefuelStatsCard(
 
 @Composable
 fun NoDataText() {
+    ValueText("-")
+}
+
+@Composable
+fun ValueText(text: String) {
     Text(
-        text = "-",
+        text = text,
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+@Composable
+fun LabelText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall
     )
 }
 

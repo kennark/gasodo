@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -31,6 +32,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -76,7 +78,7 @@ fun AddEventScreen(
     val maintenanceState by viewModel.maintenanceUiState.collectAsStateWithLifecycle()
     val showConfirmation by viewModel.showConfirmation.collectAsStateWithLifecycle()
     val hasError by viewModel.hasError.collectAsStateWithLifecycle()
-
+    val formType = viewModel.type
 
     AnimatedVisibility(
         visible = showConfirmation,
@@ -89,16 +91,26 @@ fun AddEventScreen(
 
     TopBarScaffold(
         "New Event",
+        subtitle = formType.toString(),
         navigationIcon = {
             IconButton(onClick = onNavigationBack) {
                 Icon(imageVector = arrow_back, contentDescription = arrow_back.name)
             }
         },
         actions = {
-            FilledIconButton(
-                onClick = viewModel::onSubmit
+            Row(
+                modifier = Modifier.padding(end = 4.dp)
             ) {
-                Icon(imageVector = check, contentDescription = check.name)
+                FilledIconButton(
+                    modifier = Modifier.size(
+                        IconButtonDefaults.smallContainerSize(
+                            IconButtonDefaults.IconButtonWidthOption.Wide
+                        )
+                    ),
+                    onClick = viewModel::onSubmit
+                ) {
+                    Icon(imageVector = check, contentDescription = check.name)
+                }
             }
         }
     ) { innerPadding ->
@@ -133,7 +145,6 @@ private fun FormContent(
     ) {
         BaseForm(
             state = baseState,
-            onTypeChange = viewModel::onFormTypeChange,
             mileageState = viewModel.mileageField,
             onLocationChange = viewModel::onLocationChange,
             notesState = viewModel.notesField,
@@ -152,12 +163,14 @@ private fun FormContent(
                     onFullFillUpChange = viewModel::onFullFillUpChange
                 )
             }
+
             EventType.MAINTENANCE -> {
                 MaintenanceForm(
                     state = maintenanceState,
                     providerState = viewModel.providerNameField
                 )
             }
+
             EventType.INSPECTION -> {
                 InspectionForm(
                     state = inspectionState,
@@ -193,7 +206,6 @@ private fun FormContent(
 @Composable
 fun BaseForm(
     state: AddEventTypeFormState,
-    onTypeChange: (EventType) -> Unit,
     mileageState: TextFieldState,
     onLocationChange: (SavedLocation) -> Unit,
     notesState: TextFieldState,
@@ -204,41 +216,6 @@ fun BaseForm(
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
-        // Event Type Selector
-        var expanded by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it }
-        ) {
-            OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                value = state.type.displayName,
-                onValueChange = {},
-                label = { Text("Event Type") },
-                readOnly = true,
-                singleLine = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
-            )
-            // Example https://developer.android.com/reference/kotlin/androidx/compose/material3/ExposedDropdownMenuBox.composable
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                EventType.entries.forEach { eventType ->
-                    DropdownMenuItem(
-                        text = { Text(eventType.toString()) },
-                        onClick = {
-                            onTypeChange(eventType)
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-
         // Mileage Field
         OutlinedTextField(
             state = mileageState,

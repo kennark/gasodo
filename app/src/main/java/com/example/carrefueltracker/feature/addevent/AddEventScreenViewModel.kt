@@ -4,6 +4,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.carrefueltracker.core.database.BaseColumns
@@ -17,6 +18,7 @@ import com.example.carrefueltracker.core.enums.EventType
 import com.example.carrefueltracker.core.enums.InspectionStatus
 import com.example.carrefueltracker.core.enums.PaymentMethod
 import com.example.carrefueltracker.core.utils.BigDecimalUtils
+import com.example.carrefueltracker.feature.navigation.ADD_EVENT_TYPE_ARG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,12 +34,17 @@ class AddEventScreenViewModel @Inject constructor(
     private val refuelRepository: RefuelRepository,
     private val inspectionRepository: InspectionRepository,
     private val maintenanceRepository: MaintenanceRepository,
-    private val eventRepository: EventRepository
+    private val eventRepository: EventRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    val type: EventType = checkNotNull(
+        savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG)
+    )
 
     private val _showConfirmation = MutableStateFlow(false)
     private val _hasError = MutableStateFlow(false)
-    private val _baseUiState = MutableStateFlow(AddEventTypeFormState())
+    private val _baseUiState = MutableStateFlow(AddEventTypeFormState(type = type))
     private val _refuelUiState = MutableStateFlow(RefuelEventFormState())
     private val _maintenanceUiState = MutableStateFlow(MaintenanceEventFormState())
     private val _inspectionUiState = MutableStateFlow(InspectionEventFormState())
@@ -247,7 +254,7 @@ class AddEventScreenViewModel @Inject constructor(
 
 
 data class AddEventTypeFormState(
-    val type: EventType = EventType.REFUEL,
+    val type: EventType,
     val mileage: Long? = null,
     val date: Long? = LocalDate.now().toEpochDay(),
     val location: SavedLocation? = null,

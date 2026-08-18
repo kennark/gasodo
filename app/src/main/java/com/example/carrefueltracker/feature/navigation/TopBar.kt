@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 @Composable
 fun TopBarScaffold(
     title: String,
+    subtitle: String? = null,
     navigationIcon: @Composable () -> Unit,
     actions: @Composable () -> Unit,
     applyBottomPadding: Boolean = false,
@@ -31,6 +32,10 @@ fun TopBarScaffold(
             TopAppBar(
                 title = {
                     Text(title)
+                },
+                subtitle = {
+                    if (subtitle != null)
+                        Text(subtitle)
                 },
                 navigationIcon = {
                     navigationIcon()

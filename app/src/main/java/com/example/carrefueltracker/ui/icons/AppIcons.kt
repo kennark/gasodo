@@ -14,6 +14,230 @@ import androidx.compose.ui.unit.dp
  */
 
 @Suppress("CheckReturnValue")
+public val content_paste_search: ImageVector
+    get() {
+        if (_content_paste_search != null) {
+            return _content_paste_search!!
+        }
+        _content_paste_search =
+            ImageVector.Builder(
+                name = "content_paste_search",
+                defaultWidth = 24.dp,
+                defaultHeight = 24.dp,
+                viewportWidth = 24f,
+                viewportHeight = 24f,
+            )
+                .apply {
+                    path(
+                        fill = SolidColor(Color.Black),
+                        fillAlpha = 1f,
+                        stroke = null,
+                        strokeAlpha = 1f,
+                        strokeLineWidth = 1f,
+                        strokeLineCap = StrokeCap.Butt,
+                        strokeLineJoin = StrokeJoin.Bevel,
+                        strokeLineMiter = 1f,
+                        pathFillType = PathFillType.Companion.NonZero,
+                    ) {
+                        moveTo(20.6f, 22f)
+                        lineTo(17.9f, 19.3f)
+                        quadToRelative(-0.55f, 0.32f, -1.15f, 0.51f)
+                        reflectiveQuadTo(15.5f, 20f)
+                        quadToRelative(-1.88f, 0f, -3.19f, -1.31f)
+                        reflectiveQuadTo(11f, 15.5f)
+                        reflectiveQuadToRelative(1.31f, -3.19f)
+                        reflectiveQuadTo(15.5f, 11f)
+                        reflectiveQuadToRelative(3.19f, 1.31f)
+                        reflectiveQuadTo(20f, 15.5f)
+                        quadToRelative(0f, 0.65f, -0.19f, 1.25f)
+                        reflectiveQuadTo(19.3f, 17.9f)
+                        lineTo(22f, 20.6f)
+                        lineTo(20.6f, 22f)
+                        close()
+                        moveTo(17.28f, 17.27f)
+                        quadTo(18f, 16.55f, 18f, 15.5f)
+                        reflectiveQuadTo(17.28f, 13.73f)
+                        reflectiveQuadTo(15.5f, 13f)
+                        reflectiveQuadToRelative(-1.77f, 0.72f)
+                        reflectiveQuadTo(13f, 15.5f)
+                        reflectiveQuadToRelative(0.73f, 1.77f)
+                        reflectiveQuadTo(15.5f, 18f)
+                        reflectiveQuadToRelative(1.78f, -0.73f)
+                        close()
+                        moveTo(21f, 10f)
+                        horizontalLineTo(19f)
+                        verticalLineTo(5f)
+                        horizontalLineTo(17f)
+                        verticalLineTo(8f)
+                        horizontalLineTo(7f)
+                        verticalLineTo(5f)
+                        horizontalLineTo(5f)
+                        verticalLineTo(19f)
+                        horizontalLineToRelative(5f)
+                        verticalLineToRelative(2f)
+                        horizontalLineTo(5f)
+                        quadTo(4.18f, 21f, 3.59f, 20.41f)
+                        reflectiveQuadTo(3f, 19f)
+                        verticalLineTo(5f)
+                        quadTo(3f, 4.17f, 3.59f, 3.59f)
+                        reflectiveQuadTo(5f, 3f)
+                        horizontalLineTo(9.18f)
+                        quadTo(9.45f, 2.13f, 10.25f, 1.56f)
+                        reflectiveQuadTo(12f, 1f)
+                        quadToRelative(1f, 0f, 1.79f, 0.56f)
+                        reflectiveQuadTo(14.85f, 3f)
+                        horizontalLineTo(19f)
+                        quadToRelative(0.83f, 0f, 1.41f, 0.59f)
+                        reflectiveQuadTo(21f, 5f)
+                        verticalLineToRelative(5f)
+                        close()
+                        moveTo(12.71f, 4.71f)
+                        quadTo(13f, 4.42f, 13f, 4f)
+                        quadTo(13f, 3.57f, 12.71f, 3.29f)
+                        reflectiveQuadTo(12f, 3f)
+                        reflectiveQuadTo(11.29f, 3.29f)
+                        reflectiveQuadTo(11f, 4f)
+                        quadToRelative(0f, 0.42f, 0.29f, 0.71f)
+                        reflectiveQuadTo(12f, 5f)
+                        reflectiveQuadTo(12.71f, 4.71f)
+                        close()
+                    }
+                }
+                .build()
+        return _content_paste_search!!
+    }
+
+private var _content_paste_search: ImageVector? = null
+
+@Suppress("CheckReturnValue")
+public val build: ImageVector
+    get() {
+        if (_build != null) {
+            return _build!!
+        }
+        _build =
+            ImageVector.Builder(
+                name = "build",
+                defaultWidth = 24.dp,
+                defaultHeight = 24.dp,
+                viewportWidth = 24f,
+                viewportHeight = 24f,
+            )
+                .apply {
+                    path(
+                        fill = SolidColor(Color.Black),
+                        fillAlpha = 1f,
+                        stroke = null,
+                        strokeAlpha = 1f,
+                        strokeLineWidth = 1f,
+                        strokeLineCap = StrokeCap.Butt,
+                        strokeLineJoin = StrokeJoin.Bevel,
+                        strokeLineMiter = 1f,
+                        pathFillType = PathFillType.Companion.NonZero,
+                    ) {
+                        moveTo(17.15f, 20.7f)
+                        lineTo(11.1f, 14.6f)
+                        quadToRelative(-0.5f, 0.2f, -1.01f, 0.3f)
+                        quadTo(9.58f, 15f, 9f, 15f)
+                        quadTo(6.5f, 15f, 4.75f, 13.25f)
+                        reflectiveQuadTo(3f, 9f)
+                        quadTo(3f, 8.1f, 3.25f, 7.29f)
+                        reflectiveQuadTo(3.95f, 5.75f)
+                        lineTo(7.6f, 9.4f)
+                        lineTo(9.4f, 7.6f)
+                        lineTo(5.75f, 3.95f)
+                        quadTo(6.48f, 3.5f, 7.29f, 3.25f)
+                        reflectiveQuadTo(9f, 3f)
+                        quadToRelative(2.5f, 0f, 4.25f, 1.75f)
+                        reflectiveQuadTo(15f, 9f)
+                        quadToRelative(0f, 0.57f, -0.1f, 1.09f)
+                        reflectiveQuadTo(14.6f, 11.1f)
+                        lineToRelative(6.1f, 6.05f)
+                        quadToRelative(0.3f, 0.3f, 0.3f, 0.73f)
+                        reflectiveQuadTo(20.7f, 18.6f)
+                        lineToRelative(-2.1f, 2.1f)
+                        quadTo(18.3f, 21f, 17.88f, 21f)
+                        reflectiveQuadTo(17.15f, 20.7f)
+                        close()
+                        moveToRelative(0.72f, -2.13f)
+                        lineTo(18.55f, 17.9f)
+                        lineToRelative(-6.4f, -6.4f)
+                        quadTo(12.6f, 11f, 12.8f, 10.34f)
+                        reflectiveQuadTo(13f, 9f)
+                        quadTo(13f, 7.5f, 12.04f, 6.39f)
+                        reflectiveQuadTo(9.65f, 5.05f)
+                        lineTo(11.5f, 6.9f)
+                        quadToRelative(0.3f, 0.3f, 0.3f, 0.7f)
+                        reflectiveQuadTo(11.5f, 8.3f)
+                        lineTo(8.3f, 11.5f)
+                        quadTo(8f, 11.8f, 7.6f, 11.8f)
+                        reflectiveQuadTo(6.9f, 11.5f)
+                        lineTo(5.05f, 9.65f)
+                        quadToRelative(0.22f, 1.43f, 1.34f, 2.39f)
+                        reflectiveQuadTo(9f, 13f)
+                        quadToRelative(0.65f, 0f, 1.3f, -0.2f)
+                        reflectiveQuadToRelative(1.18f, -0.63f)
+                        lineToRelative(6.4f, 6.4f)
+                        close()
+                        moveTo(11.8f, 11.8f)
+                        close()
+                    }
+                }
+                .build()
+        return _build!!
+    }
+
+private var _build: ImageVector? = null
+
+@Suppress("CheckReturnValue")
+public val close: ImageVector
+    get() {
+        if (_close != null) {
+            return _close!!
+        }
+        _close =
+            ImageVector.Builder(
+                name = "close",
+                defaultWidth = 24.dp,
+                defaultHeight = 24.dp,
+                viewportWidth = 24f,
+                viewportHeight = 24f,
+            )
+                .apply {
+                    path(
+                        fill = SolidColor(Color.Black),
+                        fillAlpha = 1f,
+                        stroke = null,
+                        strokeAlpha = 1f,
+                        strokeLineWidth = 1f,
+                        strokeLineCap = StrokeCap.Butt,
+                        strokeLineJoin = StrokeJoin.Bevel,
+                        strokeLineMiter = 1f,
+                        pathFillType = PathFillType.Companion.NonZero,
+                    ) {
+                        moveTo(6.4f, 19f)
+                        lineTo(5f, 17.6f)
+                        lineTo(10.6f, 12f)
+                        lineTo(5f, 6.4f)
+                        lineTo(6.4f, 5f)
+                        lineTo(12f, 10.6f)
+                        lineTo(17.6f, 5f)
+                        lineTo(19f, 6.4f)
+                        lineTo(13.4f, 12f)
+                        lineTo(19f, 17.6f)
+                        lineTo(17.6f, 19f)
+                        lineTo(12f, 13.4f)
+                        lineTo(6.4f, 19f)
+                        close()
+                    }
+                }
+                .build()
+        return _close!!
+    }
+
+private var _close: ImageVector? = null
+
+@Suppress("CheckReturnValue")
 public val arrow_back: ImageVector
     get() {
         if (_arrow_back != null) {

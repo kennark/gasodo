@@ -1,6 +1,7 @@
 package com.example.carrefueltracker.feature.navigation
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.carrefueltracker.core.enums.EventType
 import com.example.carrefueltracker.ui.icons.local_gas_station
 import com.example.carrefueltracker.ui.icons.overview
 
@@ -31,3 +32,11 @@ enum class Destinations(
         "Add Event"
     )
 }
+
+const val ADD_EVENT_TYPE_ARG = "type"
+
+// route pattern used in NavHost registration
+val addEventRoute = "${Destinations.ADD.route}/{$ADD_EVENT_TYPE_ARG}"
+
+// helper to build a concrete navigable route
+fun addEventRoute(type: EventType) = "${Destinations.ADD.route}/${type.name}"

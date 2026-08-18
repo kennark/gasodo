@@ -42,7 +42,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.carrefueltracker.core.database.entity.RefuelEvent
 import com.example.carrefueltracker.core.utils.toDisplayString
+import com.example.carrefueltracker.feature.navigation.TopBarScaffold
 import com.example.carrefueltracker.ui.icons.error
 import com.example.carrefueltracker.ui.icons.local_gas_station
 import java.math.BigDecimal
@@ -64,22 +66,56 @@ fun OverviewScreen(
     val fuelConsumption by viewModel.fuelConsumption.collectAsState()
     val fuelCost by viewModel.fuelCost.collectAsState()
 
+    TopBarScaffold(
+        title = "Overview",
+        navigationIcon = {},
+        actions = {}
+    ) { paddingValues ->
+        MainContent(
+            Modifier.padding(paddingValues),
+            viewModel.dateRangePickerState,
+            viewModel::onDateSelected,
+            isLoading,
+            refuelData,
+            totalCost,
+            averageCost,
+            totalLiters,
+            totalMileage,
+            fuelConsumption,
+            fuelCost
+        )
+    }
+}
 
+@Composable
+private fun MainContent(
+    modifier: Modifier = Modifier,
+    dateRangePickerState: DateRangePickerState,
+    onDateSelected: () -> Unit,
+    isLoading: Boolean,
+    refuelData: List<RefuelEvent>,
+    totalCost: BigDecimal,
+    averageCost: BigDecimal?,
+    totalLiters: BigDecimal,
+    totalMileage: Long?,
+    fuelConsumption: BigDecimal?,
+    fuelCost: BigDecimal?
+) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Year and Month Selector Card
         YearMonthSelectorCard(
-            dateRangePickerState = viewModel.dateRangePickerState,
-            onDateSelected = viewModel::onDateSelected
+            dateRangePickerState = dateRangePickerState,
+            onDateSelected = onDateSelected
         )
         HorizontalDivider()
 
-        if (viewModel.dateRangePickerState.selectedEndDateMillis != null) {
+        if (dateRangePickerState.selectedEndDateMillis != null) {
             // Loading State
             if (isLoading) {
                 CircularProgressIndicator(

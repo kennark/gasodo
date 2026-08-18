@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +20,6 @@ import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.byValue
-import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePickerState
@@ -28,7 +28,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -56,6 +58,9 @@ import com.example.carrefueltracker.core.enums.InspectionStatus
 import com.example.carrefueltracker.core.enums.PaymentMethod
 import com.example.carrefueltracker.core.utils.BigDecimalUtils
 import com.example.carrefueltracker.core.utils.toDisplayString
+import com.example.carrefueltracker.feature.navigation.TopBarScaffold
+import com.example.carrefueltracker.ui.icons.arrow_back
+import com.example.carrefueltracker.ui.icons.check
 import com.example.carrefueltracker.ui.icons.error
 import java.math.BigDecimal
 
@@ -82,9 +87,47 @@ fun AddEventScreen(
         AddEventConfirmationOverlay(baseState.type.toString(), onNavigationBack)
     }
 
+    TopBarScaffold(
+        "New Event",
+        navigationIcon = {
+            IconButton(onClick = onNavigationBack) {
+                Icon(imageVector = arrow_back, contentDescription = arrow_back.name)
+            }
+        },
+        actions = {
+            FilledIconButton(
+                onClick = viewModel::onSubmit
+            ) {
+                Icon(imageVector = check, contentDescription = check.name)
+            }
+        }
+    ) { innerPadding ->
+        FormContent(
+            innerPadding,
+            baseState,
+            viewModel,
+            refuelState,
+            maintenanceState,
+            inspectionState,
+            hasError
+        )
+    }
+}
+
+@Composable
+private fun FormContent(
+    paddingValues: PaddingValues,
+    baseState: AddEventTypeFormState,
+    viewModel: AddEventScreenViewModel,
+    refuelState: RefuelEventFormState,
+    maintenanceState: MaintenanceEventFormState,
+    inspectionState: InspectionEventFormState,
+    hasError: Boolean
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .padding(paddingValues)
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -152,15 +195,11 @@ fun AddEventScreen(
                         modifier = Modifier.padding(end = 2.dp)
                     )
                 }
-                Button(
-                    onClick = viewModel::onSubmit,
-                ) {
-                    Text("Save Event")
-                }
             }
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

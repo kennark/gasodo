@@ -4,13 +4,14 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeFloatingActionButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarDefaults
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ShortNavigationBar
+import androidx.compose.material3.ShortNavigationBarDefaults
+import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +29,7 @@ fun NavigationBarFrame() {
     val currentRoute = currentBackStackEntry?.destination?.route
     val bottomNavRoutes = BottomBarDestinations.entries.map { it.route }
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             FAB(currentRoute, navController)
         },
@@ -69,9 +71,9 @@ private fun BottomNavigationBar(
     currentRoute: String?,
     navController: NavHostController
 ) {
-    NavigationBar(windowInsets = NavigationBarDefaults.windowInsets) {
+    ShortNavigationBar(windowInsets = ShortNavigationBarDefaults.windowInsets) {
         BottomBarDestinations.entries.forEach { destination ->
-            NavigationBarItem(
+            ShortNavigationBarItem(
                 selected = currentRoute == destination.route,
                 onClick = {
                     navController.navigate(route = destination.route) {

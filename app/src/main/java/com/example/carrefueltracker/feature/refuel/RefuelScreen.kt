@@ -32,12 +32,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.example.carrefueltracker.core.database.BaseColumns
 import com.example.carrefueltracker.core.database.entity.RefuelEvent
 import com.example.carrefueltracker.core.enums.PaymentMethod
 import com.example.carrefueltracker.core.utils.toDisplayString
+import com.example.carrefueltracker.feature.navigation.TopBarScaffold
 import com.example.carrefueltracker.ui.icons.check_box
 import com.example.carrefueltracker.ui.icons.check_box_outline_blank
 import com.example.carrefueltracker.ui.icons.expand_circle_down
@@ -51,21 +53,28 @@ fun RefuelScreen(
 ) {
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
 
+    TopBarScaffold("Recent Refuels", navigationIcon = {}, actions = {}) { paddingValues ->
+        MainContent(
+            Modifier.padding(paddingValues),
+            pagedItems
+        )
+    }
+}
+
+@Composable
+private fun MainContent(
+    modifier: Modifier = Modifier,
+    pagedItems: LazyPagingItems<RefuelEvent>
+) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(
-            modifier = Modifier.padding(horizontal = 15.dp),
-            text = "Recent Refuels",
-            style = MaterialTheme.typography.titleLarge
-        )
-
         LazyColumn(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(
@@ -463,7 +472,7 @@ fun RefuelCardPreview() {
             base = BaseColumns(
                 date = 1000000000000,
                 mileage = 123543,
-                ),
+            ),
             amountLiters = BigDecimal.TEN,
             pricePerLiter = BigDecimal("1.599"),
             totalCost = BigDecimal("12.22"),

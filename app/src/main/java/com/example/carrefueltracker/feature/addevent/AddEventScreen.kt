@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -25,6 +24,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -124,77 +124,65 @@ private fun FormContent(
     inspectionState: InspectionEventFormState,
     hasError: Boolean
 ) {
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            BaseForm(
-                state = baseState,
-                onTypeChange = viewModel::onFormTypeChange,
-                mileageState = viewModel.mileageField,
-                onLocationChange = viewModel::onLocationChange,
-                notesState = viewModel.notesField,
-                datePickerState = viewModel.datePickerState
-            )
-        }
+        BaseForm(
+            state = baseState,
+            onTypeChange = viewModel::onFormTypeChange,
+            mileageState = viewModel.mileageField,
+            onLocationChange = viewModel::onLocationChange,
+            notesState = viewModel.notesField,
+            datePickerState = viewModel.datePickerState
+        )
 
         when (baseState.type) {
             EventType.REFUEL -> {
-                item {
-                    RefuelForm(
-                        state = refuelState,
-                        amountState = viewModel.amountTextField,
-                        onCalculateCostChange = viewModel::onCalculateCostChange,
-                        costState = viewModel.costTextField,
-                        pricePerLiterState = viewModel.pricePerLiterTextField,
-                        onPaymentMethodChange = viewModel::onPaymentMethodChange,
-                        onFullFillUpChange = viewModel::onFullFillUpChange
-                    )
-                }
+                RefuelForm(
+                    state = refuelState,
+                    amountState = viewModel.amountTextField,
+                    onCalculateCostChange = viewModel::onCalculateCostChange,
+                    costState = viewModel.costTextField,
+                    pricePerLiterState = viewModel.pricePerLiterTextField,
+                    onPaymentMethodChange = viewModel::onPaymentMethodChange,
+                    onFullFillUpChange = viewModel::onFullFillUpChange
+                )
             }
-
             EventType.MAINTENANCE -> {
-                item {
-                    MaintenanceForm(
-                        state = maintenanceState,
-                        providerState = viewModel.providerNameField
-                    )
-                }
+                MaintenanceForm(
+                    state = maintenanceState,
+                    providerState = viewModel.providerNameField
+                )
             }
-
             EventType.INSPECTION -> {
-                item {
-                    InspectionForm(
-                        state = inspectionState,
-                        onStatusChange = viewModel::onStatusChange
-                    )
-                }
+                InspectionForm(
+                    state = inspectionState,
+                    onStatusChange = viewModel::onStatusChange
+                )
             }
         }
 
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(3.dp, alignment = Alignment.End),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (hasError) {
-                    Icon(
-                        imageVector = error,
-                        contentDescription = error.name,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Text(
-                        text = "Validation error",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(end = 2.dp)
-                    )
-                }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(3.dp, alignment = Alignment.End),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (hasError) {
+                Icon(
+                    imageVector = error,
+                    contentDescription = error.name,
+                    tint = MaterialTheme.colorScheme.error
+                )
+                Text(
+                    text = "Validation error",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(end = 2.dp)
+                )
             }
         }
     }

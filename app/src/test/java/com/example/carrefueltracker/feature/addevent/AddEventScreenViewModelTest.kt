@@ -1,6 +1,7 @@
 package com.example.carrefueltracker.feature.addevent
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.lifecycle.SavedStateHandle
 import com.example.carrefueltracker.core.database.BaseColumns
 import com.example.carrefueltracker.core.database.entity.RefuelEvent
 import com.example.carrefueltracker.core.database.projections.DateMileage
@@ -11,9 +12,11 @@ import com.example.carrefueltracker.core.database.repository.RefuelRepository
 import com.example.carrefueltracker.core.enums.EventType
 import com.example.carrefueltracker.core.enums.PaymentMethod
 import com.example.carrefueltracker.core.utils.BigDecimalUtils
+import com.example.carrefueltracker.feature.navigation.ADD_EVENT_TYPE_ARG
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
@@ -33,6 +36,7 @@ class AddEventScreenViewModelTest {
     private lateinit var inspectionRepository: InspectionRepository
     private lateinit var maintenanceRepository: MaintenanceRepository
     private lateinit var eventRepository: EventRepository
+    private lateinit var savedStateHandle: SavedStateHandle
 
     @Before
     fun setup() {
@@ -40,12 +44,18 @@ class AddEventScreenViewModelTest {
         inspectionRepository = mockk()
         maintenanceRepository = mockk()
         eventRepository = mockk()
+        savedStateHandle = mockk()
+
+        every { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.REFUEL
+
         viewModel = AddEventScreenViewModel(
             refuelRepository,
             inspectionRepository,
             maintenanceRepository,
-            eventRepository
+            eventRepository,
+            savedStateHandle
         )
+
     }
 
     @Test

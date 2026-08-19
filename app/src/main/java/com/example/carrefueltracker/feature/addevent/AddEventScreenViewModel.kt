@@ -254,7 +254,7 @@ class AddEventScreenViewModel @Inject constructor(
 
 
 data class AddEventTypeFormState(
-    val type: EventType,
+    val type: EventType = EventType.REFUEL,
     val mileage: Long? = null,
     val date: Long? = LocalDate.now().toEpochDay(),
     val location: SavedLocation? = null,

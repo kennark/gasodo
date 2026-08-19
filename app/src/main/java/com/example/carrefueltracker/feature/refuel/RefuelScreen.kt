@@ -6,25 +6,36 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -42,10 +53,14 @@ import com.example.carrefueltracker.core.utils.toDisplayString
 import com.example.carrefueltracker.feature.navigation.TopBarScaffold
 import com.example.carrefueltracker.ui.icons.check_box
 import com.example.carrefueltracker.ui.icons.check_box_outline_blank
+import com.example.carrefueltracker.ui.icons.delete
+import com.example.carrefueltracker.ui.icons.edit
+import com.example.carrefueltracker.ui.icons.error
 import com.example.carrefueltracker.ui.icons.expand_circle_down
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.util.Locale
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 fun RefuelScreen(
@@ -56,7 +71,8 @@ fun RefuelScreen(
     TopBarScaffold("Recent Refuels", navigationIcon = {}, actions = {}) { paddingValues ->
         MainContent(
             Modifier.padding(paddingValues),
-            pagedItems
+            pagedItems,
+            viewModel::onDeleteEvent
         )
     }
 }
@@ -64,31 +80,33 @@ fun RefuelScreen(
 @Composable
 private fun MainContent(
     modifier: Modifier = Modifier,
-    pagedItems: LazyPagingItems<RefuelEvent>
+    pagedItems: LazyPagingItems<RefuelEvent>,
+    onDeleteEvent: (RefuelEvent) -> Unit
 ) {
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(bottom = 24.dp)
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(
-                pagedItems.itemCount,
-                key = pagedItems.itemKey { it.id }
-            ) { index ->
-                val refuel = pagedItems[index]
-                if (refuel != null) {
-                    RefuelEventRow(refuelEvent = refuel)
-                } else {
-                    // Show placeholder for empty slots while paging
-                    RefuelScreenLoadingPlaceholder()
-                }
+        items(
+            pagedItems.itemCount,
+            key = pagedItems.itemKey { it.id }
+        ) { index ->
+            val refuel = pagedItems[index]
+            if (refuel != null) {
+                RefuelEventRow(
+                    refuelEvent = refuel,
+                    onDeleteEvent = onDeleteEvent
+                )
+            } else {
+                // Show placeholder for empty slots while paging
+                RefuelScreenLoadingPlaceholder()
             }
+        }
+        item {
+            NoDataCard()
         }
     }
 }
@@ -99,7 +117,8 @@ private fun MainContent(
 @Composable
 fun RefuelEventRow(
     refuelEvent: RefuelEvent,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDeleteEvent: (RefuelEvent) -> Unit
 ) {
     val isExpanded = remember { mutableStateOf(false) }
 
@@ -115,23 +134,18 @@ fun RefuelEventRow(
                 .animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Amount and Price row
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
-                    Text(
-                        text = "Date",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Column(Modifier.weight(1f)) {
+                    MediumLabelText("Date")
                     // Convert the date from epoch milliseconds to epoch days
                     val dateString =
-                        LocalDate.ofEpochDay(refuelEvent.base.date?.div(86400000) ?: 0)
-                            .toString()
+                        LocalDate.ofEpochDay(refuelEvent.base.date?.div(86400000) ?: 0).format(
+                            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                        )
                     Text(
                         text = dateString,
                         style = MaterialTheme.typography.bodyLarge,
@@ -144,23 +158,17 @@ fun RefuelEventRow(
                         ) {
                             Text(
                                 text = refuelEvent.base.mileage.toString(),
-                                style = MaterialTheme.typography.bodySmall
+                                style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
                                 text = "km",
-                                style = MaterialTheme.typography.bodySmall
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
                 }
-                Column {
-                    Text(
-                        text = "Amount",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Column(Modifier.weight(0.8f)) {
+                    MediumLabelText("Amount")
                     val amount = refuelEvent.amountLiters ?: BigDecimal.ZERO
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -180,14 +188,8 @@ fun RefuelEventRow(
                     }
                 }
 
-                Column {
-                    Text(
-                        text = "Cost",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Column(Modifier.weight(0.4f)) {
+                    MediumLabelText("Cost")
 
                     val total = refuelEvent.totalCost ?: BigDecimal.ZERO
                     Row(
@@ -229,7 +231,6 @@ fun RefuelEventRow(
                 }
             }
 
-            // Full fill-up indicator row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -237,13 +238,13 @@ fun RefuelEventRow(
             ) {
                 // Full Fill-Up with icon together at the back (right)
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
                         text = "Full Fill-Up",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 2.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (refuelEvent.fullFillUp) {
                         Icon(imageVector = check_box, contentDescription = check_box.name)
@@ -276,173 +277,109 @@ fun RefuelEventRow(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Fuel Consumption Details",
+                        text = "Extra Details",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+
+                    Column(
+                        Modifier.fillMaxWidth()
                     ) {
-                        Column {
-                            Text(
-                                text = "Mileage",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            val currentMileage = refuelEvent.base.mileage ?: 0L
-                            Text(
-                                text = String.format(Locale.US, "%d km", currentMileage),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
+                        MediumLabelText("Payment")
 
-                        Column {
-                            Text(
-                                text = "Date",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            val dateString =
-                                LocalDate.ofEpochDay(refuelEvent.base.date?.div(86400000) ?: 0)
-                                    .toString()
-                            Text(
-                                text = dateString,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
+                        if (refuelEvent.paymentMethod != null)
+                            ExtraDataText(refuelEvent.paymentMethod.toString())
+                        else
+                            NoDataText("None selected")
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    Column(
+                        Modifier.fillMaxWidth()
                     ) {
-                        Column {
-                            Text(
-                                text = "Liters",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            val liters = refuelEvent.amountLiters ?: 0.0
-                            Text(
-                                text = String.format(Locale.US, "%.2f L", liters),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
+                        MediumLabelText("Location")
 
-                        Column {
-                            Text(
-                                text = "Cost",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            val cost = refuelEvent.totalCost ?: 0.0
-                            Text(
-                                text = "%.2f €".format(cost),
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        NoDataText("Placeholder")
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    Column(
+                        Modifier.fillMaxWidth()
                     ) {
-                        Column {
-                            Text(
-                                text = "Price per Liter",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            val price = refuelEvent.pricePerLiter ?: 0.0
-                            Text(
-                                text = "%.3f €/L".format(price),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        Column {
-                            Text(
-                                text = "Payment",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = refuelEvent.paymentMethod?.toString() ?: "Unknown",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(
-                            text = "Full Fill-Up",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = if (refuelEvent.fullFillUp) "Yes" else "No",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    Column {
-                        Text(
-                            text = "Notes",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        MediumLabelText("Notes")
                         refuelEvent.base.notes.let { notes ->
                             if (notes.isNotEmpty()) {
-                                Text(
-                                    text = notes,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                ExtraDataText(notes)
                             } else {
-                                Text(
-                                    text = "No notes",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                NoDataText("No notes")
                             }
                         }
                     }
+
+                    var showDeleteDialog by remember { mutableStateOf(false) }
+
+                    // Action buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        FilledIconButton(
+                            onClick = {
+                                showDeleteDialog = true
+                            },
+                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(imageVector = delete, contentDescription = delete.name)
+                        }
+                        FilledIconButton(onClick = {}) {
+                            Icon(imageVector = edit, contentDescription = edit.name)
+                        }
+                    }
+
+                    if (showDeleteDialog)
+                        DeleteDialog(
+                            {
+                                showDeleteDialog = false
+                            },
+                            onConfirmRequest = {
+                                onDeleteEvent(refuelEvent)
+                            })
                 }
             }
         }
     }
 }
 
+
+@Composable
+fun NoDataCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = error,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(48.dp)
+            )
+            Text(
+                text = "Refuels end here",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Register new refuels to show up here",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
+}
 
 /**
  * Placeholder for loading state.
@@ -463,6 +400,79 @@ fun RefuelScreenLoadingPlaceholder(
     }
 }
 
+@Composable
+fun DeleteDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmRequest: () -> Unit
+) {
+    BasicAlertDialog(
+        { onDismissRequest() }
+    ) {
+        Surface(
+            modifier = Modifier
+                .wrapContentWidth()
+                .wrapContentHeight(),
+            shape = MaterialTheme.shapes.large,
+            tonalElevation = AlertDialogDefaults.TonalElevation,
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text =
+                        "Do you want to delete this event?"
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = {
+                            onDismissRequest()
+                        },
+                    ) {
+                        Text("Dismiss")
+                    }
+                    TextButton(
+                        onClick = {
+                            onDismissRequest()
+                            onConfirmRequest()
+                        },
+                    ) {
+                        Text("Confirm")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MediumLabelText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+@Composable
+fun ExtraDataText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+@Composable
+fun NoDataText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
 
 @Preview
 @Composable
@@ -478,6 +488,7 @@ fun RefuelCardPreview() {
             totalCost = BigDecimal("12.22"),
             paymentMethod = PaymentMethod.CARD,
             fullFillUp = true
-        )
+        ),
+        onDeleteEvent = {}
     )
 }

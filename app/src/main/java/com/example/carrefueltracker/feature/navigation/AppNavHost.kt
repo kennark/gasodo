@@ -2,10 +2,12 @@ package com.example.carrefueltracker.feature.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
 import com.example.carrefueltracker.core.enums.EventType
 import com.example.carrefueltracker.feature.addevent.AddEventScreen
@@ -31,14 +33,36 @@ fun AppNavHost(
                 }
             }
         }
-        composable(
+
+        dialog(
             route = addEventRoute,
             arguments = listOf(
                 navArgument(ADD_EVENT_TYPE_ARG) {
                     type = NavType.EnumType(EventType::class.java)
                 }
-            )) {
-            AddEventScreen({ navController.popBackStack() })
+            ),
+            dialogProperties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            AddEventScreen(
+                onDismiss = { navController.popBackStack() },
+            )
+        }
+
+        dialog(
+            route = editEventRoute,
+            arguments = listOf(
+                navArgument(ADD_EVENT_TYPE_ARG) {
+                    type = NavType.EnumType(EventType::class.java)
+                },
+                navArgument(EDIT_EVENT_ID_ARG) {
+                    type = NavType.StringType
+                }
+            ),
+            dialogProperties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            AddEventScreen(
+                onDismiss = { navController.popBackStack() },
+            )
         }
     }
 }

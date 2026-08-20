@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -65,13 +66,16 @@ import com.example.carrefueltracker.ui.icons.arrow_back
 import com.example.carrefueltracker.ui.icons.check
 import com.example.carrefueltracker.ui.icons.error
 import java.math.BigDecimal
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 
 @Composable
 fun AddEventScreen(
-    onNavigationBack: () -> Unit,
+    onDismiss: () -> Unit,
     viewModel: AddEventScreenViewModel = hiltViewModel<AddEventScreenViewModel>()
 ) {
+
     val baseState by viewModel.baseUiState.collectAsStateWithLifecycle()
     val refuelState by viewModel.refuelUiState.collectAsStateWithLifecycle()
     val inspectionState by viewModel.inspectionUiState.collectAsStateWithLifecycle()
@@ -86,44 +90,46 @@ fun AddEventScreen(
         exit = fadeOut(animationSpec = tween(durationMillis = 300)),
         modifier = Modifier.zIndex(1f)
     ) {
-        AddEventConfirmationOverlay(baseState.type.toString(), onNavigationBack)
+        AddEventConfirmationOverlay(baseState.type.toString(), onDismiss)
     }
-
-    TopBarScaffold(
-        "New Event",
-        subtitle = formType.toString(),
-        navigationIcon = {
-            IconButton(onClick = onNavigationBack) {
-                Icon(imageVector = arrow_back, contentDescription = arrow_back.name)
-            }
-        },
-        actions = {
-            Row(
-                modifier = Modifier.padding(end = 4.dp)
-            ) {
-                FilledIconButton(
-                    modifier = Modifier.size(
-                        IconButtonDefaults.smallContainerSize(
-                            IconButtonDefaults.IconButtonWidthOption.Wide
-                        )
-                    ),
-                    onClick = viewModel::onSubmit
+    Surface(modifier = Modifier.fillMaxSize()) {
+        TopBarScaffold(
+            "New Event",
+            subtitle = formType.toString(),
+            navigationIcon = {
+                IconButton(onClick = onDismiss) {
+                    Icon(imageVector = arrow_back, contentDescription = arrow_back.name)
+                }
+            },
+            actions = {
+                Row(
+                    modifier = Modifier.padding(end = 4.dp)
                 ) {
-                    Icon(imageVector = check, contentDescription = check.name)
+                    FilledIconButton(
+                        modifier = Modifier.size(
+                            IconButtonDefaults.smallContainerSize(
+                                IconButtonDefaults.IconButtonWidthOption.Wide
+                            )
+                        ),
+                        onClick = viewModel::onSubmit
+                    ) {
+                        Icon(imageVector = check, contentDescription = check.name)
+                    }
                 }
             }
+        ) { innerPadding ->
+            FormContent(
+                innerPadding,
+                baseState,
+                viewModel,
+                refuelState,
+                maintenanceState,
+                inspectionState,
+                hasError
+            )
         }
-    ) { innerPadding ->
-        FormContent(
-            innerPadding,
-            baseState,
-            viewModel,
-            refuelState,
-            maintenanceState,
-            inspectionState,
-            hasError
-        )
     }
+
 }
 
 @Composable
@@ -233,7 +239,11 @@ fun BaseForm(
         // Date Picker
         var showModal by remember { mutableStateOf(false) }
         OutlinedTextField(
-            value = datePickerState.getSelectedDate().toString(), // todo display format
+            value = datePickerState.getSelectedDate()?.format(
+                DateTimeFormatter.ofLocalizedDate(
+                    FormatStyle.MEDIUM
+                )
+            ) ?: "",
             onValueChange = {},
             label = { Text("Date") },
             readOnly = true,

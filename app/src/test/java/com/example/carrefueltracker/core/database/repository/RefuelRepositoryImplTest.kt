@@ -109,13 +109,13 @@ class RefuelRepositoryImplTest {
     fun `insert delegates to DAO`() = runTest {
         // Arrange
         val event = makeRefuelEvent()
-        coEvery { dao.insert(event) } returns 1L
+        coEvery { dao.upsert(event) } returns 1L
 
         // Act
-        repository.insert(event)
+        repository.upsert(event)
 
         // Assert
-        coVerify { dao.insert(event) }
+        coVerify { dao.upsert(event) }
     }
 
     @Test

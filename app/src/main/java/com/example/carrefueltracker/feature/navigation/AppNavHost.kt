@@ -13,6 +13,7 @@ import com.example.carrefueltracker.core.enums.EventType
 import com.example.carrefueltracker.feature.addevent.AddEventScreen
 import com.example.carrefueltracker.feature.overview.OverviewScreen
 import com.example.carrefueltracker.feature.refuel.RefuelScreen
+import java.util.UUID
 
 @Composable
 fun AppNavHost(
@@ -29,7 +30,9 @@ fun AppNavHost(
             composable(destination.route) {
                 when (destination) {
                     BottomBarDestinations.OVERVIEW -> OverviewScreen()
-                    BottomBarDestinations.REFUELS -> RefuelScreen()
+                    BottomBarDestinations.REFUELS -> RefuelScreen(onNavigateToEdit = { id: UUID ->
+                        navController.navigate(editEventRoute(EventType.REFUEL, id))
+                    })
                 }
             }
         }

@@ -27,7 +27,7 @@ import java.util.UUID
     indices = [Index("saved_location_id")]
 )
 data class RefuelEvent(
-    @PrimaryKey val id: UUID = UUID.randomUUID(),
+    @PrimaryKey var id: UUID = UUID.randomUUID(),
     @Embedded val base: BaseColumns,
 
     @ColumnInfo("amount_liters") val amountLiters: BigDecimal?,

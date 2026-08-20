@@ -15,7 +15,7 @@ interface RefuelRepository {
 
     fun getAllWithinTime(start: Long, end: Long): Flow<List<RefuelEvent>>
     suspend fun getById(id: UUID): RefuelEvent?
-    suspend fun insert(event: RefuelEvent)
+    suspend fun upsert(event: RefuelEvent)
     suspend fun update(event: RefuelEvent)
     suspend fun delete(event: RefuelEvent)
 }

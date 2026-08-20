@@ -48,8 +48,8 @@ class RefuelRepositoryImpl @Inject constructor(
     override suspend fun getById(id: UUID): RefuelEvent? =
         dao.getById(id)
 
-    override suspend fun insert(event: RefuelEvent) {
-        dao.insert(event)
+    override suspend fun upsert(event: RefuelEvent) {
+        dao.upsert(event)
     }
 
     override suspend fun update(event: RefuelEvent) {

@@ -18,8 +18,8 @@ import java.util.UUID
 @Dao
 interface RefuelEventDao {
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insert(entity: RefuelEvent): Long
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: RefuelEvent): Long
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertAll(entities: List<RefuelEvent>)

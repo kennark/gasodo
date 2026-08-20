@@ -13,12 +13,15 @@ import com.example.carrefueltracker.core.enums.EventType
 import com.example.carrefueltracker.core.enums.PaymentMethod
 import com.example.carrefueltracker.core.utils.BigDecimalUtils
 import com.example.carrefueltracker.feature.navigation.ADD_EVENT_TYPE_ARG
+import com.example.carrefueltracker.feature.navigation.EDIT_EVENT_ID_ARG
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -47,6 +50,7 @@ class AddEventScreenViewModelTest {
         savedStateHandle = mockk()
 
         every { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.REFUEL
+        every { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns null
 
         viewModel = AddEventScreenViewModel(
             refuelRepository,
@@ -84,6 +88,7 @@ class AddEventScreenViewModelTest {
         assertThat(viewModel.inspectionUiState.value).isEqualTo(InspectionEventFormState())
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `onSubmit with Refuel form, calculateCost true and all data correct`() = runTest {
         val higherEvent =
@@ -103,11 +108,13 @@ class AddEventScreenViewModelTest {
 
         coEvery { eventRepository.getDateWithHigherMileage(mileage) } returns higherEvent
         coEvery { eventRepository.getDateWithLowerMileage(mileage) } returns lowerEvent
-        coEvery { refuelRepository.insert(any()) } returns Unit
+        coEvery { refuelRepository.upsert(any()) } returns Unit
 
         viewModel.onSubmit()
 
-        coVerify(exactly = 1) { refuelRepository.insert(any()) }
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { refuelRepository.upsert(any()) }
 
         assertThat(viewModel.showConfirmation.value).isTrue()
     }
@@ -462,7 +469,7 @@ class AddEventScreenViewModelTest {
         )
         val slot = slot<RefuelEvent>()
 
-        coEvery { refuelRepository.insert(capture(slot)) } returns Unit
+        coEvery { refuelRepository.upsert(capture(slot)) } returns Unit
 
         viewModel.storeRefuelEvent(refuelState, baseState)
 
@@ -482,7 +489,7 @@ class AddEventScreenViewModelTest {
         )
 
         coVerify(exactly = 1) {
-            refuelRepository.insert(
+            refuelRepository.upsert(
                 event = expectedEvent
             )
         }

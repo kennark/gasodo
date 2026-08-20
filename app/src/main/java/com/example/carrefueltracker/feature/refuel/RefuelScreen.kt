@@ -61,10 +61,12 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.UUID
 
 @Composable
 fun RefuelScreen(
     viewModel: RefuelScreenViewModel = hiltViewModel<RefuelScreenViewModel>(),
+    onNavigateToEdit: (id: UUID) -> Unit
 ) {
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
 
@@ -72,7 +74,8 @@ fun RefuelScreen(
         MainContent(
             Modifier.padding(paddingValues),
             pagedItems,
-            viewModel::onDeleteEvent
+            viewModel::onDeleteEvent,
+            onNavigateToEdit
         )
     }
 }
@@ -81,7 +84,8 @@ fun RefuelScreen(
 private fun MainContent(
     modifier: Modifier = Modifier,
     pagedItems: LazyPagingItems<RefuelEvent>,
-    onDeleteEvent: (RefuelEvent) -> Unit
+    onDeleteEvent: (RefuelEvent) -> Unit,
+    onNavigateToEdit: (id: UUID) -> Unit
 ) {
     LazyColumn(
         modifier = modifier
@@ -98,7 +102,8 @@ private fun MainContent(
             if (refuel != null) {
                 RefuelEventRow(
                     refuelEvent = refuel,
-                    onDeleteEvent = onDeleteEvent
+                    onDeleteEvent = onDeleteEvent,
+                    onNavigateToEdit = onNavigateToEdit
                 )
             } else {
                 // Show placeholder for empty slots while paging
@@ -118,7 +123,8 @@ private fun MainContent(
 fun RefuelEventRow(
     refuelEvent: RefuelEvent,
     modifier: Modifier = Modifier,
-    onDeleteEvent: (RefuelEvent) -> Unit
+    onDeleteEvent: (RefuelEvent) -> Unit,
+    onNavigateToEdit: (id: UUID) -> Unit
 ) {
     val isExpanded = remember { mutableStateOf(false) }
 
@@ -329,7 +335,9 @@ fun RefuelEventRow(
                         ) {
                             Icon(imageVector = delete, contentDescription = delete.name)
                         }
-                        FilledIconButton(onClick = {}) {
+                        FilledIconButton(onClick = {
+                            onNavigateToEdit(refuelEvent.id)
+                        }) {
                             Icon(imageVector = edit, contentDescription = edit.name)
                         }
                     }
@@ -489,6 +497,7 @@ fun RefuelCardPreview() {
             paymentMethod = PaymentMethod.CARD,
             fullFillUp = true
         ),
-        onDeleteEvent = {}
+        onDeleteEvent = {},
+        onNavigateToEdit = {}
     )
 }

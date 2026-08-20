@@ -1,6 +1,7 @@
 package com.example.carrefueltracker.feature.addevent
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,6 +20,7 @@ import com.example.carrefueltracker.core.enums.InspectionStatus
 import com.example.carrefueltracker.core.enums.PaymentMethod
 import com.example.carrefueltracker.core.utils.BigDecimalUtils
 import com.example.carrefueltracker.feature.navigation.ADD_EVENT_TYPE_ARG
+import com.example.carrefueltracker.feature.navigation.EDIT_EVENT_ID_ARG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -41,6 +44,10 @@ class AddEventScreenViewModel @Inject constructor(
     val type: EventType = checkNotNull(
         savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG)
     )
+
+    val id: UUID? = savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG)?.let {
+        UUID.fromString(it)
+    }
 
     private val _showConfirmation = MutableStateFlow(false)
     private val _hasError = MutableStateFlow(false)
@@ -93,6 +100,45 @@ class AddEventScreenViewModel @Inject constructor(
 
     fun onStatusChange(value: InspectionStatus) {
         _inspectionUiState.update { it.copy(status = value) }
+    }
+
+    init {
+        if (id != null) {
+            viewModelScope.launch {
+                if (type == EventType.REFUEL) {
+                    val event: RefuelEvent? = refuelRepository.getById(id)
+
+                    if (event != null) {
+                        _baseUiState.value = AddEventTypeFormState(
+                            type = EventType.REFUEL,
+                            mileage = event.base.mileage,
+                            date = event.base.date,
+                            notes = event.base.notes
+                        )
+                        _refuelUiState.value = RefuelEventFormState(
+                            amount = event.amountLiters,
+                            cost = event.totalCost,
+                            pricePerLiter = event.pricePerLiter,
+                            paymentMethod = event.paymentMethod,
+                            fullFillUp = event.fullFillUp
+                        )
+
+                        mileageField.setTextAndPlaceCursorAtEnd(
+                            event.base.mileage?.toString() ?: ""
+                        )
+                        costTextField.setTextAndPlaceCursorAtEnd(event.totalCost?.toString() ?: "")
+                        notesField.setTextAndPlaceCursorAtEnd(event.base.notes)
+                        amountTextField.setTextAndPlaceCursorAtEnd(
+                            event.amountLiters?.toString() ?: ""
+                        )
+                        pricePerLiterTextField.setTextAndPlaceCursorAtEnd(
+                            event.pricePerLiter?.toString() ?: ""
+                        )
+
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -228,7 +274,11 @@ class AddEventScreenViewModel @Inject constructor(
             fullFillUp = refuelState.fullFillUp,
         )
 
-        refuelRepository.insert(event)
+        // Set id of existing event in case of edit
+        if (id != null)
+            event.id = id
+
+        refuelRepository.upsert(event)
 
         showConfirmation()
     }

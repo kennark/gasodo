@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,12 +37,12 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.getSelectedDate
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,9 +51,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.zIndex
+import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
@@ -84,6 +88,20 @@ fun AddEventScreen(
     val hasError by viewModel.hasError.collectAsStateWithLifecycle()
     val formType = viewModel.type
 
+    val view = LocalView.current
+    val darkIcons = !isSystemInDarkTheme()
+
+    // Fix white status bar icons on white mode dialog
+    SideEffect {
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window ?: return@SideEffect
+
+        // Match icon appearance
+        val controller = WindowCompat.getInsetsController(dialogWindow, view)
+        controller.isAppearanceLightStatusBars = darkIcons
+        controller.isAppearanceLightNavigationBars = darkIcons
+
+    }
+
     AnimatedVisibility(
         visible = showConfirmation,
         enter = fadeIn(animationSpec = tween(durationMillis = 300)),
@@ -92,7 +110,6 @@ fun AddEventScreen(
     ) {
         AddEventConfirmationOverlay(baseState.type.toString(), onDismiss)
     }
-    Surface(modifier = Modifier.fillMaxSize()) {
         TopBarScaffold(
             "New Event",
             subtitle = formType.toString(),
@@ -128,8 +145,6 @@ fun AddEventScreen(
                 hasError
             )
         }
-    }
-
 }
 
 @Composable

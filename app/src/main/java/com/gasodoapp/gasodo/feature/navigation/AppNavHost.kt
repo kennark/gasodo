@@ -44,7 +44,10 @@ fun AppNavHost(
                     type = NavType.EnumType(EventType::class.java)
                 }
             ),
-            dialogProperties = DialogProperties(usePlatformDefaultWidth = false)
+            dialogProperties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false,
+            )
         ) {
             AddEventScreen(
                 onDismiss = { navController.popBackStack() },
@@ -61,7 +64,10 @@ fun AppNavHost(
                     type = NavType.StringType
                 }
             ),
-            dialogProperties = DialogProperties(usePlatformDefaultWidth = false)
+            dialogProperties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false,
+            )
         ) {
             AddEventScreen(
                 onDismiss = { navController.popBackStack() },

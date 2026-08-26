@@ -1,0 +1,50 @@
+package com.gasodoapp.gasodo.core.database.dao
+
+import androidx.paging.PagingSource
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
+import com.gasodoapp.gasodo.core.database.projections.DateMileage
+import kotlinx.coroutines.flow.Flow
+import java.util.UUID
+
+/**
+ * Data Access Object for RefuelEvent entities.
+ */
+@Dao
+interface RefuelEventDao {
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: RefuelEvent): Long
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(entities: List<RefuelEvent>)
+
+    @Delete
+    suspend fun delete(entity: RefuelEvent)
+
+    @Update
+    suspend fun update(entity: RefuelEvent)
+
+    @Query("SELECT * FROM refuel_events WHERE id = :id")
+    suspend fun getById(id: UUID): RefuelEvent?
+
+    @Query("DELETE FROM refuel_events WHERE id = :id")
+    suspend fun deleteById(id: UUID)
+
+    @Query("SELECT * FROM refuel_events ORDER BY date DESC")
+    fun getAllOrderByDate(): PagingSource<Int, RefuelEvent>
+
+    @Query("SELECT * FROM refuel_events WHERE date BETWEEN :startRange AND :endRange ORDER BY mileage DESC")
+    fun getAllInDateRange(startRange: Long, endRange: Long): Flow<List<RefuelEvent>>
+
+    @Query("SELECT date, mileage FROM refuel_events WHERE mileage >= :mileage ORDER BY mileage ASC LIMIT 1")
+    suspend fun getDateWithHigherMileage(mileage: Long): DateMileage?
+
+    @Query("SELECT date, mileage FROM refuel_events WHERE mileage <= :mileage ORDER BY mileage DESC LIMIT 1")
+    suspend fun getDateWithLowerMileage(mileage: Long): DateMileage?
+}

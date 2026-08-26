@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">Car refuel tracker</string>
+    <string name="app_name">Gasodo</string>
     <string name="title_activity_main">MainActivity</string>
 </resources>

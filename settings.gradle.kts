@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Car refuel tracker"
+rootProject.name = "Gasodo"
 include(":app")
  

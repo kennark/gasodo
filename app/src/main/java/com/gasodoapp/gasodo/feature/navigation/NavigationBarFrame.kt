@@ -10,11 +10,15 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.material3.animateFloatingActionButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +46,19 @@ fun NavigationBarFrame() {
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
     val bottomNavRoutes = BottomBarDestinations.entries.map { it.route }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(currentBackStackEntry) {
+        val handle = currentBackStackEntry?.savedStateHandle ?: return@LaunchedEffect
+        handle.getStateFlow<String?>("snackbar_text", null).collect { message ->
+            if (message != null) {
+                handle["snackbar_text"] = null
+                snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+            }
+        }
+    }
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             FAB(currentRoute, navController)

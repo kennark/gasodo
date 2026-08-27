@@ -49,14 +49,14 @@ class AddEventScreenViewModel @Inject constructor(
         UUID.fromString(it)
     }
 
-    private val _showConfirmation = MutableStateFlow(false)
+    private val _dismissDialog = MutableStateFlow(false)
     private val _hasError = MutableStateFlow(false)
     private val _baseUiState = MutableStateFlow(AddEventTypeFormState(type = type))
     private val _refuelUiState = MutableStateFlow(RefuelEventFormState())
     private val _maintenanceUiState = MutableStateFlow(MaintenanceEventFormState())
     private val _inspectionUiState = MutableStateFlow(InspectionEventFormState())
 
-    val showConfirmation: StateFlow<Boolean> = _showConfirmation.asStateFlow()
+    val dismissDialog: StateFlow<Boolean> = _dismissDialog.asStateFlow()
     val hasError: StateFlow<Boolean> = _hasError.asStateFlow()
     val baseUiState: StateFlow<AddEventTypeFormState> = _baseUiState.asStateFlow()
     val refuelUiState: StateFlow<RefuelEventFormState> = _refuelUiState.asStateFlow()
@@ -280,9 +280,8 @@ class AddEventScreenViewModel @Inject constructor(
 
         refuelRepository.upsert(event)
 
-        showConfirmation()
+        dismissDialog()
     }
-
     private fun storeInspectionEvent(
         inspectionState: InspectionEventFormState,
         baseState: AddEventTypeFormState
@@ -297,8 +296,8 @@ class AddEventScreenViewModel @Inject constructor(
         // TODO: Implement maintenance event storage
     }
 
-    private fun showConfirmation() {
-        _showConfirmation.value = true
+    private fun dismissDialog() {
+        _dismissDialog.value = true
     }
 }
 

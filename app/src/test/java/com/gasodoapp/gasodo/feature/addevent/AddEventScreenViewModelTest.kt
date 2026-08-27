@@ -78,7 +78,7 @@ class AddEventScreenViewModelTest {
         )
 
         // No error or confirmation yet
-        assertThat(viewModel.showConfirmation.value).isFalse()
+        assertThat(viewModel.dismissDialog.value).isFalse()
         assertThat(viewModel.hasError.value).isFalse()
 
         // Form states are defaults
@@ -116,7 +116,7 @@ class AddEventScreenViewModelTest {
 
         coVerify(exactly = 1) { refuelRepository.upsert(any()) }
 
-        assertThat(viewModel.showConfirmation.value).isTrue()
+        assertThat(viewModel.dismissDialog.value).isTrue()
     }
 
     @Test
@@ -494,6 +494,6 @@ class AddEventScreenViewModelTest {
             )
         }
 
-        assertThat(viewModel.showConfirmation.value).isTrue()
+        assertThat(viewModel.dismissDialog.value).isTrue()
     }
 }

@@ -51,6 +51,10 @@ fun AppNavHost(
         ) {
             AddEventScreen(
                 onDismiss = { navController.popBackStack() },
+                onSnackbarMessage = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle["snackbar_text"] = "Event saved"
+                }
             )
         }
 
@@ -71,6 +75,10 @@ fun AppNavHost(
         ) {
             AddEventScreen(
                 onDismiss = { navController.popBackStack() },
+                onSnackbarMessage = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle["snackbar_text"] = "Event updated"
+                }
             )
         }
     }

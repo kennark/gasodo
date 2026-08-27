@@ -1,9 +1,5 @@
 package com.gasodoapp.gasodo.feature.addevent
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -44,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.getSelectedDate
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,7 +54,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindowProvider
-import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -79,6 +75,7 @@ import java.time.format.FormatStyle
 @Composable
 fun AddEventScreen(
     onDismiss: () -> Unit,
+    onSnackbarMessage: () -> Unit,
     viewModel: AddEventScreenViewModel = hiltViewModel<AddEventScreenViewModel>()
 ) {
 
@@ -86,7 +83,7 @@ fun AddEventScreen(
     val refuelState by viewModel.refuelUiState.collectAsStateWithLifecycle()
     val inspectionState by viewModel.inspectionUiState.collectAsStateWithLifecycle()
     val maintenanceState by viewModel.maintenanceUiState.collectAsStateWithLifecycle()
-    val showConfirmation by viewModel.showConfirmation.collectAsStateWithLifecycle()
+    val dismissDialog by viewModel.dismissDialog.collectAsStateWithLifecycle()
     val hasError by viewModel.hasError.collectAsStateWithLifecycle()
     val formType = viewModel.type
 
@@ -101,52 +98,50 @@ fun AddEventScreen(
         val controller = WindowCompat.getInsetsController(dialogWindow, view)
         controller.isAppearanceLightStatusBars = darkIcons
         controller.isAppearanceLightNavigationBars = darkIcons
-
     }
 
-    AnimatedVisibility(
-        visible = showConfirmation,
-        enter = fadeIn(animationSpec = tween(durationMillis = 300)),
-        exit = fadeOut(animationSpec = tween(durationMillis = 300)),
-        modifier = Modifier.zIndex(1f)
-    ) {
-        AddEventConfirmationOverlay(baseState.type.toString(), onDismiss)
+    LaunchedEffect(dismissDialog) {
+        if (dismissDialog) {
+            onSnackbarMessage()
+            onDismiss()
+        }
     }
-        TopBarScaffold(
-            if (viewModel.id == null) "New Event" else "Edit Event",
-            subtitle = formType.toString(),
-            navigationIcon = {
-                IconButton(onClick = onDismiss) {
-                    Icon(imageVector = arrow_back, contentDescription = arrow_back.name)
-                }
-            },
-            actions = {
-                Row(
-                    modifier = Modifier.padding(end = 4.dp)
+
+    TopBarScaffold(
+        if (viewModel.id == null) "New Event" else "Edit Event",
+        subtitle = formType.toString(),
+        navigationIcon = {
+            IconButton(onClick = onDismiss) {
+                Icon(imageVector = arrow_back, contentDescription = arrow_back.name)
+            }
+        },
+        actions = {
+            Row(
+                modifier = Modifier.padding(end = 4.dp)
+            ) {
+                FilledIconButton(
+                    modifier = Modifier.size(
+                        IconButtonDefaults.smallContainerSize(
+                            IconButtonDefaults.IconButtonWidthOption.Wide
+                        )
+                    ),
+                    onClick = viewModel::onSubmit
                 ) {
-                    FilledIconButton(
-                        modifier = Modifier.size(
-                            IconButtonDefaults.smallContainerSize(
-                                IconButtonDefaults.IconButtonWidthOption.Wide
-                            )
-                        ),
-                        onClick = viewModel::onSubmit
-                    ) {
-                        Icon(imageVector = check, contentDescription = check.name)
-                    }
+                    Icon(imageVector = check, contentDescription = check.name)
                 }
             }
-        ) { innerPadding ->
-            FormContent(
-                innerPadding,
-                baseState,
-                viewModel,
-                refuelState,
-                maintenanceState,
-                inspectionState,
-                hasError
-            )
         }
+    ) { innerPadding ->
+        FormContent(
+            innerPadding,
+            baseState,
+            viewModel,
+            refuelState,
+            maintenanceState,
+            inspectionState,
+            hasError
+        )
+    }
 }
 
 @Composable

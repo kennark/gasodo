@@ -113,7 +113,7 @@ fun AddEventScreen(
         AddEventConfirmationOverlay(baseState.type.toString(), onDismiss)
     }
         TopBarScaffold(
-            "New Event",
+            if (viewModel.id == null) "New Event" else "Edit Event",
             subtitle = formType.toString(),
             navigationIcon = {
                 IconButton(onClick = onDismiss) {

@@ -173,7 +173,7 @@ fun RefuelEventRow(
                         }
                     }
                 }
-                Column(Modifier.weight(0.8f)) {
+                Column(Modifier.weight(0.7f)) {
                     MediumLabelText("Amount")
                     val amount = refuelEvent.amountLiters ?: BigDecimal.ZERO
                     Row(
@@ -194,7 +194,7 @@ fun RefuelEventRow(
                     }
                 }
 
-                Column(Modifier.weight(0.4f)) {
+                Column(Modifier.weight(0.5f)) {
                     MediumLabelText("Cost")
 
                     val total = refuelEvent.totalCost ?: BigDecimal.ZERO

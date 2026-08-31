@@ -135,6 +135,7 @@ class AddEventScreenViewModel @Inject constructor(
                             event.pricePerLiter?.toString() ?: ""
                         )
 
+                        datePickerState.selectedDateMillis = event.base.date
                     }
                 }
             }

@@ -8,17 +8,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.byValue
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePickerState
@@ -29,6 +34,7 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -41,6 +47,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.getSelectedDate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +60,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -86,6 +94,7 @@ fun AddEventScreen(
     val dismissDialog by viewModel.dismissDialog.collectAsStateWithLifecycle()
     val hasError by viewModel.hasError.collectAsStateWithLifecycle()
     val formType = viewModel.type
+    val locations by viewModel.locations.collectAsStateWithLifecycle(initialValue = emptyList())
 
     val view = LocalView.current
     val darkIcons = !isSystemInDarkTheme()
@@ -139,6 +148,7 @@ fun AddEventScreen(
             refuelState,
             maintenanceState,
             inspectionState,
+            locations,
             hasError
         )
     }
@@ -152,6 +162,7 @@ private fun FormContent(
     refuelState: RefuelEventFormState,
     maintenanceState: MaintenanceEventFormState,
     inspectionState: InspectionEventFormState,
+    locations: List<SavedLocation>,
     hasError: Boolean
 ) {
     Column(
@@ -167,7 +178,8 @@ private fun FormContent(
             mileageState = viewModel.mileageField,
             onLocationChange = viewModel::onLocationChange,
             notesState = viewModel.notesField,
-            datePickerState = viewModel.datePickerState
+            datePickerState = viewModel.datePickerState,
+            locations = locations
         )
 
         when (baseState.type) {
@@ -228,7 +240,8 @@ fun BaseForm(
     mileageState: TextFieldState,
     onLocationChange: (SavedLocation) -> Unit,
     notesState: TextFieldState,
-    datePickerState: DatePickerState
+    datePickerState: DatePickerState,
+    locations: List<SavedLocation>,
 ) {
     Column(
         modifier = Modifier
@@ -250,7 +263,7 @@ fun BaseForm(
         )
 
         // Date Picker
-        var showModal by remember { mutableStateOf(false) }
+        var showDateModal by remember { mutableStateOf(false) }
         OutlinedTextField(
             value = datePickerState.getSelectedDate()?.format(
                 DateTimeFormatter.ofLocalizedDate(
@@ -271,23 +284,23 @@ fun BaseForm(
                         awaitFirstDown(pass = PointerEventPass.Initial)
                         val upEvent = waitForUpOrCancellation(pass = PointerEventPass.Initial)
                         if (upEvent != null) {
-                            showModal = true
+                            showDateModal = true
                         }
                     }
                 },
         )
-        if (showModal) {
+        if (showDateModal) {
             DatePickerDialog(
-                onDismissRequest = { showModal = false },
+                onDismissRequest = { showDateModal = false },
                 confirmButton = {
                     TextButton(onClick = {
-                        showModal = false
+                        showDateModal = false
                     }) {
                         Text("OK")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showModal = false }) {
+                    TextButton(onClick = { showDateModal = false }) {
                         Text("Cancel")
                     }
                 }
@@ -296,15 +309,41 @@ fun BaseForm(
             }
         }
 
-        // Location Field (placeholder - needs location picker)
+        // Location Field
+        var showLocationDialog by remember { mutableStateOf(false) }
         OutlinedTextField(
             value = state.location?.name ?: "",
             onValueChange = {},
             label = { Text("Location") },
             readOnly = true,
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .pointerInput(state.location?.name) {
+                    awaitEachGesture {
+                        // Modifier.clickable doesn't work for text fields, so we use Modifier.pointerInput
+                        // in the Initial pass to observe events before the text field consumes them
+                        // in the Main pass.
+                        awaitFirstDown(pass = PointerEventPass.Initial)
+                        val upEvent = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                        if (upEvent != null) {
+                            showLocationDialog = true
+                        }
+                    }
+                },
         )
+        val selectedLocation = remember { mutableStateOf(state.location) }
+
+        if (showLocationDialog) {
+            LocationSelectDialog(
+                locations = locations,
+                onLocationChange = onLocationChange,
+                onDismissDialog = {
+                    showLocationDialog = false
+                },
+                selectedLocation = selectedLocation
+            )
+        }
 
         // Notes Field
         OutlinedTextField(
@@ -553,7 +592,111 @@ fun <T> RadioGroup(
                     selected = selectedOption == option,
                     onClick = { onSelectionChanged(option) }
                 )
-                Text(option.toString())
+                if (option is SavedLocation) {
+                    Text(option.name)
+                } else {
+                    Text(option.toString())
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun LocationSelectDialog(
+    locations: List<SavedLocation>,
+    onLocationChange: (SavedLocation) -> Unit,
+    onDismissDialog: () -> Unit,
+    selectedLocation: MutableState<SavedLocation?>
+) {
+    val searchTextFieldState = rememberTextFieldState()
+    Dialog(
+        onDismissRequest = {
+            onDismissDialog()
+        }
+    ) {
+        Card(
+            Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column {
+                Text(
+                    modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp),
+                    text = "Select Location",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider()
+
+                Column(
+                    Modifier
+                        .height(240.dp)
+                        .padding(horizontal = 24.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    OutlinedTextField(
+                        label = { Text("Search or enter new name") },
+                        state = searchTextFieldState,
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedLocation.value == null,
+                            onClick = { selectedLocation.value = null }
+                        )
+                        Text("Create new")
+                    }
+                    locations.filter { location ->
+                        location.name.contains(
+                            searchTextFieldState.text.toString(),
+                            ignoreCase = true
+                        )
+                    }.let { filteredLocations ->
+                        if (filteredLocations.isEmpty())
+                        // If user enters a new name, auto-select "Create new"
+                            selectedLocation.value = null
+                        RadioGroup<SavedLocation>(
+                            options = filteredLocations,
+                            selectedOption = selectedLocation.value,
+                            onSelectionChanged = { option -> selectedLocation.value = option }
+                        )
+                    }
+
+
+                }
+                HorizontalDivider()
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = { onDismissDialog() }
+                    ) {
+                        Text("Cancel")
+                    }
+                    TextButton(
+                        onClick = {
+                            selectedLocation.value?.let { onLocationChange(it) }
+                            if (selectedLocation.value == null && searchTextFieldState.text.isNotEmpty()) {
+                                onLocationChange(SavedLocation(name = searchTextFieldState.text.toString()))
+                            }
+                            onDismissDialog()
+                        },
+                        enabled = selectedLocation.value != null || searchTextFieldState.text.isNotEmpty()
+                    ) {
+                        Text("Select")
+                    }
+                }
             }
         }
     }

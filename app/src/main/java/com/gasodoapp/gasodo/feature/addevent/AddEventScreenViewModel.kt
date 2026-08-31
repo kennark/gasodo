@@ -15,6 +15,7 @@ import com.gasodoapp.gasodo.core.database.repository.EventRepository
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
+import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
 import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
@@ -38,6 +39,7 @@ class AddEventScreenViewModel @Inject constructor(
     private val inspectionRepository: InspectionRepository,
     private val maintenanceRepository: MaintenanceRepository,
     private val eventRepository: EventRepository,
+    private val locationRepository: SavedLocationRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -62,6 +64,8 @@ class AddEventScreenViewModel @Inject constructor(
     val refuelUiState: StateFlow<RefuelEventFormState> = _refuelUiState.asStateFlow()
     val maintenanceUiState: StateFlow<MaintenanceEventFormState> = _maintenanceUiState.asStateFlow()
     val inspectionUiState: StateFlow<InspectionEventFormState> = _inspectionUiState.asStateFlow()
+
+    val locations = locationRepository.getAll()
 
     // TextFieldStates for user-editable text fields (state-based API)
     val mileageField = TextFieldState()
@@ -136,6 +140,12 @@ class AddEventScreenViewModel @Inject constructor(
                         )
 
                         datePickerState.selectedDateMillis = event.base.date
+
+                        event.base.savedLocationId?.let { id ->
+                            locationRepository.getById(id)?.let {
+                                onLocationChange(it)
+                            }
+                        }
                     }
                 }
             }
@@ -160,6 +170,8 @@ class AddEventScreenViewModel @Inject constructor(
 
         viewModelScope.launch {
             if (validateBaseValues(updatedBaseState)) {
+
+                baseState.location?.let { savedLocation -> storeLocationIfNotExist(savedLocation) }
 
                 if (updatedBaseState.type == EventType.REFUEL) {
 
@@ -295,6 +307,13 @@ class AddEventScreenViewModel @Inject constructor(
         baseState: AddEventTypeFormState
     ) {
         // TODO: Implement maintenance event storage
+    }
+
+    private suspend fun storeLocationIfNotExist(
+        location: SavedLocation
+    ) {
+        if (locationRepository.getById(location.id) == null)
+            locationRepository.insert(location)
     }
 
     private fun dismissDialog() {

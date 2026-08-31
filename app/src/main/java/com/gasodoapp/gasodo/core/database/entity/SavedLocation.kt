@@ -12,7 +12,7 @@ import java.util.UUID
 data class SavedLocation(
     @PrimaryKey val id: UUID = UUID.randomUUID(),
     @ColumnInfo("name") val name: String,
-    @ColumnInfo("latitude") val latitude: Double?,
-    @ColumnInfo("longitude") val longitude: Double?,
-    @ColumnInfo("address") val address: String?
+    @ColumnInfo("latitude") val latitude: Double? = null,
+    @ColumnInfo("longitude") val longitude: Double? = null,
+    @ColumnInfo("address") val address: String? = null
 )

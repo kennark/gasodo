@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,10 +27,10 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +47,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
+import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.feature.navigation.TopBarScaffold
@@ -75,7 +75,8 @@ fun RefuelScreen(
             Modifier.padding(paddingValues),
             pagedItems,
             viewModel::onDeleteEvent,
-            onNavigateToEdit
+            onNavigateToEdit,
+            getSavedLocation = viewModel::getSavedLocation
         )
     }
 }
@@ -85,7 +86,8 @@ private fun MainContent(
     modifier: Modifier = Modifier,
     pagedItems: LazyPagingItems<RefuelEvent>,
     onDeleteEvent: (RefuelEvent) -> Unit,
-    onNavigateToEdit: (id: UUID) -> Unit
+    onNavigateToEdit: (id: UUID) -> Unit,
+    getSavedLocation: suspend (id: UUID) -> SavedLocation?
 ) {
     LazyColumn(
         modifier = modifier
@@ -103,7 +105,8 @@ private fun MainContent(
                 RefuelEventRow(
                     refuelEvent = refuel,
                     onDeleteEvent = onDeleteEvent,
-                    onNavigateToEdit = onNavigateToEdit
+                    onNavigateToEdit = onNavigateToEdit,
+                    getSavedLocation = getSavedLocation
                 )
             } else {
                 // Show placeholder for empty slots while paging
@@ -124,7 +127,8 @@ fun RefuelEventRow(
     refuelEvent: RefuelEvent,
     modifier: Modifier = Modifier,
     onDeleteEvent: (RefuelEvent) -> Unit,
-    onNavigateToEdit: (id: UUID) -> Unit
+    onNavigateToEdit: (id: UUID) -> Unit,
+    getSavedLocation: suspend (id: UUID) -> SavedLocation?
 ) {
     val isExpanded = remember { mutableStateOf(false) }
 
@@ -302,9 +306,20 @@ fun RefuelEventRow(
                     Column(
                         Modifier.fillMaxWidth()
                     ) {
+                        var location: SavedLocation? by remember { mutableStateOf(null) }
+                        LaunchedEffect(refuelEvent) {
+                            location = refuelEvent.base.savedLocationId?.let {
+                                getSavedLocation(it)
+                            }
+                        }
                         MediumLabelText("Location")
 
-                        NoDataText("Placeholder")
+                        if (location == null)
+                            NoDataText("No location set")
+                        else {
+                            ExtraDataText(location!!.name)
+                        }
+
                     }
 
                     Column(
@@ -416,14 +431,13 @@ fun DeleteDialog(
     BasicAlertDialog(
         { onDismissRequest() }
     ) {
-        Surface(
+        Card(
             modifier = Modifier
                 .wrapContentWidth()
                 .wrapContentHeight(),
-            shape = MaterialTheme.shapes.large,
-            tonalElevation = AlertDialogDefaults.TonalElevation,
+            shape = RoundedCornerShape(16.dp),
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(24.dp)) {
                 Text(
                     text =
                         "Do you want to delete this event?"
@@ -498,6 +512,7 @@ fun RefuelCardPreview() {
             fullFillUp = true
         ),
         onDeleteEvent = {},
-        onNavigateToEdit = {}
+        onNavigateToEdit = {},
+        getSavedLocation = { return@RefuelEventRow SavedLocation(name = "name") }
     )
 }

@@ -12,7 +12,7 @@ import java.util.UUID
         SELECT id, 'REFUEL' as eventType, date, mileage, saved_location_id, photo_uris, notes
         FROM refuel_events
         UNION ALL
-        SELECT id, 'MAINTENANCE' as eventType, date, mileage, saved_location_id, photo_uris, notes
+        SELECT event_id, 'MAINTENANCE' as eventType, date, mileage, saved_location_id, photo_uris, notes
         FROM maintenance_events
         UNION ALL
         SELECT id, 'INSPECTION' as eventType, date, mileage, saved_location_id, photo_uris, notes

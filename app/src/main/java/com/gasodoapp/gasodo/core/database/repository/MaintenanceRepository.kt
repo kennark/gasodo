@@ -1,14 +1,15 @@
 package com.gasodoapp.gasodo.core.database.repository
 
+import androidx.paging.PagingSource
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
-import kotlinx.coroutines.flow.Flow
+import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import java.util.UUID
 
 /**
  * Repository interface for maintenance events.
  */
 interface MaintenanceRepository {
-    fun getAll(): Flow<List<MaintenanceEvent>>
+    fun getAll(): PagingSource<Int, MaintenanceEventWithServices>
     suspend fun getById(id: UUID): MaintenanceEvent?
     suspend fun insert(event: MaintenanceEvent)
     suspend fun update(event: MaintenanceEvent)

@@ -1,13 +1,15 @@
 package com.gasodoapp.gasodo.core.database.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
-import kotlinx.coroutines.flow.Flow
+import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import java.util.UUID
 
 /**
@@ -28,12 +30,17 @@ interface MaintenanceEventDao {
     @Update
     suspend fun update(entity: MaintenanceEvent)
 
-    @Query("SELECT * FROM maintenance_events WHERE id = :id")
+    @Query("SELECT * FROM maintenance_events WHERE event_id = :id")
     suspend fun getById(id: UUID): MaintenanceEvent?
 
-    @Query("DELETE FROM maintenance_events WHERE id = :id")
+    @Query("DELETE FROM maintenance_events WHERE event_id = :id")
     suspend fun deleteById(id: UUID)
 
+    @Transaction
     @Query("SELECT * FROM maintenance_events ORDER BY date DESC")
-    fun getAll(): Flow<List<MaintenanceEvent>>
+    fun getAllWithServiceTypesOrderByDate(): PagingSource<Int, MaintenanceEventWithServices>
+
+    @Transaction
+    @Query("SELECT * FROM maintenance_events WHERE event_id = :id")
+    suspend fun getByIdWithServiceTypes(id: UUID): MaintenanceEventWithServices
 }

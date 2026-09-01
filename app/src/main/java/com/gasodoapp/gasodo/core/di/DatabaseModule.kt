@@ -8,11 +8,14 @@ import com.gasodoapp.gasodo.core.database.dao.InspectionEventDao
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceEventDao
 import com.gasodoapp.gasodo.core.database.dao.RefuelEventDao
 import com.gasodoapp.gasodo.core.database.dao.SavedLocationDao
+import com.gasodoapp.gasodo.core.database.seed.SeedCallbacks
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import javax.inject.Provider
 import javax.inject.Singleton
 
 @Module
@@ -21,7 +24,11 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
+    fun provideAppDatabase(
+        @ApplicationContext context: Context,
+        provider: Provider<AppDatabase>,
+        @ApplicationScope scope: CoroutineScope
+    ): AppDatabase =
         Room.databaseBuilder(
             context,
             AppDatabase::class.java,
@@ -29,6 +36,7 @@ object DatabaseModule {
         )
             // Drop all data on database updates
             .fallbackToDestructiveMigration(true)
+            .addCallback(SeedCallbacks(provider, scope))
             .build()
 
     @Provides

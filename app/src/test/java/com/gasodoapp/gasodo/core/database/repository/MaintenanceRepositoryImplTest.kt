@@ -1,15 +1,15 @@
 package com.gasodoapp.gasodo.core.database.repository
 
+import androidx.paging.PagingSource
 import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceEventDao
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
+import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -32,38 +32,17 @@ class MaintenanceRepositoryImplTest {
         repository = MaintenanceRepositoryImpl(dao)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `getAll returns Flow from DAO`() = runTest {
+    fun `getAll delegates to DAO`() {
         // Arrange
-        val expectedEvents = listOf(
-            makeMaintenanceEvent(date = LocalDate.of(2025, 6, 1).toEpochDay()),
-            makeMaintenanceEvent(date = LocalDate.of(2025, 5, 15).toEpochDay())
-        )
-
-        every { dao.getAll() } returns flowOf(expectedEvents)
+        val pagingSource = mockk<PagingSource<Int, MaintenanceEventWithServices>>()
+        every { dao.getAllWithServiceTypesOrderByDate() } returns pagingSource
 
         // Act
-        var result: List<MaintenanceEvent> = emptyList()
-        repository.getAll().collect { value -> result = value }
+        val result = repository.getAll()
 
         // Assert
-        assertThat(result).isEqualTo(expectedEvents)
-        assertThat(result).hasSize(2)
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun `getAll returns empty list when DAO returns empty`() = runTest {
-        // Arrange
-        every { dao.getAll() } returns flowOf(emptyList())
-
-        // Act
-        var result: List<MaintenanceEvent> = emptyList()
-        repository.getAll().collect { value -> result = value }
-
-        // Assert
-        assertThat(result).isEmpty()
+        assertThat(result).isEqualTo(pagingSource)
     }
 
     @Test

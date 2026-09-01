@@ -309,7 +309,7 @@ class AddEventScreenViewModel @Inject constructor(
         // TODO: Implement maintenance event storage
     }
 
-    private suspend fun storeLocationIfNotExist(
+    internal suspend fun storeLocationIfNotExist(
         location: SavedLocation
     ) {
         if (locationRepository.getById(location.id) == null)

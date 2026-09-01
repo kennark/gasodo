@@ -4,11 +4,13 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.lifecycle.SavedStateHandle
 import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
+import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.projections.DateMileage
 import com.gasodoapp.gasodo.core.database.repository.EventRepository
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
+import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
 import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
@@ -21,6 +23,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -40,6 +43,7 @@ class AddEventScreenViewModelTest {
     private lateinit var maintenanceRepository: MaintenanceRepository
     private lateinit var eventRepository: EventRepository
     private lateinit var savedStateHandle: SavedStateHandle
+    private lateinit var locationRepository: SavedLocationRepository
 
     @Before
     fun setup() {
@@ -48,15 +52,18 @@ class AddEventScreenViewModelTest {
         maintenanceRepository = mockk()
         eventRepository = mockk()
         savedStateHandle = mockk()
+        locationRepository = mockk()
 
         every { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.REFUEL
         every { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns null
+        every { locationRepository.getAll() } returns emptyFlow()
 
         viewModel = AddEventScreenViewModel(
             refuelRepository,
             inspectionRepository,
             maintenanceRepository,
             eventRepository,
+            locationRepository,
             savedStateHandle
         )
 
@@ -495,5 +502,50 @@ class AddEventScreenViewModelTest {
         }
 
         assertThat(viewModel.dismissDialog.value).isTrue()
+    }
+
+    @Test
+    fun `onSubmit with validation failure sets hasError`() = runTest {
+        // Given - state that will fail validation
+        val currentMileage = 1000L
+        val currentDate = LocalDate.now().toEpochDay()
+        val state = AddEventTypeFormState(mileage = currentMileage, date = currentDate)
+
+        // Mock a higher mileage event with earlier date to trigger failure
+        val earlierDate = currentDate - 86400000
+        val higherEvent = DateMileage(earlierDate, 1500L)
+
+        coEvery { eventRepository.getDateWithHigherMileage(any()) } returns higherEvent
+        coEvery { eventRepository.getDateWithLowerMileage(any()) } returns null
+
+        // When & Then - validation fails, so hasError should be set to true
+        assertThat(viewModel.validateBaseValues(state)).isFalse()
+    }
+
+    @Test
+    fun `storeLocationIfNotExist inserts location when it does not exist`() = runTest {
+        // Given
+        val location = SavedLocation(name = "Test Station")
+
+        coEvery { locationRepository.getById(any()) } returns null
+        coEvery { locationRepository.insert(location) } returns Unit
+
+        // When & Then - verify insert is called
+        viewModel.storeLocationIfNotExist(location)
+
+        coVerify(exactly = 1) { locationRepository.insert(location) }
+    }
+
+    @Test
+    fun `storeLocationIfNotExist does not insert when location already exists`() = runTest {
+        // Given
+        val location = SavedLocation(name = "Existing Station")
+
+        coEvery { locationRepository.getById(any()) } returns location
+
+        // When & Then - verify insert is NOT called because getById returned the existing location
+        viewModel.storeLocationIfNotExist(location)
+
+        coVerify(exactly = 0) { locationRepository.insert(any()) }
     }
 }

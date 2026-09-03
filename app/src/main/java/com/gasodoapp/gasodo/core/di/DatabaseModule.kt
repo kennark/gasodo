@@ -6,6 +6,7 @@ import com.gasodoapp.gasodo.core.database.AppDatabase
 import com.gasodoapp.gasodo.core.database.dao.EventDao
 import com.gasodoapp.gasodo.core.database.dao.InspectionEventDao
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceEventDao
+import com.gasodoapp.gasodo.core.database.dao.MaintenanceServiceTypeDao
 import com.gasodoapp.gasodo.core.database.dao.RefuelEventDao
 import com.gasodoapp.gasodo.core.database.dao.SavedLocationDao
 import com.gasodoapp.gasodo.core.database.seed.SeedCallbacks
@@ -58,4 +59,8 @@ object DatabaseModule {
     @Provides
     fun provideEventDao(database: AppDatabase): EventDao =
         database.eventDao()
+
+    @Provides
+    fun provideMaintenanceServiceTypeDao(database: AppDatabase): MaintenanceServiceTypeDao =
+        database.maintenanceServiceTypeDao()
 }

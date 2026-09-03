@@ -8,7 +8,6 @@ import androidx.room.Query
 import androidx.room.Update
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import kotlinx.coroutines.flow.Flow
-import java.util.UUID
 
 /**
  * Data Access Object for Maintenance Service Types.
@@ -29,10 +28,10 @@ interface MaintenanceServiceTypeDao {
     suspend fun update(entity: MaintenanceServiceType)
 
     @Query("SELECT * FROM maintenance_service_types WHERE service_id = :id")
-    suspend fun getById(id: UUID): MaintenanceServiceType?
+    suspend fun getById(id: Long): MaintenanceServiceType?
 
     @Query("DELETE FROM maintenance_service_types WHERE service_id = :id")
-    suspend fun deleteById(id: UUID)
+    suspend fun deleteById(id: Long)
 
     @Query("SELECT * FROM maintenance_service_types")
     fun getAll(): Flow<List<MaintenanceServiceType>>

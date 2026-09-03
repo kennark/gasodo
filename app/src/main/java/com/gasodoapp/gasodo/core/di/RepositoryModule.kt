@@ -6,6 +6,8 @@ import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepositoryImpl
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepositoryImpl
+import com.gasodoapp.gasodo.core.database.repository.MaintenanceServiceTypeRepository
+import com.gasodoapp.gasodo.core.database.repository.MaintenanceServiceTypeRepositoryImpl
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepositoryImpl
 import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
@@ -49,4 +51,10 @@ abstract class RepositoryModule {
     abstract fun bindEventRepository(
         impl: EventRepositoryImpl
     ): EventRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindMaintenanceServiceTypeRepository(
+        impl: MaintenanceServiceTypeRepositoryImpl
+    ): MaintenanceServiceTypeRepository
 }

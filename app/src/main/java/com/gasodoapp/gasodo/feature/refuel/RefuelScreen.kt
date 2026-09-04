@@ -70,7 +70,7 @@ fun RefuelScreen(
 ) {
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
 
-    TopBarScaffold("Recent Refuels", navigationIcon = {}, actions = {}) { paddingValues ->
+    TopBarScaffold("Recent Refuels") { paddingValues ->
         MainContent(
             Modifier.padding(paddingValues),
             pagedItems,

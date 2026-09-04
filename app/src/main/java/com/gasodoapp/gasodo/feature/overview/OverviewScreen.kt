@@ -67,9 +67,7 @@ fun OverviewScreen(
     val fuelCost by viewModel.fuelCost.collectAsState()
 
     TopBarScaffold(
-        title = "Overview",
-        navigationIcon = {},
-        actions = {}
+        title = "Overview"
     ) { paddingValues ->
         MainContent(
             Modifier.padding(paddingValues),

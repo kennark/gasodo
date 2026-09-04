@@ -1,8 +1,10 @@
 package com.gasodoapp.gasodo.core.database.repository
 
 import androidx.paging.PagingSource
+import com.gasodoapp.gasodo.core.database.AppDatabase
 import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceEventDao
+import com.gasodoapp.gasodo.core.database.dao.UsedMaintenanceServiceDao
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.google.common.truth.Truth.assertThat
@@ -23,20 +25,24 @@ import java.util.UUID
  */
 class MaintenanceRepositoryImplTest {
 
-    private lateinit var dao: MaintenanceEventDao
+    private lateinit var db: AppDatabase
+    private lateinit var eventDao: MaintenanceEventDao
+    private lateinit var usedServiceDao: UsedMaintenanceServiceDao
     private lateinit var repository: MaintenanceRepository
 
     @Before
     fun setup() {
-        dao = mockk()
-        repository = MaintenanceRepositoryImpl(dao)
+        db = mockk()
+        eventDao = mockk()
+        usedServiceDao = mockk()
+        repository = MaintenanceRepositoryImpl(db, eventDao, usedServiceDao)
     }
 
     @Test
     fun `getAll delegates to DAO`() {
         // Arrange
         val pagingSource = mockk<PagingSource<Int, MaintenanceEventWithServices>>()
-        every { dao.getAllWithServiceTypesOrderByDate() } returns pagingSource
+        every { eventDao.getAllWithServiceTypesOrderByDate() } returns pagingSource
 
         // Act
         val result = repository.getAll()
@@ -50,7 +56,7 @@ class MaintenanceRepositoryImplTest {
         // Arrange
         val expectedId = UUID.randomUUID()
         val expected = makeMaintenanceEvent(id = expectedId)
-        coEvery { dao.getById(expectedId) } returns expected
+        coEvery { eventDao.getById(expectedId) } returns expected
 
         // Act
         val result = repository.getById(expectedId)
@@ -59,14 +65,14 @@ class MaintenanceRepositoryImplTest {
         assertThat(result).isEqualTo(expected)
         assertThat(result?.id).isEqualTo(expectedId)
 
-        coVerify { dao.getById(expectedId) }
+        coVerify { eventDao.getById(expectedId) }
     }
 
     @Test
     fun `getById returns null when DAO returns null`() = runTest {
         // Arrange
         val id = UUID.randomUUID()
-        coEvery { dao.getById(id) } returns null
+        coEvery { eventDao.getById(id) } returns null
 
         // Act
         val result = repository.getById(id)
@@ -74,55 +80,52 @@ class MaintenanceRepositoryImplTest {
         // Assert
         assertThat(result).isNull()
 
-        coVerify { dao.getById(id) }
+        coVerify { eventDao.getById(id) }
     }
 
     @Test
     fun `insert delegates to DAO`() = runTest {
         // Arrange
         val event = makeMaintenanceEvent()
-        coEvery { dao.insert(event) } returns 1L
+        coEvery { eventDao.insert(event) } returns 1L
 
         // Act
         repository.insert(event)
 
         // Assert
-        coVerify { dao.insert(event) }
+        coVerify { eventDao.insert(event) }
     }
 
     @Test
     fun `update delegates to DAO`() = runTest {
         // Arrange
         val event = makeMaintenanceEvent()
-        coEvery { dao.update(event) } returns Unit
+        coEvery { eventDao.update(event) } returns Unit
 
         // Act
         repository.update(event)
 
         // Assert
-        coVerify { dao.update(event) }
+        coVerify { eventDao.update(event) }
     }
 
     @Test
     fun `delete delegates to DAO`() = runTest {
         // Arrange
         val event = makeMaintenanceEvent()
-        coEvery { dao.delete(event) } returns Unit
+        coEvery { eventDao.delete(event) } returns Unit
 
         // Act
         repository.delete(event)
 
         // Assert
-        coVerify { dao.delete(event) }
+        coVerify { eventDao.delete(event) }
     }
 
     private fun makeMaintenanceEvent(
         id: UUID = UUID.randomUUID(),
         date: Long = LocalDate.of(2025, 6, 15).toEpochDay(),
         mileage: Long = 50000,
-        serviceTypes: List<String> = listOf("Oil Change"),
-        providerName: String? = "Quick Lube Inc",
-        partsUsed: List<String>? = listOf("Oil Filter"),
         totalCost: BigDecimal? = BigDecimal("89.99")
     ): MaintenanceEvent {
         return MaintenanceEvent(
@@ -134,9 +137,6 @@ class MaintenanceRepositoryImplTest {
                 photoUris = emptyList(),
                 notes = ""
             ),
-            serviceTypes = serviceTypes,
-            providerName = providerName,
-            partsUsed = partsUsed,
             totalCost = totalCost
         )
     }

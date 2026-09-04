@@ -18,16 +18,10 @@ class MaintenanceEventTest {
 
         val event = MaintenanceEvent(
             base = base,
-            serviceTypes = listOf("Oil Change"),
-            providerName = "Shell Service",
-            partsUsed = listOf("Oil Filter"),
             totalCost = BigDecimal("75.50")
         )
 
         assertThat(event.base).isEqualTo(base)
-        assertThat(event.serviceTypes).isEqualTo(listOf("Oil Change"))
-        assertThat(event.providerName).isEqualTo("Shell Service")
-        assertThat(event.partsUsed).isEqualTo(listOf("Oil Filter"))
         assertThat(event.totalCost).isEqualTo(BigDecimal("75.50"))
     }
 }

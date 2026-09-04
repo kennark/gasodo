@@ -9,6 +9,7 @@ import com.gasodoapp.gasodo.core.database.projections.DateMileage
 import com.gasodoapp.gasodo.core.database.repository.EventRepository
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
+import com.gasodoapp.gasodo.core.database.repository.MaintenanceServiceTypeRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
 import com.gasodoapp.gasodo.core.enums.EventType
@@ -44,6 +45,7 @@ class AddEventScreenViewModelTest {
     private lateinit var eventRepository: EventRepository
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var locationRepository: SavedLocationRepository
+    private lateinit var maintenanceServiceTypeRepository: MaintenanceServiceTypeRepository
 
     @Before
     fun setup() {
@@ -53,10 +55,12 @@ class AddEventScreenViewModelTest {
         eventRepository = mockk()
         savedStateHandle = mockk()
         locationRepository = mockk()
+        maintenanceServiceTypeRepository = mockk()
 
         every { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.REFUEL
         every { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns null
         every { locationRepository.getAll() } returns emptyFlow()
+        every { maintenanceServiceTypeRepository.getAll() } returns emptyFlow()
 
         viewModel = AddEventScreenViewModel(
             refuelRepository,
@@ -64,6 +68,7 @@ class AddEventScreenViewModelTest {
             maintenanceRepository,
             eventRepository,
             locationRepository,
+            maintenanceServiceTypeRepository,
             savedStateHandle
         )
 

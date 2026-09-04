@@ -9,6 +9,7 @@ import com.gasodoapp.gasodo.core.database.dao.MaintenanceEventDao
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceServiceTypeDao
 import com.gasodoapp.gasodo.core.database.dao.RefuelEventDao
 import com.gasodoapp.gasodo.core.database.dao.SavedLocationDao
+import com.gasodoapp.gasodo.core.database.dao.UsedMaintenanceServiceDao
 import com.gasodoapp.gasodo.core.database.seed.SeedCallbacks
 import dagger.Module
 import dagger.Provides
@@ -63,4 +64,8 @@ object DatabaseModule {
     @Provides
     fun provideMaintenanceServiceTypeDao(database: AppDatabase): MaintenanceServiceTypeDao =
         database.maintenanceServiceTypeDao()
+
+    @Provides
+    fun provideUsedMaintenanceServiceDao(database: AppDatabase): UsedMaintenanceServiceDao =
+        database.usedMaintenanceServiceDao()
 }

@@ -9,6 +9,7 @@ import com.gasodoapp.gasodo.core.database.dao.MaintenanceEventDao
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceServiceTypeDao
 import com.gasodoapp.gasodo.core.database.dao.RefuelEventDao
 import com.gasodoapp.gasodo.core.database.dao.SavedLocationDao
+import com.gasodoapp.gasodo.core.database.dao.UsedMaintenanceServiceDao
 import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
@@ -42,4 +43,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun inspectionEventDao(): InspectionEventDao
     abstract fun eventDao(): EventDao
     abstract fun maintenanceServiceTypeDao(): MaintenanceServiceTypeDao
+    abstract fun usedMaintenanceServiceDao(): UsedMaintenanceServiceDao
 }

@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey
  */
 @Entity(tableName = "maintenance_service_types")
 data class MaintenanceServiceType(
-    @PrimaryKey(autoGenerate = true) @ColumnInfo("service_id") val id: Long = 0,
+    @PrimaryKey(autoGenerate = true) @ColumnInfo("service_id") var id: Long = 0,
     @ColumnInfo("service_name") val serviceName: String,
     @ColumnInfo("notes") val notes: String? = null
 )

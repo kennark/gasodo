@@ -21,9 +21,11 @@ import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.byValue
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePickerState
@@ -38,6 +40,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -65,6 +68,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
@@ -72,6 +76,7 @@ import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.feature.navigation.TopBarScaffold
+import com.gasodoapp.gasodo.ui.icons.add
 import com.gasodoapp.gasodo.ui.icons.arrow_back
 import com.gasodoapp.gasodo.ui.icons.check
 import com.gasodoapp.gasodo.ui.icons.error
@@ -95,6 +100,7 @@ fun AddEventScreen(
     val hasError by viewModel.hasError.collectAsStateWithLifecycle()
     val formType = viewModel.type
     val locations by viewModel.locations.collectAsStateWithLifecycle(initialValue = emptyList())
+    val serviceTypes by viewModel.serviceTypes.collectAsStateWithLifecycle(initialValue = emptyList())
 
     val view = LocalView.current
     val darkIcons = !isSystemInDarkTheme()
@@ -149,7 +155,8 @@ fun AddEventScreen(
             maintenanceState,
             inspectionState,
             locations,
-            hasError
+            serviceTypes,
+            hasError,
         )
     }
 }
@@ -163,6 +170,7 @@ private fun FormContent(
     maintenanceState: MaintenanceEventFormState,
     inspectionState: InspectionEventFormState,
     locations: List<SavedLocation>,
+    serviceTypes: List<MaintenanceServiceType>,
     hasError: Boolean
 ) {
     Column(
@@ -198,7 +206,10 @@ private fun FormContent(
             EventType.MAINTENANCE -> {
                 MaintenanceForm(
                     state = maintenanceState,
-                    providerState = viewModel.providerNameField
+                    costState = viewModel.costTextField,
+                    serviceTypes = serviceTypes,
+                    onServiceTypeChange = viewModel::onServiceTypeChange,
+                    onCreateNewServiceType = viewModel::onCreateNewServiceType
                 )
             }
 
@@ -536,25 +547,68 @@ fun InspectionForm(
 @Composable
 fun MaintenanceForm(
     state: MaintenanceEventFormState,
-    providerState: TextFieldState
+    costState: TextFieldState,
+    serviceTypes: List<MaintenanceServiceType>,
+    onServiceTypeChange: (MaintenanceServiceType) -> Unit,
+    onCreateNewServiceType: (MaintenanceServiceType) -> Unit,
 ) {
+    val searchTextFieldState = rememberTextFieldState()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            "Maintenance Details",
-            style = MaterialTheme.typography.titleMedium
-        )
-
         OutlinedTextField(
-            state = providerState,
-            label = { Text("Service Provider") },
+            state = costState,
+            label = { Text("Total Cost") },
             lineLimits = TextFieldLineLimits.SingleLine,
             modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            trailingIcon = { Text("€") },
+            inputTransformation = InputTransformation.byValue { current, proposed ->
+                if ("""[^0-9,.]""".toRegex() in proposed) current else proposed
+            }
         )
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            "Select Done Work",
+            style = MaterialTheme.typography.titleMedium
+        )
+        Spacer(Modifier.height(12.dp))
+
+        OutlinedTextField(
+            state = searchTextFieldState,
+            label = { Text("Search or enter new name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        if (searchTextFieldState.text.isNotEmpty())
+            ListItem(
+                leadingContent = { Icon(imageVector = add, contentDescription = add.name) },
+                content = { Text("Create new item") },
+                onClick = {
+                    onCreateNewServiceType(MaintenanceServiceType(serviceName = searchTextFieldState.text.toString()))
+                    searchTextFieldState.clearText()
+                }
+            )
+
+        val filteredTypes = serviceTypes.filter {
+            it.serviceName.contains(
+                searchTextFieldState.text,
+                true
+            )
+        }
+        for (type in filteredTypes) {
+            ListItem(
+                leadingContent = {
+                    Checkbox(
+                        checked = type in state.doneWork,
+                        onCheckedChange = { onServiceTypeChange(type) })
+                },
+                content = { Text(type.serviceName) },
+                onClick = { onServiceTypeChange(type) }
+            )
+        }
     }
 }
 

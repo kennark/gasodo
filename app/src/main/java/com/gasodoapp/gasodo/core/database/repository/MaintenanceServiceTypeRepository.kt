@@ -7,7 +7,7 @@ interface MaintenanceServiceTypeRepository {
 
     fun getAll(): Flow<List<MaintenanceServiceType>>
     suspend fun getById(id: Long): MaintenanceServiceType?
-    suspend fun insert(entity: MaintenanceServiceType)
+    suspend fun insert(entity: MaintenanceServiceType): Long
     suspend fun update(entity: MaintenanceServiceType)
     suspend fun delete(entity: MaintenanceServiceType)
 }

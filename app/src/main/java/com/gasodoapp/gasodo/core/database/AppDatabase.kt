@@ -31,7 +31,7 @@ import com.gasodoapp.gasodo.core.utils.DbConverterUtils
     views = [
         AllEventsBaseColumnsView::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(DbConverterUtils::class)

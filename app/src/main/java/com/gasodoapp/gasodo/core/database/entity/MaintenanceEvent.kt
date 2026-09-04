@@ -29,8 +29,5 @@ data class MaintenanceEvent(
     @PrimaryKey @ColumnInfo("event_id") val id: UUID = UUID.randomUUID(),
     @Embedded val base: BaseColumns,
 
-    @ColumnInfo("service_types") val serviceTypes: List<String>,
-    @ColumnInfo("provider_name") val providerName: String?,
-    @ColumnInfo("parts_used") val partsUsed: List<String>?,
     @ColumnInfo("total_cost") val totalCost: BigDecimal?
 )

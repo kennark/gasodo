@@ -15,9 +15,8 @@ class MaintenanceServiceTypeRepositoryImpl @Inject constructor(
     override suspend fun getById(id: Long): MaintenanceServiceType? =
         dao.getById(id)
 
-    override suspend fun insert(entity: MaintenanceServiceType) {
+    override suspend fun insert(entity: MaintenanceServiceType): Long =
         dao.insert(entity)
-    }
 
     override suspend fun update(entity: MaintenanceServiceType) {
         dao.update(entity)

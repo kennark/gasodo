@@ -9,11 +9,14 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gasodoapp.gasodo.core.database.BaseColumns
+import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
+import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.repository.EventRepository
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
+import com.gasodoapp.gasodo.core.database.repository.MaintenanceServiceTypeRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
 import com.gasodoapp.gasodo.core.enums.EventType
@@ -26,6 +29,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -40,6 +44,7 @@ class AddEventScreenViewModel @Inject constructor(
     private val maintenanceRepository: MaintenanceRepository,
     private val eventRepository: EventRepository,
     private val locationRepository: SavedLocationRepository,
+    private val maintenanceServiceTypeRepository: MaintenanceServiceTypeRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -66,6 +71,11 @@ class AddEventScreenViewModel @Inject constructor(
     val inspectionUiState: StateFlow<InspectionEventFormState> = _inspectionUiState.asStateFlow()
 
     val locations = locationRepository.getAll()
+    private val _draftServiceTypes = MutableStateFlow<List<MaintenanceServiceType>>(emptyList())
+    val serviceTypes =
+        combine(maintenanceServiceTypeRepository.getAll(), _draftServiceTypes) { dbItems, drafts ->
+            drafts + dbItems
+        }
 
     // TextFieldStates for user-editable text fields (state-based API)
     val mileageField = TextFieldState()
@@ -104,6 +114,23 @@ class AddEventScreenViewModel @Inject constructor(
 
     fun onStatusChange(value: InspectionStatus) {
         _inspectionUiState.update { it.copy(status = value) }
+    }
+
+    fun onServiceTypeChange(value: MaintenanceServiceType) {
+        _maintenanceUiState.update { current ->
+            current.copy(
+                doneWork = if (value in current.doneWork) {
+                    current.doneWork.minus(value)
+                } else {
+                    current.doneWork.plus(value)
+                }
+            )
+        }
+    }
+
+    fun onCreateNewServiceType(value: MaintenanceServiceType) {
+        _draftServiceTypes.update { it.plus(value) }
+        onServiceTypeChange(value)
     }
 
     init {
@@ -187,13 +214,8 @@ class AddEventScreenViewModel @Inject constructor(
                     }
                 } else if (updatedBaseState.type == EventType.MAINTENANCE) {
                     val state = _maintenanceUiState.value
-                    val providerNameValue =
-                        providerNameField.text.toString().ifEmpty { state.providerName }
-                    val updatedMaintenanceState = state.copy(
-                        providerName = providerNameValue
-                    )
-                    if (validateMaintenanceValues(updatedMaintenanceState)) {
-                        storeMaintenanceEvent(updatedMaintenanceState, updatedBaseState)
+                    if (validateMaintenanceValues(state)) {
+                        storeMaintenanceEvent(state, updatedBaseState)
                     }
                 }
             } else {
@@ -302,11 +324,31 @@ class AddEventScreenViewModel @Inject constructor(
         // TODO: Implement inspection event storage
     }
 
-    private fun storeMaintenanceEvent(
+    private suspend fun storeMaintenanceEvent(
         maintenanceState: MaintenanceEventFormState,
         baseState: AddEventTypeFormState
     ) {
-        // TODO: Implement maintenance event storage
+        for (serviceType in _draftServiceTypes.value) {
+            if (serviceType in maintenanceState.doneWork)
+                storeMaintenanceServiceTypeIfNotExist(serviceType)
+        }
+
+        val baseColumns = BaseColumns(
+            date = baseState.date,
+            mileage = baseState.mileage,
+            savedLocationId = baseState.location?.id,
+            notes = baseState.notes
+
+        )
+
+        val event = MaintenanceEvent(
+            base = baseColumns,
+            totalCost = maintenanceState.cost
+        )
+
+        maintenanceRepository.insertWithUsedServices(event, maintenanceState.doneWork)
+
+        dismissDialog()
     }
 
     internal suspend fun storeLocationIfNotExist(
@@ -314,6 +356,14 @@ class AddEventScreenViewModel @Inject constructor(
     ) {
         if (locationRepository.getById(location.id) == null)
             locationRepository.insert(location)
+    }
+
+    internal suspend fun storeMaintenanceServiceTypeIfNotExist(
+        type: MaintenanceServiceType
+    ) {
+        if (type.id == 0L)
+        // Set id to newly created id in DB
+            type.id = maintenanceServiceTypeRepository.insert(type)
     }
 
     private fun dismissDialog() {
@@ -341,7 +391,8 @@ data class RefuelEventFormState(
 )
 
 data class MaintenanceEventFormState(
-    val providerName: String = ""
+    val doneWork: Set<MaintenanceServiceType> = emptySet(),
+    val cost: BigDecimal? = null
 )
 
 data class InspectionEventFormState(

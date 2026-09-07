@@ -2,6 +2,7 @@ package com.gasodoapp.gasodo.feature.navigation
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.gasodoapp.gasodo.core.enums.EventType
+import com.gasodoapp.gasodo.ui.icons.build
 import com.gasodoapp.gasodo.ui.icons.local_gas_station
 import com.gasodoapp.gasodo.ui.icons.overview
 import java.util.UUID
@@ -21,6 +22,11 @@ enum class BottomBarDestinations(
         "refuels",
         "Refuels",
         local_gas_station
+    ),
+    MAINTENANCE(
+        "maintenance",
+        "Maintenance",
+        build
     )
 }
 

@@ -194,10 +194,8 @@ fun MaintenanceEventRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
+
+                if (eventWithServices.services.isNotEmpty())
                     Text(
                         text = eventWithServices.services.size.let {
                             "$it service action" +
@@ -206,7 +204,9 @@ fun MaintenanceEventRow(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
+                else
+                    Spacer(Modifier)
+
                 val rotation by animateFloatAsState(
                     targetValue = if (isExpanded.value) 180f else 0f,
                     animationSpec = tween(durationMillis = 250)
@@ -233,32 +233,33 @@ fun MaintenanceEventRow(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    Column(
-                        Modifier.fillMaxWidth()
-                    ) {
-                        MediumLabelText("Done Work")
+                    if (eventWithServices.services.isNotEmpty()) {
+                        Column(
+                            Modifier.fillMaxWidth()
+                        ) {
+                            MediumLabelText("Done Work")
 
-                        if (eventWithServices.services.size > 3) {
-                            for (serviceType in eventWithServices.services.subList(0, 3)) {
-                                ExtraDataText(serviceType.serviceName)
-                            }
+                            if (eventWithServices.services.size > 3) {
+                                for (serviceType in eventWithServices.services.subList(0, 3)) {
+                                    ExtraDataText(serviceType.serviceName)
+                                }
 
-                            var showDoneWorkDialog by remember { mutableStateOf(false) }
+                                var showDoneWorkDialog by remember { mutableStateOf(false) }
 
-                            TextButton(onClick = { showDoneWorkDialog = true }) {
-                                Text("Show All (${eventWithServices.services.size} actions)")
-                            }
-                            if (showDoneWorkDialog)
-                                DoneTasksBottomSheet(
-                                    doneWork = eventWithServices.services,
-                                    onDismissRequest = { showDoneWorkDialog = false }
-                                )
-                        } else {
-                            for (serviceType in eventWithServices.services) {
-                                ExtraDataText(serviceType.serviceName)
+                                TextButton(onClick = { showDoneWorkDialog = true }) {
+                                    Text("Show All (${eventWithServices.services.size} actions)")
+                                }
+                                if (showDoneWorkDialog)
+                                    DoneTasksBottomSheet(
+                                        doneWork = eventWithServices.services,
+                                        onDismissRequest = { showDoneWorkDialog = false }
+                                    )
+                            } else {
+                                for (serviceType in eventWithServices.services) {
+                                    ExtraDataText(serviceType.serviceName)
+                                }
                             }
                         }
-
                     }
 
                     Column(

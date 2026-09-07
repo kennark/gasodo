@@ -213,7 +213,9 @@ class AddEventScreenViewModel @Inject constructor(
                         storeInspectionEvent(state, updatedBaseState)
                     }
                 } else if (updatedBaseState.type == EventType.MAINTENANCE) {
-                    val state = _maintenanceUiState.value
+                    val state = _maintenanceUiState.value.copy(
+                        cost = costTextField.text.toString().toBigDecimalOrNull()
+                    )
                     if (validateMaintenanceValues(state)) {
                         storeMaintenanceEvent(state, updatedBaseState)
                     }

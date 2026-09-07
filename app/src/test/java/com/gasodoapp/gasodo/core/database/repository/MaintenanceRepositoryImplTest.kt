@@ -45,7 +45,7 @@ class MaintenanceRepositoryImplTest {
         every { eventDao.getAllWithServiceTypesOrderByDate() } returns pagingSource
 
         // Act
-        val result = repository.getAll()
+        val result = repository.getAllByDatePaged()
 
         // Assert
         assertThat(result).isEqualTo(pagingSource)

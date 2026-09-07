@@ -1,6 +1,8 @@
 package com.gasodoapp.gasodo.core.database.repository
 
-import androidx.paging.PagingSource
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.room.withTransaction
 import com.gasodoapp.gasodo.core.database.AppDatabase
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceEventDao
@@ -9,6 +11,7 @@ import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.UsedMaintenanceService
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
+import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 import javax.inject.Inject
 
@@ -21,8 +24,17 @@ class MaintenanceRepositoryImpl @Inject constructor(
     private val usedServiceDao: UsedMaintenanceServiceDao
 ) : MaintenanceRepository {
 
-    override fun getAll(): PagingSource<Int, MaintenanceEventWithServices> =
-        eventDao.getAllWithServiceTypesOrderByDate()
+    override fun getAllByDatePaged(): Flow<PagingData<MaintenanceEventWithServices>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false,
+                prefetchDistance = 5
+            ),
+            pagingSourceFactory = { eventDao.getAllWithServiceTypesOrderByDate() }
+        ).flow
+    }
+
 
     override suspend fun getById(id: UUID): MaintenanceEvent? =
         eventDao.getById(id)

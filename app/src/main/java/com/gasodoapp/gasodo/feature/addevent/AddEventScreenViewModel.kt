@@ -13,6 +13,7 @@ import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
+import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.database.repository.EventRepository
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -72,8 +74,10 @@ class AddEventScreenViewModel @Inject constructor(
 
     val locations = locationRepository.getAll()
     private val _draftServiceTypes = MutableStateFlow<List<MaintenanceServiceType>>(emptyList())
+    private val _dbServiceTypes = maintenanceServiceTypeRepository.getAll()
+        .map { list -> list.sortedBy { it !in _maintenanceUiState.value.doneWork } }
     val serviceTypes =
-        combine(maintenanceServiceTypeRepository.getAll(), _draftServiceTypes) { dbItems, drafts ->
+        combine(_dbServiceTypes, _draftServiceTypes) { dbItems, drafts ->
             drafts + dbItems
         }
 
@@ -137,43 +141,88 @@ class AddEventScreenViewModel @Inject constructor(
         if (id != null) {
             viewModelScope.launch {
                 if (type == EventType.REFUEL) {
-                    val event: RefuelEvent? = refuelRepository.getById(id)
+                    loadRefuelEvent(id)
+                } else if (type == EventType.MAINTENANCE) {
+                    loadMaintenanceEvent(id)
+                }
+            }
+        }
+    }
 
-                    if (event != null) {
-                        _baseUiState.value = AddEventTypeFormState(
-                            type = EventType.REFUEL,
-                            mileage = event.base.mileage,
-                            date = event.base.date,
-                            notes = event.base.notes
-                        )
-                        _refuelUiState.value = RefuelEventFormState(
-                            amount = event.amountLiters,
-                            cost = event.totalCost,
-                            pricePerLiter = event.pricePerLiter,
-                            paymentMethod = event.paymentMethod,
-                            fullFillUp = event.fullFillUp
-                        )
+    private suspend fun loadMaintenanceEvent(id: UUID) {
+        val eventWithServices: MaintenanceEventWithServices? =
+            maintenanceRepository.getByIdWithServiceTypes(id)
 
-                        mileageField.setTextAndPlaceCursorAtEnd(
-                            event.base.mileage?.toString() ?: ""
-                        )
-                        costTextField.setTextAndPlaceCursorAtEnd(event.totalCost?.toString() ?: "")
-                        notesField.setTextAndPlaceCursorAtEnd(event.base.notes)
-                        amountTextField.setTextAndPlaceCursorAtEnd(
-                            event.amountLiters?.toString() ?: ""
-                        )
-                        pricePerLiterTextField.setTextAndPlaceCursorAtEnd(
-                            event.pricePerLiter?.toString() ?: ""
-                        )
+        if (eventWithServices != null) {
+            _baseUiState.value = AddEventTypeFormState(
+                type = EventType.MAINTENANCE,
+                mileage = eventWithServices.event.base.mileage,
+                date = eventWithServices.event.base.date,
+                notes = eventWithServices.event.base.notes
+            )
 
-                        datePickerState.selectedDateMillis = event.base.date
+            _maintenanceUiState.value = MaintenanceEventFormState(
+                doneWork = eventWithServices.services.toSet(),
+                cost = eventWithServices.event.totalCost
+            )
 
-                        event.base.savedLocationId?.let { id ->
-                            locationRepository.getById(id)?.let {
-                                onLocationChange(it)
-                            }
-                        }
-                    }
+            mileageField.setTextAndPlaceCursorAtEnd(
+                eventWithServices.event.base.mileage?.toString() ?: ""
+            )
+
+            costTextField.setTextAndPlaceCursorAtEnd(
+                eventWithServices.event.totalCost?.toString() ?: ""
+            )
+
+            notesField.setTextAndPlaceCursorAtEnd(
+                eventWithServices.event.base.notes
+            )
+
+            datePickerState.selectedDateMillis = eventWithServices.event.base.date
+
+            eventWithServices.event.base.savedLocationId?.let { id ->
+                locationRepository.getById(id)?.let {
+                    onLocationChange(it)
+                }
+            }
+        }
+    }
+
+    private suspend fun loadRefuelEvent(id: UUID) {
+        val event: RefuelEvent? = refuelRepository.getById(id)
+
+        if (event != null) {
+            _baseUiState.value = AddEventTypeFormState(
+                type = EventType.REFUEL,
+                mileage = event.base.mileage,
+                date = event.base.date,
+                notes = event.base.notes
+            )
+            _refuelUiState.value = RefuelEventFormState(
+                amount = event.amountLiters,
+                cost = event.totalCost,
+                pricePerLiter = event.pricePerLiter,
+                paymentMethod = event.paymentMethod,
+                fullFillUp = event.fullFillUp
+            )
+
+            mileageField.setTextAndPlaceCursorAtEnd(
+                event.base.mileage?.toString() ?: ""
+            )
+            costTextField.setTextAndPlaceCursorAtEnd(event.totalCost?.toString() ?: "")
+            notesField.setTextAndPlaceCursorAtEnd(event.base.notes)
+            amountTextField.setTextAndPlaceCursorAtEnd(
+                event.amountLiters?.toString() ?: ""
+            )
+            pricePerLiterTextField.setTextAndPlaceCursorAtEnd(
+                event.pricePerLiter?.toString() ?: ""
+            )
+
+            datePickerState.selectedDateMillis = event.base.date
+
+            event.base.savedLocationId?.let { id ->
+                locationRepository.getById(id)?.let {
+                    onLocationChange(it)
                 }
             }
         }

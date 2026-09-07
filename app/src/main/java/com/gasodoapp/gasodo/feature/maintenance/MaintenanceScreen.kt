@@ -61,11 +61,13 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.UUID
 
 
 @Composable
 fun MaintenanceScreen(
-    viewModel: MaintenanceScreenViewModel = hiltViewModel<MaintenanceScreenViewModel>()
+    viewModel: MaintenanceScreenViewModel = hiltViewModel<MaintenanceScreenViewModel>(),
+    onNavigateToEdit: (id: UUID) -> Unit
 ) {
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
 
@@ -73,7 +75,8 @@ fun MaintenanceScreen(
         MainContent(
             Modifier.padding(paddingValues),
             pagedItems,
-            viewModel::onDeleteMaintenanceEvent
+            viewModel::onDeleteMaintenanceEvent,
+            onNavigateToEdit
         )
     }
 }
@@ -82,7 +85,8 @@ fun MaintenanceScreen(
 fun MainContent(
     modifier: Modifier = Modifier,
     pagedItems: LazyPagingItems<MaintenanceEventWithServices>,
-    onDeleteMaintenanceEvent: (MaintenanceEventWithServices) -> Unit
+    onDeleteMaintenanceEvent: (MaintenanceEventWithServices) -> Unit,
+    onNavigateToEdit: (id: UUID) -> Unit
 ) {
     LazyColumn(
         modifier = modifier
@@ -99,7 +103,8 @@ fun MainContent(
             if (event != null) {
                 MaintenanceEventRow(
                     eventWithServices = event,
-                    onDeleteMaintenanceEvent = onDeleteMaintenanceEvent
+                    onDeleteMaintenanceEvent = onDeleteMaintenanceEvent,
+                    onNavigateToEdit
                 )
             }
         }
@@ -114,7 +119,8 @@ fun MainContent(
 @Composable
 fun MaintenanceEventRow(
     eventWithServices: MaintenanceEventWithServices,
-    onDeleteMaintenanceEvent: (MaintenanceEventWithServices) -> Unit
+    onDeleteMaintenanceEvent: (MaintenanceEventWithServices) -> Unit,
+    onNavigateToEdit: (id: UUID) -> Unit
 ) {
     val isExpanded = remember { mutableStateOf(false) }
 
@@ -314,7 +320,7 @@ fun MaintenanceEventRow(
                             Icon(imageVector = delete, contentDescription = delete.name)
                         }
                         FilledIconButton(onClick = {
-                            // to be added
+                            onNavigateToEdit(eventWithServices.event.id)
                         }) {
                             Icon(imageVector = edit, contentDescription = edit.name)
                         }

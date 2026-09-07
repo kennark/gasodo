@@ -39,6 +39,9 @@ class MaintenanceRepositoryImpl @Inject constructor(
     override suspend fun getById(id: UUID): MaintenanceEvent? =
         eventDao.getById(id)
 
+    override suspend fun getByIdWithServiceTypes(id: UUID): MaintenanceEventWithServices? =
+        eventDao.getByIdWithServiceTypes(id)
+
     override suspend fun insert(event: MaintenanceEvent) {
         eventDao.insert(event)
     }

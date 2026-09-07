@@ -42,5 +42,5 @@ interface MaintenanceEventDao {
 
     @Transaction
     @Query("SELECT * FROM maintenance_events WHERE event_id = :id")
-    suspend fun getByIdWithServiceTypes(id: UUID): MaintenanceEventWithServices
+    suspend fun getByIdWithServiceTypes(id: UUID): MaintenanceEventWithServices?
 }

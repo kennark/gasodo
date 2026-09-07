@@ -34,7 +34,9 @@ fun AppNavHost(
                     BottomBarDestinations.REFUELS -> RefuelScreen(onNavigateToEdit = { id: UUID ->
                         navController.navigate(editEventRoute(EventType.REFUEL, id))
                     })
-                    BottomBarDestinations.MAINTENANCE -> MaintenanceScreen()
+                    BottomBarDestinations.MAINTENANCE -> MaintenanceScreen(onNavigateToEdit = { id: UUID ->
+                        navController.navigate(editEventRoute(EventType.MAINTENANCE, id))
+                    })
                 }
             }
         }

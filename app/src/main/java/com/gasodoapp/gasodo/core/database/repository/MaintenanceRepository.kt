@@ -13,6 +13,7 @@ import java.util.UUID
 interface MaintenanceRepository {
     fun getAllByDatePaged(): Flow<PagingData<MaintenanceEventWithServices>>
     suspend fun getById(id: UUID): MaintenanceEvent?
+    suspend fun getByIdWithServiceTypes(id: UUID): MaintenanceEventWithServices?
     suspend fun insert(event: MaintenanceEvent)
     suspend fun update(event: MaintenanceEvent)
     suspend fun delete(event: MaintenanceEvent)

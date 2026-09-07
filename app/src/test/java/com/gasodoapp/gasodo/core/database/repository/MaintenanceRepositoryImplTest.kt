@@ -11,7 +11,13 @@ import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.verify
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -39,16 +45,20 @@ class MaintenanceRepositoryImplTest {
     }
 
     @Test
-    fun `getAll delegates to DAO`() {
+    fun `getAll delegates to DAO and returns Flow`() = runTest {
         // Arrange
         val pagingSource = mockk<PagingSource<Int, MaintenanceEventWithServices>>()
+        every { pagingSource.registerInvalidatedCallback(any()) } just runs
         every { eventDao.getAllWithServiceTypesOrderByDate() } returns pagingSource
 
         // Act
         val result = repository.getAllByDatePaged()
+        // trigger a collection from DAO
+        result.take(1).collect()
 
         // Assert
-        assertThat(result).isEqualTo(pagingSource)
+        assertThat(result).isInstanceOf(Flow::class.java)
+        verify(exactly = 1) { eventDao.getAllWithServiceTypesOrderByDate() }
     }
 
     @Test

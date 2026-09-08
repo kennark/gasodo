@@ -75,7 +75,7 @@ import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import com.gasodoapp.gasodo.core.utils.toDisplayString
-import com.gasodoapp.gasodo.feature.navigation.TopBarScaffold
+import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.add
 import com.gasodoapp.gasodo.ui.icons.arrow_back
 import com.gasodoapp.gasodo.ui.icons.check

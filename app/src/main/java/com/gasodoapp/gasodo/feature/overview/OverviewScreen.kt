@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.utils.toDisplayString
-import com.gasodoapp.gasodo.feature.navigation.TopBarScaffold
+import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.error
 import com.gasodoapp.gasodo.ui.icons.local_gas_station
 import java.math.BigDecimal

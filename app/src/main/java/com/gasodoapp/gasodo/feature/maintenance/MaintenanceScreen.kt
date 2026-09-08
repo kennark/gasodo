@@ -48,11 +48,11 @@ import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.utils.toDisplayString
-import com.gasodoapp.gasodo.feature.navigation.TopBarScaffold
-import com.gasodoapp.gasodo.feature.refuel.DeleteDialog
-import com.gasodoapp.gasodo.feature.refuel.ExtraDataText
-import com.gasodoapp.gasodo.feature.refuel.MediumLabelText
-import com.gasodoapp.gasodo.feature.refuel.NoDataText
+import com.gasodoapp.gasodo.ui.components.DeleteDialog
+import com.gasodoapp.gasodo.ui.components.ExtraDataText
+import com.gasodoapp.gasodo.ui.components.MediumLabelText
+import com.gasodoapp.gasodo.ui.components.NoDataText
+import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.delete
 import com.gasodoapp.gasodo.ui.icons.edit
 import com.gasodoapp.gasodo.ui.icons.error

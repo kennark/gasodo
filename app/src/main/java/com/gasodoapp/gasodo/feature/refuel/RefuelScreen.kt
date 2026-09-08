@@ -4,31 +4,22 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,12 +41,17 @@ import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.gasodoapp.gasodo.core.utils.toDisplayString
-import com.gasodoapp.gasodo.feature.navigation.TopBarScaffold
+import com.gasodoapp.gasodo.ui.components.DeleteDialog
+import com.gasodoapp.gasodo.ui.components.ExtraDataText
+import com.gasodoapp.gasodo.ui.components.LoadingPlaceholder
+import com.gasodoapp.gasodo.ui.components.MediumLabelText
+import com.gasodoapp.gasodo.ui.components.NoDataCard
+import com.gasodoapp.gasodo.ui.components.NoDataText
+import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.check_box
 import com.gasodoapp.gasodo.ui.icons.check_box_outline_blank
 import com.gasodoapp.gasodo.ui.icons.delete
 import com.gasodoapp.gasodo.ui.icons.edit
-import com.gasodoapp.gasodo.ui.icons.error
 import com.gasodoapp.gasodo.ui.icons.expand_circle_down
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -110,11 +106,11 @@ private fun MainContent(
                 )
             } else {
                 // Show placeholder for empty slots while paging
-                RefuelScreenLoadingPlaceholder()
+                LoadingPlaceholder()
             }
         }
         item {
-            NoDataCard()
+            NoDataCard("Refuels end here", "Register new refuels to show up here")
         }
     }
 }
@@ -370,131 +366,6 @@ fun RefuelEventRow(
         }
     }
 }
-
-
-@Composable
-fun NoDataCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = error,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(48.dp)
-            )
-            Text(
-                text = "Refuels end here",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Register new refuels to show up here",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
-    }
-}
-
-/**
- * Placeholder for loading state.
- */
-@Composable
-fun RefuelScreenLoadingPlaceholder(
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(120.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(48.dp)
-        )
-    }
-}
-
-@Composable
-fun DeleteDialog(
-    onDismissRequest: () -> Unit,
-    onConfirmRequest: () -> Unit
-) {
-    BasicAlertDialog(
-        { onDismissRequest() }
-    ) {
-        Card(
-            modifier = Modifier
-                .wrapContentWidth()
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(16.dp),
-        ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    text =
-                        "Do you want to delete this event?"
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(
-                        onClick = {
-                            onDismissRequest()
-                        },
-                    ) {
-                        Text("Dismiss")
-                    }
-                    TextButton(
-                        onClick = {
-                            onDismissRequest()
-                            onConfirmRequest()
-                        },
-                    ) {
-                        Text("Confirm")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MediumLabelText(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-}
-
-@Composable
-fun ExtraDataText(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurface
-    )
-}
-
-@Composable
-fun NoDataText(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-}
-
 
 @Preview
 @Composable

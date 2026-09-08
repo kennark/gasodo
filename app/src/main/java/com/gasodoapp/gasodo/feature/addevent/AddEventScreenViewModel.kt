@@ -146,6 +146,12 @@ class AddEventScreenViewModel @Inject constructor(
                     loadMaintenanceEvent(id)
                 }
             }
+        } else {
+            viewModelScope.launch {
+                mileageField.setTextAndPlaceCursorAtEnd(
+                    eventRepository.getHighestMileage()?.toString() ?: ""
+                )
+            }
         }
     }
 

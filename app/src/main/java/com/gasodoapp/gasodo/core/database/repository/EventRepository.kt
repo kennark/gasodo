@@ -7,6 +7,7 @@ import com.gasodoapp.gasodo.core.database.projections.DateMileage
  */
 interface EventRepository {
 
+    suspend fun getHighestMileage(): Long?
     suspend fun getDateWithHigherMileage(mileage: Long): DateMileage?
     suspend fun getDateWithLowerMileage(mileage: Long): DateMileage?
 }

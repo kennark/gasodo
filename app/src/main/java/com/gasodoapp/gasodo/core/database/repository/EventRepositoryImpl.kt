@@ -11,6 +11,8 @@ class EventRepositoryImpl @Inject constructor(
     private val dao: EventDao
 ) : EventRepository {
 
+    override suspend fun getHighestMileage(): Long? =
+        dao.getHighestMileage()
 
     override suspend fun getDateWithHigherMileage(mileage: Long): DateMileage? =
         dao.getDateWithHigherMileage(mileage)

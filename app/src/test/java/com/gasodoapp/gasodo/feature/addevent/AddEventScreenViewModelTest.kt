@@ -61,6 +61,7 @@ class AddEventScreenViewModelTest {
         every { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns null
         every { locationRepository.getAll() } returns emptyFlow()
         every { maintenanceServiceTypeRepository.getAll() } returns emptyFlow()
+        coEvery { eventRepository.getHighestMileage() } returns null
 
         viewModel = AddEventScreenViewModel(
             refuelRepository,
@@ -98,6 +99,29 @@ class AddEventScreenViewModelTest {
         assertThat(viewModel.refuelUiState.value).isEqualTo(RefuelEventFormState())
         assertThat(viewModel.maintenanceUiState.value).isEqualTo(MaintenanceEventFormState())
         assertThat(viewModel.inspectionUiState.value).isEqualTo(InspectionEventFormState())
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `mileage field is set on ViewModel initialisation`() = runTest {
+        coEvery { eventRepository.getHighestMileage() } returns 10L
+
+        val testViewModel = AddEventScreenViewModel(
+            refuelRepository,
+            inspectionRepository,
+            maintenanceRepository,
+            eventRepository,
+            locationRepository,
+            maintenanceServiceTypeRepository,
+            savedStateHandle
+        )
+
+        advanceUntilIdle()
+
+        // 2 for the overwritten mock & setup
+        coVerify(exactly = 2) { eventRepository.getHighestMileage() }
+
+        assertThat(testViewModel.mileageField.text.toString()).isEqualTo("10")
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

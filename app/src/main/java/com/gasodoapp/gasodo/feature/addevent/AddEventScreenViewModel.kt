@@ -249,23 +249,24 @@ class AddEventScreenViewModel @Inject constructor(
 
                 baseState.location?.let { savedLocation -> storeLocationIfNotExist(savedLocation) }
 
-                if (updatedBaseState.type == EventType.REFUEL) {
+                when (updatedBaseState.type) {
+                    EventType.REFUEL -> {
+                        val updatedRefuelState = calculateRefuelEventData()
 
-                    val updatedRefuelState = calculateRefuelEventData()
-
-                    if (validateRefuelValues(updatedRefuelState)) {
                         storeRefuelEvent(updatedRefuelState, updatedBaseState)
                     }
-                } else if (updatedBaseState.type == EventType.INSPECTION) {
-                    val state = _inspectionUiState.value
-                    if (validateInspectionValues(state)) {
+
+                    EventType.INSPECTION -> {
+                        val state = _inspectionUiState.value
+
                         storeInspectionEvent(state, updatedBaseState)
                     }
-                } else if (updatedBaseState.type == EventType.MAINTENANCE) {
-                    val state = _maintenanceUiState.value.copy(
-                        cost = costTextField.text.toString().toBigDecimalOrNull()
-                    )
-                    if (validateMaintenanceValues(state)) {
+
+                    EventType.MAINTENANCE -> {
+                        val state = _maintenanceUiState.value.copy(
+                            cost = costTextField.text.toString().toBigDecimalOrNull()
+                        )
+
                         storeMaintenanceEvent(state, updatedBaseState)
                     }
                 }
@@ -324,18 +325,6 @@ class AddEventScreenViewModel @Inject constructor(
             }
         }
 
-        return true
-    }
-
-    private fun validateRefuelValues(refuelState: RefuelEventFormState): Boolean {
-        return true
-    }
-
-    private fun validateInspectionValues(inspectionState: InspectionEventFormState): Boolean {
-        return true
-    }
-
-    private fun validateMaintenanceValues(maintenanceState: MaintenanceEventFormState): Boolean {
         return true
     }
 

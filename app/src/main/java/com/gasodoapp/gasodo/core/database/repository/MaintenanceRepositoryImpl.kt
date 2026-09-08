@@ -46,8 +46,15 @@ class MaintenanceRepositoryImpl @Inject constructor(
         eventDao.insert(event)
     }
 
-    override suspend fun update(event: MaintenanceEvent) {
+    override suspend fun update(event: MaintenanceEvent, services: Set<MaintenanceServiceType>?) {
         eventDao.update(event)
+
+        if (services != null) {
+            usedServiceDao.deleteByEventId(event.id)
+            services.map { UsedMaintenanceService(event.id, it.id) }.let {
+                usedServiceDao.insertAll(it)
+            }
+        }
     }
 
     override suspend fun delete(event: MaintenanceEvent) {

@@ -26,7 +26,7 @@ import java.util.UUID
     indices = [Index("saved_location_id")]
 )
 data class MaintenanceEvent(
-    @PrimaryKey @ColumnInfo("event_id") val id: UUID = UUID.randomUUID(),
+    @PrimaryKey @ColumnInfo("event_id") var id: UUID = UUID.randomUUID(),
     @Embedded val base: BaseColumns,
 
     @ColumnInfo("total_cost") val totalCost: BigDecimal?

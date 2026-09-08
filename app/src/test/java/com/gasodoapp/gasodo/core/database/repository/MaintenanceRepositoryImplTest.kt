@@ -107,7 +107,7 @@ class MaintenanceRepositoryImplTest {
     }
 
     @Test
-    fun `update delegates to DAO`() = runTest {
+    fun `update without services delegates to DAO`() = runTest {
         // Arrange
         val event = makeMaintenanceEvent()
         coEvery { eventDao.update(event) } returns Unit
@@ -117,6 +117,21 @@ class MaintenanceRepositoryImplTest {
 
         // Assert
         coVerify { eventDao.update(event) }
+    }
+
+    @Test
+    fun `update with services delegates to 2 DAOs`() = runTest {
+        val event = makeMaintenanceEvent()
+        coEvery { eventDao.update(event) } returns Unit
+        coEvery { usedServiceDao.deleteByEventId(event.id) } returns Unit
+        coEvery { usedServiceDao.insertAll(any()) } returns Unit
+
+        repository.update(event, emptySet())
+
+        coVerify(exactly = 1) { eventDao.update(event) }
+        coVerify(exactly = 1) { usedServiceDao.deleteByEventId(event.id) }
+        coVerify(exactly = 1) { usedServiceDao.insertAll(emptyList()) }
+
     }
 
     @Test

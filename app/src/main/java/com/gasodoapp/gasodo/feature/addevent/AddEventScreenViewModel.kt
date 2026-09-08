@@ -397,7 +397,11 @@ class AddEventScreenViewModel @Inject constructor(
             totalCost = maintenanceState.cost
         )
 
-        maintenanceRepository.insertWithUsedServices(event, maintenanceState.doneWork)
+        if (id != null) {
+            event.id = id
+            maintenanceRepository.update(event, maintenanceState.doneWork)
+        } else
+            maintenanceRepository.insertWithUsedServices(event, maintenanceState.doneWork)
 
         dismissDialog()
     }

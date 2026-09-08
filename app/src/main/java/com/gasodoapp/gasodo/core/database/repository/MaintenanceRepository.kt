@@ -15,7 +15,7 @@ interface MaintenanceRepository {
     suspend fun getById(id: UUID): MaintenanceEvent?
     suspend fun getByIdWithServiceTypes(id: UUID): MaintenanceEventWithServices?
     suspend fun insert(event: MaintenanceEvent)
-    suspend fun update(event: MaintenanceEvent)
+    suspend fun update(event: MaintenanceEvent, services: Set<MaintenanceServiceType>? = null)
     suspend fun delete(event: MaintenanceEvent)
     suspend fun insertWithUsedServices(
         event: MaintenanceEvent,

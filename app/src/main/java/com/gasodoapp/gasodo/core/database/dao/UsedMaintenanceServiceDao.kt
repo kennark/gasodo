@@ -4,7 +4,9 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import com.gasodoapp.gasodo.core.database.entity.UsedMaintenanceService
+import java.util.UUID
 
 @Dao
 interface UsedMaintenanceServiceDao {
@@ -16,4 +18,7 @@ interface UsedMaintenanceServiceDao {
 
     @Delete
     suspend fun delete(entity: UsedMaintenanceService)
+
+    @Query("DELETE FROM used_maintenance_services WHERE event_id = :id")
+    suspend fun deleteByEventId(id: UUID)
 }

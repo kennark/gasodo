@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
+import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.ui.components.NoDataCard
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
@@ -70,6 +71,7 @@ fun OverviewScreen(
     val fuelConsumption by viewModel.fuelConsumption.collectAsState()
     val fuelCost by viewModel.fuelCost.collectAsState()
 
+    val maintenanceData by viewModel.maintenanceData.collectAsState()
     val totalMaintenanceCost by viewModel.totalMaintenanceCost.collectAsState()
     val maintenanceActions by viewModel.maintenanceAction.collectAsState()
     val topMaintenanceActions by viewModel.topMaintenanceActions.collectAsState()
@@ -89,6 +91,7 @@ fun OverviewScreen(
             totalMileage,
             fuelConsumption,
             fuelCost,
+            maintenanceData,
             totalMaintenanceCost,
             maintenanceActions,
             topMaintenanceActions
@@ -109,6 +112,7 @@ private fun MainContent(
     totalMileage: Long?,
     fuelConsumption: BigDecimal?,
     fuelCost: BigDecimal?,
+    maintenanceData: List<MaintenanceEventWithServices>,
     totalMaintenanceCost: BigDecimal,
     maintenanceActions: List<MaintenanceServiceType>,
     topMaintenanceActions: List<TopMaintenanceAction>
@@ -134,11 +138,7 @@ private fun MainContent(
                     modifier = Modifier.size(48.dp), color = MaterialTheme.colorScheme.primary
                 )
             } else {
-                if (refuelData.isEmpty()) {
-                    // Empty State
-                    EmptyRefuelState()
-                } else {
-                    // Statistics Cards
+                if (refuelData.isNotEmpty())
                     RefuelStatsCard(
                         totalCost = totalRefuelCost,
                         averageCost = averageCost,
@@ -147,13 +147,17 @@ private fun MainContent(
                         fuelConsumption = fuelConsumption,
                         fuelCost = fuelCost
                     )
-                }
+                else
+                    NoStatsCard(local_gas_station, "refuel")
 
-                MaintenanceStatsCard(
-                    totalCost = totalMaintenanceCost,
-                    maintenanceActions = maintenanceActions,
-                    topMaintenanceActions = topMaintenanceActions
-                )
+                if (maintenanceData.isNotEmpty())
+                    MaintenanceStatsCard(
+                        totalCost = totalMaintenanceCost,
+                        maintenanceActions = maintenanceActions,
+                        topMaintenanceActions = topMaintenanceActions
+                    )
+                else
+                    NoStatsCard(build, "maintenance")
             }
         } else {
             NoDataCard(
@@ -219,9 +223,8 @@ fun YearMonthSelectorCard(
 }
 
 
-@Preview
 @Composable
-fun EmptyRefuelState() {
+fun NoStatsCard(icon: ImageVector, type: String) {
     Card(
         modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
     ) {
@@ -233,18 +236,18 @@ fun EmptyRefuelState() {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
-                imageVector = local_gas_station,
+                imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(48.dp)
             )
             Text(
-                text = "No refuels found",
+                text = "No ${type}s found",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Select a different period to see your refuel history",
+                text = "Select a different period to see your $type history",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )

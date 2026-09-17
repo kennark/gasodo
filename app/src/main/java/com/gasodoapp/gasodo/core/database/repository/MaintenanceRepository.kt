@@ -21,4 +21,6 @@ interface MaintenanceRepository {
         event: MaintenanceEvent,
         services: Set<MaintenanceServiceType> = emptySet()
     )
+
+    fun getAllWithinTime(start: Long, end: Long): Flow<List<MaintenanceEventWithServices>>
 }

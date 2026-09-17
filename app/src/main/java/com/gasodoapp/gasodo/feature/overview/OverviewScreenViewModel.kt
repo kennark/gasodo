@@ -5,7 +5,10 @@ import androidx.compose.material3.DateRangePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
+import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
+import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,14 +24,15 @@ import javax.inject.Inject
 @HiltViewModel
 class OverviewScreenViewModel @Inject constructor(
     private val refuelRepository: RefuelRepository,
+    private val maintenanceRepository: MaintenanceRepository
 ) : ViewModel() {
 
     // Refuel data for the selected period
     private val _refuelData = MutableStateFlow<List<RefuelEvent>>(emptyList())
     val refuelData: StateFlow<List<RefuelEvent>> = _refuelData.asStateFlow()
 
-    private val _totalCost = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
-    val totalCost: StateFlow<BigDecimal> = _totalCost.asStateFlow()
+    private val _totalRefuelCost = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
+    val totalRefuelCost: StateFlow<BigDecimal> = _totalRefuelCost.asStateFlow()
 
     private val _totalLiters = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
     val totalLiters: StateFlow<BigDecimal> = _totalLiters.asStateFlow()
@@ -46,6 +50,18 @@ class OverviewScreenViewModel @Inject constructor(
 
     private val _averagePricePerLiter = MutableStateFlow<BigDecimal?>(null)
     val averagePricePerLiter = _averagePricePerLiter.asStateFlow()
+
+    private val _maintenanceData = MutableStateFlow<List<MaintenanceEventWithServices>>(emptyList())
+    val maintenanceData = _maintenanceData.asStateFlow()
+
+    private val _totalMaintenanceCost = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
+    val totalMaintenanceCost = _totalMaintenanceCost.asStateFlow()
+
+    private val _maintenanceActions = MutableStateFlow<List<MaintenanceServiceType>>(emptyList())
+    val maintenanceAction = _maintenanceActions.asStateFlow()
+
+    private val _topMaintenanceActions = MutableStateFlow<List<TopMaintenanceAction>>(emptyList())
+    val topMaintenanceActions = _topMaintenanceActions.asStateFlow()
 
 
     // Loading state
@@ -68,10 +84,18 @@ class OverviewScreenViewModel @Inject constructor(
             dateRangePickerState.selectedStartDateMillis,
             dateRangePickerState.selectedEndDateMillis
         )
+        loadMaintenanceData(
+            dateRangePickerState.selectedStartDateMillis,
+            dateRangePickerState.selectedEndDateMillis
+        )
     }
 
     fun onDateSelected() {
         loadRefuelData(
+            dateRangePickerState.selectedStartDateMillis,
+            dateRangePickerState.selectedEndDateMillis
+        )
+        loadMaintenanceData(
             dateRangePickerState.selectedStartDateMillis,
             dateRangePickerState.selectedEndDateMillis
         )
@@ -97,7 +121,7 @@ class OverviewScreenViewModel @Inject constructor(
 
     private fun calculateRefuelStatistics(data: List<RefuelEvent>) {
         if (data.isNotEmpty()) {
-            _totalCost.value = data.sumOf { it.totalCost ?: BigDecimal.ZERO }
+            _totalRefuelCost.value = data.sumOf { it.totalCost ?: BigDecimal.ZERO }
             _totalLiters.value = data.sumOf { it.amountLiters ?: BigDecimal.ZERO }
             _averagePricePerLiter.value = data.sumOf { it.pricePerLiter ?: BigDecimal.ZERO }
                 .let {
@@ -164,6 +188,36 @@ class OverviewScreenViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    private fun loadMaintenanceData(start: Long?, end: Long?) {
+        viewModelScope.launch {
+            if (start != null && end != null) {
+                _isLoading.value = true
+                maintenanceRepository.getAllWithinTime(start, end)
+                    .catch { _ ->
+                        _maintenanceData.value = emptyList()
+                    }
+                    .collect { data ->
+                        _maintenanceData.value = data
+                        calculateMaintenanceStatistics(_maintenanceData.value)
+                        _isLoading.value = false
+                    }
+            }
+        }
+    }
+
+    private fun calculateMaintenanceStatistics(data: List<MaintenanceEventWithServices>) {
+        if (data.isNotEmpty()) {
+            _totalMaintenanceCost.value = data.sumOf { it.event.totalCost ?: BigDecimal.ZERO }
+            _maintenanceActions.value = data.flatMap { it.services }
+
+            _topMaintenanceActions.value = _maintenanceActions.value
+                .groupBy { it.serviceName }
+                .map { (_, services) -> TopMaintenanceAction(services.first(), services.size) }
+                .sortedByDescending { it.count }
+                .take(3)
         }
     }
 }

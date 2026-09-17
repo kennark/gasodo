@@ -71,4 +71,10 @@ class MaintenanceRepositoryImpl @Inject constructor(
             usedServiceDao.insertAll(listToInsert)
         }
     }
+
+    override fun getAllWithinTime(
+        start: Long,
+        end: Long
+    ): Flow<List<MaintenanceEventWithServices>> =
+        eventDao.getAllInDateRange(start, end)
 }

@@ -10,6 +10,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
+import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
 /**
@@ -43,4 +44,10 @@ interface MaintenanceEventDao {
     @Transaction
     @Query("SELECT * FROM maintenance_events WHERE event_id = :id")
     suspend fun getByIdWithServiceTypes(id: UUID): MaintenanceEventWithServices?
+
+    @Query("SELECT * FROM maintenance_events WHERE date BETWEEN :startRange AND :endRange ORDER BY mileage DESC")
+    fun getAllInDateRange(
+        startRange: Long,
+        endRange: Long
+    ): Flow<List<MaintenanceEventWithServices>>
 }

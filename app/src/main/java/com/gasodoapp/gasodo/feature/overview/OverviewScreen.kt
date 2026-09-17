@@ -37,14 +37,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.utils.toDisplayString
+import com.gasodoapp.gasodo.ui.components.NoDataCard
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
+import com.gasodoapp.gasodo.ui.icons.build
 import com.gasodoapp.gasodo.ui.icons.error
 import com.gasodoapp.gasodo.ui.icons.local_gas_station
 import java.math.BigDecimal
@@ -59,12 +63,16 @@ fun OverviewScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val refuelData by viewModel.refuelData.collectAsState()
 
-    val totalCost by viewModel.totalCost.collectAsState()
+    val totalRefuelCost by viewModel.totalRefuelCost.collectAsState()
     val averageCost by viewModel.averagePricePerLiter.collectAsState()
     val totalLiters by viewModel.totalLiters.collectAsState()
     val totalMileage by viewModel.totalMileage.collectAsState()
     val fuelConsumption by viewModel.fuelConsumption.collectAsState()
     val fuelCost by viewModel.fuelCost.collectAsState()
+
+    val totalMaintenanceCost by viewModel.totalMaintenanceCost.collectAsState()
+    val maintenanceActions by viewModel.maintenanceAction.collectAsState()
+    val topMaintenanceActions by viewModel.topMaintenanceActions.collectAsState()
 
     TopBarScaffold(
         title = "Overview"
@@ -75,12 +83,15 @@ fun OverviewScreen(
             viewModel::onDateSelected,
             isLoading,
             refuelData,
-            totalCost,
+            totalRefuelCost,
             averageCost,
             totalLiters,
             totalMileage,
             fuelConsumption,
-            fuelCost
+            fuelCost,
+            totalMaintenanceCost,
+            maintenanceActions,
+            topMaintenanceActions
         )
     }
 }
@@ -92,12 +103,15 @@ private fun MainContent(
     onDateSelected: () -> Unit,
     isLoading: Boolean,
     refuelData: List<RefuelEvent>,
-    totalCost: BigDecimal,
+    totalRefuelCost: BigDecimal,
     averageCost: BigDecimal?,
     totalLiters: BigDecimal,
     totalMileage: Long?,
     fuelConsumption: BigDecimal?,
-    fuelCost: BigDecimal?
+    fuelCost: BigDecimal?,
+    totalMaintenanceCost: BigDecimal,
+    maintenanceActions: List<MaintenanceServiceType>,
+    topMaintenanceActions: List<TopMaintenanceAction>
 ) {
     Column(
         modifier = modifier
@@ -119,23 +133,33 @@ private fun MainContent(
                 CircularProgressIndicator(
                     modifier = Modifier.size(48.dp), color = MaterialTheme.colorScheme.primary
                 )
-            } else if (refuelData.isEmpty()) {
-                // Empty State
-                EmptyRefuelState()
             } else {
-                // Statistics Cards
-                RefuelStatsCard(
-                    totalCost = totalCost,
-                    averageCost = averageCost,
-                    totalLiters = totalLiters,
-                    totalMileage = totalMileage,
-                    fuelConsumption = fuelConsumption,
-                    fuelCost = fuelCost
-                )
+                if (refuelData.isEmpty()) {
+                    // Empty State
+                    EmptyRefuelState()
+                } else {
+                    // Statistics Cards
+                    RefuelStatsCard(
+                        totalCost = totalRefuelCost,
+                        averageCost = averageCost,
+                        totalLiters = totalLiters,
+                        totalMileage = totalMileage,
+                        fuelConsumption = fuelConsumption,
+                        fuelCost = fuelCost
+                    )
+                }
 
+                MaintenanceStatsCard(
+                    totalCost = totalMaintenanceCost,
+                    maintenanceActions = maintenanceActions,
+                    topMaintenanceActions = topMaintenanceActions
+                )
             }
         } else {
-            MissingEndDateCard()
+            NoDataCard(
+                "Time period not set",
+                "Select an end date to see statistics"
+            )
         }
     }
 }
@@ -270,6 +294,168 @@ fun RefuelStatsCard(
     fuelConsumption: BigDecimal?,
     fuelCost: BigDecimal?
 ) {
+    StatisticsCardFrame(
+        "Refuel Statistics",
+        local_gas_station
+    ) {
+        Row(
+            modifier = Modifier.height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    LabelText("Total Refuel Cost")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        ValueText(totalCost.toDisplayString(2))
+                        ValueText("€")
+                    }
+                }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    LabelText("Total Refuelled")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        ValueText(totalLiters.toDisplayString(2))
+                        ValueText("L")
+                    }
+                }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    LabelText("Average Fuel Price")
+                    if (averageCost != null) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            ValueText(averageCost.toDisplayString(2))
+                            ValueText("€/L")
+                        }
+                    } else {
+                        NoDataText()
+                    }
+                }
+            }
+            VerticalDivider()
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    LabelText("Total Distance Travelled")
+                    if (totalMileage != null) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            ValueText(totalMileage.toString())
+                            ValueText("km")
+                        }
+                    } else {
+                        NoDataText()
+                    }
+                }
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    LabelText("Average Fuel Consumption")
+                    if (fuelConsumption != null) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            ValueText(fuelConsumption.toDisplayString(2))
+                            ValueText("L/100 km")
+                        }
+                    } else {
+                        NoDataText()
+                    }
+                }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    LabelText("Average Fuel Cost")
+                    if (fuelCost != null) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            ValueText(fuelCost.toDisplayString(2))
+                            ValueText("€/100 km")
+                        }
+                    } else {
+                        NoDataText()
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun MaintenanceStatsCard(
+    totalCost: BigDecimal,
+    maintenanceActions: List<MaintenanceServiceType>,
+    topMaintenanceActions: List<TopMaintenanceAction>
+) {
+
+    StatisticsCardFrame(
+        "Maintenance Statistics",
+        build
+    ) {
+        Row(
+            modifier = Modifier.height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    LabelText("Total Maintenance Cost")
+                    ValueText("${totalCost.toDisplayString(2)} €")
+                }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    LabelText("Maintenance Action Count")
+                    if (maintenanceActions.isNotEmpty())
+                        ValueText("${maintenanceActions.size} actions")
+                    else
+                        NoDataText()
+                }
+            }
+            if (topMaintenanceActions.isNotEmpty()) {
+                VerticalDivider()
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    LabelText("Top Maintenance Actions")
+                    for (action in topMaintenanceActions) {
+                        ValueText("${action.count}x • ${action.serviceType.serviceName}")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StatisticsCardFrame(
+    title: String,
+    icon: ImageVector,
+    content: @Composable (() -> Unit)
+) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -286,113 +472,17 @@ fun RefuelStatsCard(
             ) {
                 Box(modifier = Modifier.padding(2.dp)) {
                     Icon(
-                        imageVector = local_gas_station,
-                        contentDescription = local_gas_station.name
+                        imageVector = icon,
+                        contentDescription = icon.name
                     )
                 }
                 Text(
-                    text = "Refuel Statistics",
+                    text = title,
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleMedium
                 )
             }
-            Row(
-                modifier = Modifier.height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        LabelText("Total Refuel Cost")
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            ValueText(totalCost.toDisplayString(2))
-                            ValueText("€")
-                        }
-                    }
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        LabelText("Total Refuelled")
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            ValueText(totalLiters.toDisplayString(2))
-                            ValueText("L")
-                        }
-                    }
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        LabelText("Average Fuel Price")
-                        if (averageCost != null) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                ValueText(averageCost.toDisplayString(2))
-                                ValueText("€/L")
-                            }
-                        } else {
-                            NoDataText()
-                        }
-                    }
-                }
-                VerticalDivider()
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        LabelText("Total Distance Travelled")
-                        if (totalMileage != null) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                ValueText(totalMileage.toString())
-                                ValueText("km")
-                            }
-                        } else {
-                            NoDataText()
-                        }
-                    }
-
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        LabelText("Average Fuel Consumption")
-                        if (fuelConsumption != null) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                ValueText(fuelConsumption.toDisplayString(2))
-                                ValueText("L/100 km")
-                            }
-                        } else {
-                            NoDataText()
-                        }
-                    }
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        LabelText("Average Fuel Cost")
-                        if (fuelCost != null) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                ValueText(fuelCost.toDisplayString(2))
-                                ValueText("€/100 km")
-                            }
-                        } else {
-                            NoDataText()
-                        }
-                    }
-                }
-            }
+            content()
         }
     }
 }

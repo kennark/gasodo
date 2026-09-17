@@ -97,4 +97,33 @@ class EventRepositoryImplTest {
 
         coVerify { dao.getDateWithLowerMileage(inputMileage) }
     }
+
+    @Test
+    fun `getHighestMileage delegates to DAO and returns result`() = runTest {
+        // Arrange
+        val expectedMileage = 98765L
+        coEvery { dao.getHighestMileage() } returns expectedMileage
+
+        // Act
+        val result = repository.getHighestMileage()
+
+        // Assert
+        assertThat(result).isEqualTo(expectedMileage)
+
+        coVerify { dao.getHighestMileage() }
+    }
+
+    @Test
+    fun `getHighestMileage returns null when DAO returns null`() = runTest {
+        // Arrange
+        coEvery { dao.getHighestMileage() } returns null
+
+        // Act
+        val result = repository.getHighestMileage()
+
+        // Assert
+        assertThat(result).isNull()
+
+        coVerify { dao.getHighestMileage() }
+    }
 }

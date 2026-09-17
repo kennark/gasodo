@@ -306,9 +306,7 @@ fun RefuelStatsCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
+                LabelAndValueSpacing {
                     LabelText("Total Refuel Cost")
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -317,9 +315,7 @@ fun RefuelStatsCard(
                         ValueText("€")
                     }
                 }
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
+                LabelAndValueSpacing {
                     LabelText("Total Refuelled")
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -328,9 +324,7 @@ fun RefuelStatsCard(
                         ValueText("L")
                     }
                 }
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
+                LabelAndValueSpacing {
                     LabelText("Average Fuel Price")
                     if (averageCost != null) {
                         Row(
@@ -349,9 +343,7 @@ fun RefuelStatsCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
+                LabelAndValueSpacing {
                     LabelText("Total Distance Travelled")
                     if (totalMileage != null) {
                         Row(
@@ -365,9 +357,7 @@ fun RefuelStatsCard(
                     }
                 }
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
+                LabelAndValueSpacing {
                     LabelText("Average Fuel Consumption")
                     if (fuelConsumption != null) {
                         Row(
@@ -380,9 +370,7 @@ fun RefuelStatsCard(
                         NoDataText()
                     }
                 }
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
+                LabelAndValueSpacing {
                     LabelText("Average Fuel Cost")
                     if (fuelCost != null) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -418,15 +406,12 @@ fun MaintenanceStatsCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
+                LabelAndValueSpacing {
                     LabelText("Total Maintenance Cost")
                     ValueText("${totalCost.toDisplayString(2)} €")
                 }
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
+
+                LabelAndValueSpacing {
                     LabelText("Maintenance Action Count")
                     if (maintenanceActions.isNotEmpty())
                         ValueText("${maintenanceActions.size} actions")
@@ -508,6 +493,17 @@ fun LabelText(text: String) {
         text = text,
         style = MaterialTheme.typography.bodySmall
     )
+}
+
+@Composable
+fun LabelAndValueSpacing(
+    content: @Composable () -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        content()
+    }
 }
 
 

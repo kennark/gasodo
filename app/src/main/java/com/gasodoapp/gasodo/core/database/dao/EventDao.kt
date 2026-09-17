@@ -12,9 +12,9 @@ interface EventDao {
     @Query("SELECT mileage FROM alleventsbasecolumnsview ORDER BY mileage DESC LIMIT 1")
     suspend fun getHighestMileage(): Long?
 
-    @Query("SELECT date, mileage FROM alleventsbasecolumnsview WHERE mileage >= :mileage ORDER BY mileage ASC LIMIT 1")
+    @Query("SELECT date, mileage FROM alleventsbasecolumnsview WHERE mileage > :mileage ORDER BY mileage ASC LIMIT 1")
     suspend fun getDateWithHigherMileage(mileage: Long): DateMileage?
 
-    @Query("SELECT date, mileage FROM alleventsbasecolumnsview WHERE mileage <= :mileage ORDER BY mileage DESC LIMIT 1")
+    @Query("SELECT date, mileage FROM alleventsbasecolumnsview WHERE mileage < :mileage ORDER BY mileage DESC LIMIT 1")
     suspend fun getDateWithLowerMileage(mileage: Long): DateMileage?
 }

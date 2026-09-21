@@ -1,16 +1,27 @@
 package com.gasodoapp.gasodo.core.database.repository
 
+import androidx.paging.PagingSource
+import com.gasodoapp.gasodo.core.database.AppDatabase
 import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.dao.InspectionEventDao
+import com.gasodoapp.gasodo.core.database.dao.UsedInspectablePartDao
+import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
+import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -23,13 +34,17 @@ import java.util.UUID
  */
 class InspectionRepositoryImplTest {
 
+    private lateinit var db: AppDatabase
     private lateinit var dao: InspectionEventDao
+    private lateinit var usedPartDao: UsedInspectablePartDao
     private lateinit var repository: InspectionRepository
 
     @Before
     fun setup() {
+        db = mockk()
         dao = mockk()
-        repository = InspectionRepositoryImpl(dao)
+        usedPartDao = mockk()
+        repository = InspectionRepositoryImpl(db, dao, usedPartDao)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -67,6 +82,22 @@ class InspectionRepositoryImplTest {
     }
 
     @Test
+    fun `getAllPaged delegates to DAO and returns Flow`() = runTest {
+        // Arrange
+        val pagingSource = mockk<PagingSource<Int, InspectionEventWithParts>>()
+        every { pagingSource.registerInvalidatedCallback(any()) } just runs
+        every { dao.getAllWithPartsOrderByDate() } returns pagingSource
+
+        // Act
+        val result = repository.getAllPaged()
+        result.take(1).collect()
+
+        // Assert
+        assertThat(result).isInstanceOf(Flow::class.java)
+        verify(exactly = 1) { dao.getAllWithPartsOrderByDate() }
+    }
+
+    @Test
     fun `getById delegates to DAO and returns result`() = runTest {
         // Arrange
         val expectedId = UUID.randomUUID()
@@ -99,6 +130,26 @@ class InspectionRepositoryImplTest {
     }
 
     @Test
+    fun `getByIdWithParts delegates to DAO and returns result`() = runTest {
+        // Arrange
+        val expectedId = UUID.randomUUID()
+        val expected = InspectionEventWithParts(
+            event = makeInspectionEvent(id = expectedId),
+            parts = listOf(makeInspectablePart())
+        )
+        coEvery { dao.getByIdWithParts(expectedId) } returns expected
+
+        // Act
+        val result = repository.getByIdWithParts(expectedId)
+
+        // Assert
+        assertThat(result).isEqualTo(expected)
+        assertThat(result?.event?.id).isEqualTo(expectedId)
+
+        coVerify { dao.getByIdWithParts(expectedId) }
+    }
+
+    @Test
     fun `insert delegates to DAO`() = runTest {
         // Arrange
         val event = makeInspectionEvent()
@@ -116,12 +167,31 @@ class InspectionRepositoryImplTest {
         // Arrange
         val event = makeInspectionEvent()
         coEvery { dao.update(event) } returns Unit
+        coEvery { usedPartDao.deleteByInspectionEventId(event.id) } just runs
+        coEvery { usedPartDao.insertAll(any()) } returns Unit
+
+        // Act
+        repository.update(event, parts = emptySet())
+
+        // Assert
+        coVerify { dao.update(event) }
+        coVerify { usedPartDao.deleteByInspectionEventId(event.id) }
+        coVerify { usedPartDao.insertAll(any()) }
+    }
+
+    @Test
+    fun `update without parts only delegates to DAO`() = runTest {
+        // Arrange
+        val event = makeInspectionEvent()
+        coEvery { dao.update(event) } returns Unit
 
         // Act
         repository.update(event)
 
         // Assert
         coVerify { dao.update(event) }
+        coVerify(exactly = 0) { usedPartDao.deleteByInspectionEventId(any()) }
+        coVerify(exactly = 0) { usedPartDao.insertAll(any()) }
     }
 
     @Test
@@ -155,6 +225,17 @@ class InspectionRepositoryImplTest {
             ),
             status = status,
             findings = findings
+        )
+    }
+
+    private fun makeInspectablePart(
+        id: Long = 1L,
+        partName: String = "Brake Pads"
+    ): InspectablePart {
+        return InspectablePart(
+            id = id,
+            partName = partName,
+            notes = null
         )
     }
 }

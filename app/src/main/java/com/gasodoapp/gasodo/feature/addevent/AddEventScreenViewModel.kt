@@ -170,12 +170,18 @@ class AddEventScreenViewModel @Inject constructor(
     init {
         if (id != null) {
             viewModelScope.launch {
-                if (type == EventType.REFUEL) {
-                    loadRefuelEvent(id)
-                } else if (type == EventType.MAINTENANCE) {
-                    loadMaintenanceEvent(id)
-                } else if (type == EventType.INSPECTION) {
-                    loadInspectionEvent(id)
+                when (type) {
+                    EventType.REFUEL -> {
+                        loadRefuelEvent(id)
+                    }
+
+                    EventType.MAINTENANCE -> {
+                        loadMaintenanceEvent(id)
+                    }
+
+                    EventType.INSPECTION -> {
+                        loadInspectionEvent(id)
+                    }
                 }
             }
         } else {
@@ -429,7 +435,7 @@ class AddEventScreenViewModel @Inject constructor(
 
         dismissDialog()
     }
-    private suspend fun storeInspectionEvent(
+    internal suspend fun storeInspectionEvent(
         inspectionState: InspectionEventFormState,
         baseState: AddEventTypeFormState
     ) {
@@ -464,7 +470,7 @@ class AddEventScreenViewModel @Inject constructor(
         dismissDialog()
     }
 
-    private suspend fun storeMaintenanceEvent(
+    internal suspend fun storeMaintenanceEvent(
         maintenanceState: MaintenanceEventFormState,
         baseState: AddEventTypeFormState
     ) {

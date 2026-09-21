@@ -3,16 +3,24 @@ package com.gasodoapp.gasodo.feature.addevent
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.lifecycle.SavedStateHandle
 import com.gasodoapp.gasodo.core.database.BaseColumns
+import com.gasodoapp.gasodo.core.database.entity.InspectablePart
+import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
+import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
+import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
+import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
+import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.database.projections.DateMileage
 import com.gasodoapp.gasodo.core.database.repository.EventRepository
+import com.gasodoapp.gasodo.core.database.repository.InspectablePartRepository
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceServiceTypeRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
 import com.gasodoapp.gasodo.core.enums.EventType
+import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import com.gasodoapp.gasodo.feature.navigation.ADD_EVENT_TYPE_ARG
@@ -23,14 +31,20 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.UUID
 
 /**
  * Unit tests for AddEventScreenViewModel.
@@ -41,16 +55,20 @@ class AddEventScreenViewModelTest {
     private lateinit var viewModel: AddEventScreenViewModel
     private lateinit var refuelRepository: RefuelRepository
     private lateinit var inspectionRepository: InspectionRepository
+    private lateinit var inspectablePartRepository: InspectablePartRepository
     private lateinit var maintenanceRepository: MaintenanceRepository
     private lateinit var eventRepository: EventRepository
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var locationRepository: SavedLocationRepository
     private lateinit var maintenanceServiceTypeRepository: MaintenanceServiceTypeRepository
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
+        Dispatchers.setMain(StandardTestDispatcher())
         refuelRepository = mockk()
         inspectionRepository = mockk()
+        inspectablePartRepository = mockk()
         maintenanceRepository = mockk()
         eventRepository = mockk()
         savedStateHandle = mockk()
@@ -61,11 +79,13 @@ class AddEventScreenViewModelTest {
         every { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns null
         every { locationRepository.getAll() } returns emptyFlow()
         every { maintenanceServiceTypeRepository.getAll() } returns emptyFlow()
+        every { inspectablePartRepository.getAll() } returns emptyFlow()
         coEvery { eventRepository.getHighestMileage() } returns null
 
         viewModel = AddEventScreenViewModel(
             refuelRepository,
             inspectionRepository,
+            inspectablePartRepository,
             maintenanceRepository,
             eventRepository,
             locationRepository,
@@ -73,6 +93,12 @@ class AddEventScreenViewModelTest {
             savedStateHandle
         )
 
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
@@ -109,6 +135,7 @@ class AddEventScreenViewModelTest {
         val testViewModel = AddEventScreenViewModel(
             refuelRepository,
             inspectionRepository,
+            inspectablePartRepository,
             maintenanceRepository,
             eventRepository,
             locationRepository,
@@ -576,5 +603,548 @@ class AddEventScreenViewModelTest {
         viewModel.storeLocationIfNotExist(location)
 
         coVerify(exactly = 0) { locationRepository.insert(any()) }
+    }
+
+    @Test
+    fun `onInspectedPartChange adds part when not already selected`() {
+        // Given
+        val part = InspectablePart(partName = "Brakes")
+
+        // When
+        viewModel.onInspectedPartChange(part)
+
+        // Then - part is added to inspectedParts
+        assertThat(viewModel.inspectionUiState.value.inspectedParts).contains(part)
+    }
+
+    @Test
+    fun `onInspectedPartChange removes part when already selected`() {
+        // Given
+        val part = InspectablePart(partName = "Brakes")
+        viewModel.onInspectedPartChange(part)
+
+        // When
+        viewModel.onInspectedPartChange(part)
+
+        // Then - part is removed from inspectedParts
+        assertThat(viewModel.inspectionUiState.value.inspectedParts).doesNotContain(part)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onCreateNewInspectablePart adds draft part and selects it`() = runTest {
+        // Given
+        val part = InspectablePart(partName = "Tires")
+
+        // When
+        viewModel.onCreateNewInspectablePart(part)
+
+        // Then - the part is selected in inspectedParts
+        assertThat(viewModel.inspectionUiState.value.inspectedParts).contains(part)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onSubmit with Inspection form stores inspection event`() = runTest {
+        // Given
+        val higherEvent =
+            DateMileage(LocalDate.now().plusDays(1).toEpochDay().times(86400000L), 1235)
+        val lowerEvent =
+            DateMileage(LocalDate.now().minusDays(1).toEpochDay().times(86400000L), 1233)
+        val mileage = 1234L
+        val notes = "inspection notes"
+        val part = InspectablePart(partName = "Brakes")
+
+        viewModel.onFormTypeChange(EventType.INSPECTION)
+        viewModel.mileageField.setTextAndPlaceCursorAtEnd(mileage.toString())
+        viewModel.onInspectedPartChange(part)
+        viewModel.onStatusChange(InspectionStatus.PASS)
+        viewModel.notesField.setTextAndPlaceCursorAtEnd(notes)
+
+        coEvery { eventRepository.getDateWithHigherMileage(mileage) } returns higherEvent
+        coEvery { eventRepository.getDateWithLowerMileage(mileage) } returns lowerEvent
+        coEvery { inspectionRepository.insertWithUsedParts(any(), any()) } returns Unit
+
+        viewModel.onSubmit()
+
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            inspectionRepository.insertWithUsedParts(
+                event = match {
+                    it.status == InspectionStatus.PASS &&
+                            it.base.mileage == mileage &&
+                            it.base.notes == notes
+                },
+                parts = setOf(part)
+            )
+        }
+
+        assertThat(viewModel.dismissDialog.value).isTrue()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onSubmit with existing Inspection id calls update instead of insert`() = runTest {
+        // Given
+        val existingId = UUID.randomUUID()
+        coEvery { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns existingId.toString()
+        coEvery { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.INSPECTION
+        coEvery { inspectionRepository.getByIdWithParts(existingId) } returns null
+
+        val editViewModel = AddEventScreenViewModel(
+            refuelRepository,
+            inspectionRepository,
+            inspectablePartRepository,
+            maintenanceRepository,
+            eventRepository,
+            locationRepository,
+            maintenanceServiceTypeRepository,
+            savedStateHandle
+        )
+
+        val higherEvent =
+            DateMileage(LocalDate.now().plusDays(1).toEpochDay().times(86400000L), 1001)
+        val lowerEvent =
+            DateMileage(LocalDate.now().minusDays(1).toEpochDay().times(86400000L), 999)
+        val mileage = 1000L
+        val part = InspectablePart(partName = "Engine")
+
+        editViewModel.onFormTypeChange(EventType.INSPECTION)
+        editViewModel.mileageField.setTextAndPlaceCursorAtEnd(mileage.toString())
+        editViewModel.onInspectedPartChange(part)
+        editViewModel.onStatusChange(InspectionStatus.CONDITIONAL_PASS)
+
+        coEvery { eventRepository.getDateWithHigherMileage(mileage) } returns higherEvent
+        coEvery { eventRepository.getDateWithLowerMileage(mileage) } returns lowerEvent
+        coEvery { inspectionRepository.update(any(), any()) } returns Unit
+
+        editViewModel.onSubmit()
+
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            inspectionRepository.update(
+                event = match {
+                    it.id == existingId && it.status == InspectionStatus.CONDITIONAL_PASS
+                },
+                parts = setOf(part)
+            )
+        }
+
+        coVerify(exactly = 0) { inspectionRepository.insertWithUsedParts(any(), any()) }
+        assertThat(editViewModel.dismissDialog.value).isTrue()
+    }
+
+    @Test
+    fun `storeInspectionEvent inserts new InspectionEvent and shows confirmation`() = runTest {
+        // Given
+        val baseState = AddEventTypeFormState(
+            date = LocalDate.now().toEpochDay().times(86400000),
+            mileage = 1234,
+            location = null,
+            notes = "inspection notes"
+        )
+        val part = InspectablePart(partName = "Brakes")
+        val inspectionState = InspectionEventFormState(
+            inspectedParts = setOf(part),
+            status = InspectionStatus.PASS
+        )
+
+        coEvery { inspectionRepository.insertWithUsedParts(any(), any()) } returns Unit
+
+        viewModel.storeInspectionEvent(inspectionState, baseState)
+
+        coVerify(exactly = 1) {
+            inspectionRepository.insertWithUsedParts(
+                event = match {
+                    it.status == InspectionStatus.PASS &&
+                            it.base.mileage == 1234L &&
+                            it.base.notes == "inspection notes"
+                },
+                parts = setOf(part)
+            )
+        }
+
+        assertThat(viewModel.dismissDialog.value).isTrue()
+    }
+
+    @Test
+    fun `storeInspectionEvent with existing id calls update`() = runTest {
+        // Given
+        val existingId = UUID.randomUUID()
+        coEvery { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns existingId.toString()
+        coEvery { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.INSPECTION
+        coEvery { inspectionRepository.getByIdWithParts(existingId) } returns null
+
+        val editViewModel = AddEventScreenViewModel(
+            refuelRepository,
+            inspectionRepository,
+            inspectablePartRepository,
+            maintenanceRepository,
+            eventRepository,
+            locationRepository,
+            maintenanceServiceTypeRepository,
+            savedStateHandle
+        )
+
+        val baseState = AddEventTypeFormState(
+            date = LocalDate.now().toEpochDay().times(86400000),
+            mileage = 1000,
+            location = null,
+            notes = "edit notes"
+        )
+        val part = InspectablePart(partName = "Engine")
+        val inspectionState = InspectionEventFormState(
+            inspectedParts = setOf(part),
+            status = InspectionStatus.CONDITIONAL_PASS
+        )
+
+        coEvery { inspectionRepository.update(any(), any()) } returns Unit
+
+        editViewModel.storeInspectionEvent(inspectionState, baseState)
+
+        coVerify(exactly = 1) {
+            inspectionRepository.update(
+                event = match {
+                    it.id == existingId && it.status == InspectionStatus.CONDITIONAL_PASS
+                },
+                parts = setOf(part)
+            )
+        }
+
+        coVerify(exactly = 0) { inspectionRepository.insertWithUsedParts(any(), any()) }
+        assertThat(editViewModel.dismissDialog.value).isTrue()
+    }
+
+    @Test
+    fun `storeInspectablePartIfNotExist inserts part when it has no id`() = runTest {
+        // Given
+        val part = InspectablePart(partName = "Tires")
+        coEvery { inspectablePartRepository.insert(part) } returns 5L
+
+        // When
+        viewModel.storeInspectablePartIfNotExist(part)
+
+        // Then - part id is set from the DB insert
+        assertThat(part.id).isEqualTo(5L)
+        coVerify(exactly = 1) { inspectablePartRepository.insert(part) }
+    }
+
+    @Test
+    fun `storeInspectablePartIfNotExist skips insert when part already has an id`() = runTest {
+        // Given
+        val part = InspectablePart(id = 10L, partName = "Brakes")
+
+        // When
+        viewModel.storeInspectablePartIfNotExist(part)
+
+        // Then - no insert is performed
+        coVerify(exactly = 0) { inspectablePartRepository.insert(any()) }
+    }
+
+    @Test
+    fun `storeMaintenanceEvent inserts MaintenanceEvent with used services`() = runTest {
+        // Given
+        val baseState = AddEventTypeFormState(
+            date = LocalDate.now().toEpochDay().times(86400000),
+            mileage = 1500,
+            location = null,
+            notes = "oil change"
+        )
+        val serviceType = MaintenanceServiceType(serviceName = "Oil Change")
+        val maintenanceState = MaintenanceEventFormState(
+            doneWork = setOf(serviceType),
+            cost = BigDecimal("49.99")
+        )
+
+        coEvery { maintenanceRepository.insertWithUsedServices(any(), any()) } returns Unit
+
+        viewModel.storeMaintenanceEvent(maintenanceState, baseState)
+
+        coVerify(exactly = 1) {
+            maintenanceRepository.insertWithUsedServices(
+                event = match {
+                    it.totalCost == BigDecimal("49.99") &&
+                            it.base.mileage == 1500L &&
+                            it.base.notes == "oil change"
+                },
+                services = setOf(serviceType)
+            )
+        }
+
+        assertThat(viewModel.dismissDialog.value).isTrue()
+    }
+
+    @Test
+    fun `storeMaintenanceEvent with existing id calls update`() = runTest {
+        // Given
+        val existingId = UUID.randomUUID()
+        coEvery { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns existingId.toString()
+        coEvery { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.MAINTENANCE
+        coEvery { maintenanceRepository.getByIdWithServiceTypes(existingId) } returns null
+
+        val editViewModel = AddEventScreenViewModel(
+            refuelRepository,
+            inspectionRepository,
+            inspectablePartRepository,
+            maintenanceRepository,
+            eventRepository,
+            locationRepository,
+            maintenanceServiceTypeRepository,
+            savedStateHandle
+        )
+
+        val baseState = AddEventTypeFormState(
+            date = LocalDate.now().toEpochDay().times(86400000),
+            mileage = 2000,
+            location = null,
+            notes = "edit work"
+        )
+        val serviceType = MaintenanceServiceType(serviceName = "Brake Pads")
+        val maintenanceState = MaintenanceEventFormState(
+            doneWork = setOf(serviceType),
+            cost = BigDecimal("120.00")
+        )
+
+        coEvery { maintenanceRepository.update(any(), any()) } returns Unit
+
+        editViewModel.storeMaintenanceEvent(maintenanceState, baseState)
+
+        coVerify(exactly = 1) {
+            maintenanceRepository.update(
+                event = match {
+                    it.id == existingId && it.totalCost == BigDecimal("120.00")
+                },
+                services = setOf(serviceType)
+            )
+        }
+
+        coVerify(exactly = 0) { maintenanceRepository.insertWithUsedServices(any(), any()) }
+        assertThat(editViewModel.dismissDialog.value).isTrue()
+    }
+
+    @Test
+    fun `storeMaintenanceEvent stores draft service types before insert`() = runTest {
+        // Given - a draft service type that is selected in doneWork
+        val draftType = MaintenanceServiceType(serviceName = "New Service")
+        viewModel.onCreateNewServiceType(draftType)
+        val baseState = AddEventTypeFormState(
+            date = LocalDate.now().toEpochDay().times(86400000),
+            mileage = 1800,
+            location = null,
+            notes = ""
+        )
+        val maintenanceState = MaintenanceEventFormState(
+            doneWork = setOf(draftType),
+            cost = BigDecimal("75.00")
+        )
+
+        coEvery { maintenanceServiceTypeRepository.insert(draftType) } returns 7L
+        coEvery { maintenanceRepository.insertWithUsedServices(any(), any()) } returns Unit
+
+        viewModel.storeMaintenanceEvent(maintenanceState, baseState)
+
+        // Then - the draft service type id is set from the DB
+        assertThat(draftType.id).isEqualTo(7L)
+        coVerify(exactly = 1) { maintenanceServiceTypeRepository.insert(draftType) }
+        coVerify(exactly = 1) { maintenanceRepository.insertWithUsedServices(any(), any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `loadInspectionEvent populates parts and base state when editing`() = runTest {
+        // Given
+        val existingId = UUID.randomUUID()
+        coEvery { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns existingId.toString()
+        coEvery { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.INSPECTION
+
+        val part = InspectablePart(id = 3L, partName = "Brakes")
+        val inspectionEvent = InspectionEvent(
+            id = existingId,
+            base = BaseColumns(
+                date = LocalDate.now().toEpochDay().times(86400000),
+                mileage = 2000,
+                savedLocationId = null,
+                notes = "Inspection notes"
+            ),
+            status = InspectionStatus.PASS
+        )
+        coEvery { inspectionRepository.getByIdWithParts(existingId) } returns
+                InspectionEventWithParts(event = inspectionEvent, parts = listOf(part))
+        coEvery { eventRepository.getHighestMileage() } returns null
+
+        val editViewModel = AddEventScreenViewModel(
+            refuelRepository,
+            inspectionRepository,
+            inspectablePartRepository,
+            maintenanceRepository,
+            eventRepository,
+            locationRepository,
+            maintenanceServiceTypeRepository,
+            savedStateHandle
+        )
+
+        advanceUntilIdle()
+
+        // Then - base state reflects the loaded event
+        assertThat(editViewModel.baseUiState.value.type).isEqualTo(EventType.INSPECTION)
+        assertThat(editViewModel.baseUiState.value.mileage).isEqualTo(2000L)
+        assertThat(editViewModel.baseUiState.value.notes).isEqualTo("Inspection notes")
+
+        // And - inspected parts are populated
+        assertThat(editViewModel.inspectionUiState.value.inspectedParts).contains(part)
+    }
+
+    @Test
+    fun `storeMaintenanceServiceTypeIfNotExist inserts type when it has no id`() = runTest {
+        // Given
+        val type = MaintenanceServiceType(serviceName = "New Service")
+        coEvery { maintenanceServiceTypeRepository.insert(type) } returns 5L
+
+        // When
+        viewModel.storeMaintenanceServiceTypeIfNotExist(type)
+
+        // Then - type id is set from the DB insert
+        assertThat(type.id).isEqualTo(5L)
+        coVerify(exactly = 1) { maintenanceServiceTypeRepository.insert(type) }
+    }
+
+    @Test
+    fun `storeMaintenanceServiceTypeIfNotExist skips insert when type already has an id`() =
+        runTest {
+            // Given
+            val type = MaintenanceServiceType(id = 10L, serviceName = "Existing Service")
+
+            // When
+            viewModel.storeMaintenanceServiceTypeIfNotExist(type)
+
+            // Then - no insert is performed
+            coVerify(exactly = 0) { maintenanceServiceTypeRepository.insert(any()) }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `loadRefuelEvent populates fields when editing`() = runTest {
+        // Given
+        val existingId = UUID.randomUUID()
+        coEvery { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns existingId.toString()
+        coEvery { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.REFUEL
+
+        val refuelEvent = RefuelEvent(
+            id = existingId,
+            base = BaseColumns(
+                date = LocalDate.now().toEpochDay().times(86400000),
+                mileage = 3000,
+                savedLocationId = null,
+                notes = "refuel notes"
+            ),
+            amountLiters = BigDecimal("40.00"),
+            pricePerLiter = BigDecimal("1.80"),
+            totalCost = BigDecimal("72.00"),
+            paymentMethod = PaymentMethod.MOBILE_PAYMENT,
+            fullFillUp = true
+        )
+        coEvery { refuelRepository.getById(existingId) } returns refuelEvent
+        coEvery { eventRepository.getHighestMileage() } returns null
+
+        val editViewModel = AddEventScreenViewModel(
+            refuelRepository,
+            inspectionRepository,
+            inspectablePartRepository,
+            maintenanceRepository,
+            eventRepository,
+            locationRepository,
+            maintenanceServiceTypeRepository,
+            savedStateHandle
+        )
+
+        advanceUntilIdle()
+
+        // Then - base state reflects the loaded event
+        assertThat(editViewModel.baseUiState.value.type).isEqualTo(EventType.REFUEL)
+        assertThat(editViewModel.baseUiState.value.mileage).isEqualTo(3000L)
+        assertThat(editViewModel.baseUiState.value.notes).isEqualTo("refuel notes")
+
+        // And - refuel state is populated
+        assertThat(editViewModel.refuelUiState.value.amount).isEqualTo(BigDecimal("40.00"))
+        assertThat(editViewModel.refuelUiState.value.pricePerLiter).isEqualTo(BigDecimal("1.80"))
+        assertThat(editViewModel.refuelUiState.value.cost).isEqualTo(BigDecimal("72.00"))
+        assertThat(editViewModel.refuelUiState.value.paymentMethod)
+            .isEqualTo(PaymentMethod.MOBILE_PAYMENT)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `loadMaintenanceEvent populates fields when editing`() = runTest {
+        // Given
+        val existingId = UUID.randomUUID()
+        coEvery { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns existingId.toString()
+        coEvery { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.MAINTENANCE
+
+        val serviceType = MaintenanceServiceType(id = 3L, serviceName = "Oil Change")
+        val maintenanceEvent = MaintenanceEvent(
+            id = existingId,
+            base = BaseColumns(
+                date = LocalDate.now().toEpochDay().times(86400000),
+                mileage = 4000,
+                savedLocationId = null,
+                notes = "maintenance notes"
+            ),
+            totalCost = BigDecimal("95.50")
+        )
+        coEvery { maintenanceRepository.getByIdWithServiceTypes(existingId) } returns
+                MaintenanceEventWithServices(
+                    event = maintenanceEvent,
+                    services = listOf(serviceType)
+                )
+        coEvery { eventRepository.getHighestMileage() } returns null
+
+        val editViewModel = AddEventScreenViewModel(
+            refuelRepository,
+            inspectionRepository,
+            inspectablePartRepository,
+            maintenanceRepository,
+            eventRepository,
+            locationRepository,
+            maintenanceServiceTypeRepository,
+            savedStateHandle
+        )
+
+        advanceUntilIdle()
+
+        // Then - base state reflects the loaded event
+        assertThat(editViewModel.baseUiState.value.type).isEqualTo(EventType.MAINTENANCE)
+        assertThat(editViewModel.baseUiState.value.mileage).isEqualTo(4000L)
+        assertThat(editViewModel.baseUiState.value.notes).isEqualTo("maintenance notes")
+
+        // And - maintenance state is populated
+        assertThat(editViewModel.maintenanceUiState.value.cost).isEqualTo(BigDecimal("95.50"))
+        assertThat(editViewModel.maintenanceUiState.value.doneWork).contains(serviceType)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onSubmit with Maintenance validation failure sets hasError`() = runTest {
+        // Given - set form type to MAINTENANCE
+        viewModel.onFormTypeChange(EventType.MAINTENANCE)
+        viewModel.mileageField.setTextAndPlaceCursorAtEnd("1000")
+
+        // Mock a higher mileage event with earlier date to trigger validation failure
+        val earlierDate = LocalDate.now().minusDays(1).toEpochDay().times(86400000)
+        val higherEvent = DateMileage(earlierDate, 1500L)
+        coEvery { eventRepository.getDateWithHigherMileage(1000L) } returns higherEvent
+        coEvery { eventRepository.getDateWithLowerMileage(1000L) } returns null
+
+        viewModel.onSubmit()
+
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { eventRepository.getDateWithHigherMileage(1000L) }
+
+        // Then - validation failed, so hasError is set and nothing is stored
+        assertThat(viewModel.hasError.value).isTrue()
+        coVerify(exactly = 0) { maintenanceRepository.insertWithUsedServices(any(), any()) }
+        coVerify(exactly = 0) { maintenanceRepository.update(any(), any()) }
     }
 }

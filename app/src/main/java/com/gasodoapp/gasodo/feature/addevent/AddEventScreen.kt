@@ -68,6 +68,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.enums.EventType
@@ -101,6 +102,7 @@ fun AddEventScreen(
     val formType = viewModel.type
     val locations by viewModel.locations.collectAsStateWithLifecycle(initialValue = emptyList())
     val serviceTypes by viewModel.serviceTypes.collectAsStateWithLifecycle(initialValue = emptyList())
+    val inspectableParts by viewModel.inspectableParts.collectAsStateWithLifecycle(initialValue = emptyList())
 
     val view = LocalView.current
     val darkIcons = !isSystemInDarkTheme()
@@ -156,6 +158,7 @@ fun AddEventScreen(
             inspectionState,
             locations,
             serviceTypes,
+            inspectableParts,
             hasError,
         )
     }
@@ -171,6 +174,7 @@ private fun FormContent(
     inspectionState: InspectionEventFormState,
     locations: List<SavedLocation>,
     serviceTypes: List<MaintenanceServiceType>,
+    inspectableParts: List<InspectablePart>,
     hasError: Boolean
 ) {
     Column(
@@ -216,6 +220,9 @@ private fun FormContent(
             EventType.INSPECTION -> {
                 InspectionForm(
                     state = inspectionState,
+                    inspectableParts = inspectableParts,
+                    onInspectedPartChange = viewModel::onInspectedPartChange,
+                    onCreateNewInspectablePart = viewModel::onCreateNewInspectablePart,
                     onStatusChange = viewModel::onStatusChange
                 )
             }
@@ -514,13 +521,15 @@ fun RefuelForm(
 @Composable
 fun InspectionForm(
     state: InspectionEventFormState,
+    inspectableParts: List<InspectablePart>,
+    onInspectedPartChange: (InspectablePart) -> Unit,
+    onCreateNewInspectablePart: (InspectablePart) -> Unit,
     onStatusChange: (InspectionStatus) -> Unit
 ) {
+    val searchTextFieldState = rememberTextFieldState()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
             "Inspection Details",
@@ -528,17 +537,48 @@ fun InspectionForm(
         )
 
         // Status Selector (Radio buttons)
-        state.status?.let { currentStatus ->
-            RadioGroup(
-                options = InspectionStatus.entries,
-                selectedOption = currentStatus,
-                onSelectionChanged = onStatusChange
+        RadioGroup(
+            options = InspectionStatus.entries,
+            selectedOption = state.status,
+            onSelectionChanged = onStatusChange
+        )
+
+        Text(
+            "Select Inspected Parts",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        OutlinedTextField(
+            state = searchTextFieldState,
+            label = { Text("Search or enter new name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        if (searchTextFieldState.text.isNotEmpty())
+            ListItem(
+                leadingContent = { Icon(imageVector = add, contentDescription = add.name) },
+                content = { Text("Create new item") },
+                onClick = {
+                    onCreateNewInspectablePart(InspectablePart(partName = searchTextFieldState.text.toString()))
+                    searchTextFieldState.clearText()
+                }
             )
-        } ?: run {
-            RadioGroup(
-                options = InspectionStatus.entries,
-                selectedOption = null,
-                onSelectionChanged = onStatusChange
+
+        val filteredParts = inspectableParts.filter {
+            it.partName.contains(
+                searchTextFieldState.text,
+                true
+            )
+        }
+        for (part in filteredParts) {
+            ListItem(
+                leadingContent = {
+                    Checkbox(
+                        checked = part in state.inspectedParts,
+                        onCheckedChange = { onInspectedPartChange(part) })
+                },
+                content = { Text(part.partName) },
+                onClick = { onInspectedPartChange(part) }
             )
         }
     }

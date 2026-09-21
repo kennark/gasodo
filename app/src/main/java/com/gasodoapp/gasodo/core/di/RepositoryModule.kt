@@ -2,6 +2,8 @@ package com.gasodoapp.gasodo.core.di
 
 import com.gasodoapp.gasodo.core.database.repository.EventRepository
 import com.gasodoapp.gasodo.core.database.repository.EventRepositoryImpl
+import com.gasodoapp.gasodo.core.database.repository.InspectablePartRepository
+import com.gasodoapp.gasodo.core.database.repository.InspectablePartRepositoryImpl
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepositoryImpl
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
@@ -57,4 +59,10 @@ abstract class RepositoryModule {
     abstract fun bindMaintenanceServiceTypeRepository(
         impl: MaintenanceServiceTypeRepositoryImpl
     ): MaintenanceServiceTypeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindInspectablePartRepository(
+        impl: InspectablePartRepositoryImpl
+    ): InspectablePartRepository
 }

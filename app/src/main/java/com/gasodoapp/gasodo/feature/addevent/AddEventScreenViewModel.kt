@@ -9,12 +9,16 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gasodoapp.gasodo.core.database.BaseColumns
+import com.gasodoapp.gasodo.core.database.entity.InspectablePart
+import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
+import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.database.repository.EventRepository
+import com.gasodoapp.gasodo.core.database.repository.InspectablePartRepository
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceServiceTypeRepository
@@ -43,6 +47,7 @@ import javax.inject.Inject
 class AddEventScreenViewModel @Inject constructor(
     private val refuelRepository: RefuelRepository,
     private val inspectionRepository: InspectionRepository,
+    private val inspectablePartRepository: InspectablePartRepository,
     private val maintenanceRepository: MaintenanceRepository,
     private val eventRepository: EventRepository,
     private val locationRepository: SavedLocationRepository,
@@ -78,6 +83,14 @@ class AddEventScreenViewModel @Inject constructor(
         .map { list -> list.sortedBy { it !in _maintenanceUiState.value.doneWork } }
     val serviceTypes =
         combine(_dbServiceTypes, _draftServiceTypes) { dbItems, drafts ->
+            drafts + dbItems
+        }
+
+    private val _draftInspectableParts = MutableStateFlow<List<InspectablePart>>(emptyList())
+    private val _dbInspectableParts = inspectablePartRepository.getAll()
+        .map { list -> list.sortedBy { it !in _inspectionUiState.value.inspectedParts } }
+    val inspectableParts =
+        combine(_dbInspectableParts, _draftInspectableParts) { dbItems, drafts ->
             drafts + dbItems
         }
 
@@ -137,6 +150,23 @@ class AddEventScreenViewModel @Inject constructor(
         onServiceTypeChange(value)
     }
 
+    fun onInspectedPartChange(value: InspectablePart) {
+        _inspectionUiState.update { current ->
+            current.copy(
+                inspectedParts = if (value in current.inspectedParts) {
+                    current.inspectedParts.minus(value)
+                } else {
+                    current.inspectedParts.plus(value)
+                }
+            )
+        }
+    }
+
+    fun onCreateNewInspectablePart(value: InspectablePart) {
+        _draftInspectableParts.update { it.plus(value) }
+        onInspectedPartChange(value)
+    }
+
     init {
         if (id != null) {
             viewModelScope.launch {
@@ -144,6 +174,8 @@ class AddEventScreenViewModel @Inject constructor(
                     loadRefuelEvent(id)
                 } else if (type == EventType.MAINTENANCE) {
                     loadMaintenanceEvent(id)
+                } else if (type == EventType.INSPECTION) {
+                    loadInspectionEvent(id)
                 }
             }
         } else {
@@ -188,6 +220,40 @@ class AddEventScreenViewModel @Inject constructor(
 
             eventWithServices.event.base.savedLocationId?.let { id ->
                 locationRepository.getById(id)?.let {
+                    onLocationChange(it)
+                }
+            }
+        }
+    }
+
+    private suspend fun loadInspectionEvent(id: UUID) {
+        val eventWithParts: InspectionEventWithParts? =
+            inspectionRepository.getByIdWithParts(id)
+
+        if (eventWithParts != null) {
+            _baseUiState.value = AddEventTypeFormState(
+                type = EventType.INSPECTION,
+                mileage = eventWithParts.event.base.mileage,
+                date = eventWithParts.event.base.date,
+                notes = eventWithParts.event.base.notes
+            )
+
+            _inspectionUiState.value = InspectionEventFormState(
+                inspectedParts = eventWithParts.parts.toSet()
+            )
+
+            mileageField.setTextAndPlaceCursorAtEnd(
+                eventWithParts.event.base.mileage?.toString() ?: ""
+            )
+
+            notesField.setTextAndPlaceCursorAtEnd(
+                eventWithParts.event.base.notes
+            )
+
+            datePickerState.selectedDateMillis = eventWithParts.event.base.date
+
+            eventWithParts.event.base.savedLocationId?.let { locationId ->
+                locationRepository.getById(locationId)?.let {
                     onLocationChange(it)
                 }
             }
@@ -363,11 +429,39 @@ class AddEventScreenViewModel @Inject constructor(
 
         dismissDialog()
     }
-    private fun storeInspectionEvent(
+    private suspend fun storeInspectionEvent(
         inspectionState: InspectionEventFormState,
         baseState: AddEventTypeFormState
     ) {
-        // TODO: Implement inspection event storage
+        // Persist any draft parts that are newly created in the UI
+        for (part in _draftInspectableParts.value) {
+            if (part in inspectionState.inspectedParts)
+                storeInspectablePartIfNotExist(part)
+        }
+
+        val baseColumns = BaseColumns(
+            date = baseState.date,
+            mileage = baseState.mileage,
+            savedLocationId = baseState.location?.id,
+            notes = baseState.notes
+        )
+
+        if (id != null) {
+            val event = InspectionEvent(
+                id = id,
+                base = baseColumns,
+                status = inspectionState.status
+            )
+            inspectionRepository.update(event, inspectionState.inspectedParts)
+        } else {
+            val event = InspectionEvent(
+                base = baseColumns,
+                status = inspectionState.status
+            )
+            inspectionRepository.insertWithUsedParts(event, inspectionState.inspectedParts)
+        }
+
+        dismissDialog()
     }
 
     private suspend fun storeMaintenanceEvent(
@@ -416,6 +510,14 @@ class AddEventScreenViewModel @Inject constructor(
             type.id = maintenanceServiceTypeRepository.insert(type)
     }
 
+    internal suspend fun storeInspectablePartIfNotExist(
+        part: InspectablePart
+    ) {
+        if (part.id == 0L)
+        // Set id to newly created id in DB
+            part.id = inspectablePartRepository.insert(part)
+    }
+
     private fun dismissDialog() {
         _dismissDialog.value = true
     }
@@ -446,5 +548,6 @@ data class MaintenanceEventFormState(
 )
 
 data class InspectionEventFormState(
+    val inspectedParts: Set<InspectablePart> = emptySet(),
     val status: InspectionStatus? = null
 )

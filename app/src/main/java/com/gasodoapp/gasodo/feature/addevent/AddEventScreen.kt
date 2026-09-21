@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.input.byValue
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
@@ -47,6 +48,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.getSelectedDate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,6 +64,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
@@ -532,21 +535,46 @@ fun InspectionForm(
             .fillMaxWidth()
     ) {
         Text(
-            "Inspection Details",
+            "Inspection Result",
             style = MaterialTheme.typography.titleMedium
         )
+        Spacer(Modifier.height(12.dp))
 
-        // Status Selector (Radio buttons)
-        RadioGroup(
-            options = InspectionStatus.entries,
-            selectedOption = state.status,
-            onSelectionChanged = onStatusChange
-        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+        ) {
+            InspectionStatus.entries.forEachIndexed { index, status ->
+                ToggleButton(
+                    checked = status == state.status,
+                    onCheckedChange = { onStatusChange(status) },
+                    shapes =
+                        when (index) {
+                            0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                            InspectionStatus.entries.lastIndex ->
+                                ButtonGroupDefaults.connectedTrailingButtonShapes()
+
+                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = status.toString(),
+                        softWrap = false,
+                        maxLines = 1,
+                        overflow = TextOverflow.Visible,
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
 
         Text(
-            "Select Inspected Parts",
+            "Select Inspected Areas",
             style = MaterialTheme.typography.titleMedium
         )
+
+        Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
             state = searchTextFieldState,

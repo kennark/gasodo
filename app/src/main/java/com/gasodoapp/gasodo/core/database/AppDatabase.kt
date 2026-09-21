@@ -4,17 +4,21 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.gasodoapp.gasodo.core.database.dao.EventDao
+import com.gasodoapp.gasodo.core.database.dao.InspectablePartDao
 import com.gasodoapp.gasodo.core.database.dao.InspectionEventDao
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceEventDao
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceServiceTypeDao
 import com.gasodoapp.gasodo.core.database.dao.RefuelEventDao
 import com.gasodoapp.gasodo.core.database.dao.SavedLocationDao
+import com.gasodoapp.gasodo.core.database.dao.UsedInspectablePartDao
 import com.gasodoapp.gasodo.core.database.dao.UsedMaintenanceServiceDao
+import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
+import com.gasodoapp.gasodo.core.database.entity.UsedInspectablePart
 import com.gasodoapp.gasodo.core.database.entity.UsedMaintenanceService
 import com.gasodoapp.gasodo.core.database.views.AllEventsBaseColumnsView
 import com.gasodoapp.gasodo.core.utils.DbConverterUtils
@@ -26,12 +30,14 @@ import com.gasodoapp.gasodo.core.utils.DbConverterUtils
         MaintenanceEvent::class,
         InspectionEvent::class,
         MaintenanceServiceType::class,
-        UsedMaintenanceService::class
+        UsedMaintenanceService::class,
+        InspectablePart::class,
+        UsedInspectablePart::class,
     ],
     views = [
         AllEventsBaseColumnsView::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(DbConverterUtils::class)
@@ -44,4 +50,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
     abstract fun maintenanceServiceTypeDao(): MaintenanceServiceTypeDao
     abstract fun usedMaintenanceServiceDao(): UsedMaintenanceServiceDao
+    abstract fun inspectablePartDao(): InspectablePartDao
+    abstract fun usedInspectablePartDao(): UsedInspectablePartDao
 }

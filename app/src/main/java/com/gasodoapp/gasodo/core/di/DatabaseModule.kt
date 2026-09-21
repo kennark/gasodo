@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.room.Room
 import com.gasodoapp.gasodo.core.database.AppDatabase
 import com.gasodoapp.gasodo.core.database.dao.EventDao
+import com.gasodoapp.gasodo.core.database.dao.InspectablePartDao
 import com.gasodoapp.gasodo.core.database.dao.InspectionEventDao
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceEventDao
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceServiceTypeDao
 import com.gasodoapp.gasodo.core.database.dao.RefuelEventDao
 import com.gasodoapp.gasodo.core.database.dao.SavedLocationDao
+import com.gasodoapp.gasodo.core.database.dao.UsedInspectablePartDao
 import com.gasodoapp.gasodo.core.database.dao.UsedMaintenanceServiceDao
 import com.gasodoapp.gasodo.core.database.seed.SeedCallbacks
 import dagger.Module
@@ -68,4 +70,12 @@ object DatabaseModule {
     @Provides
     fun provideUsedMaintenanceServiceDao(database: AppDatabase): UsedMaintenanceServiceDao =
         database.usedMaintenanceServiceDao()
+
+    @Provides
+    fun provideInspectablePartDao(database: AppDatabase): InspectablePartDao =
+        database.inspectablePartDao()
+
+    @Provides
+    fun provideUsedInspectablePartDao(database: AppDatabase): UsedInspectablePartDao =
+        database.usedInspectablePartDao()
 }

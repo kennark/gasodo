@@ -1,12 +1,15 @@
 package com.gasodoapp.gasodo.core.database.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
+import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
@@ -34,6 +37,14 @@ interface InspectionEventDao {
     @Query("DELETE FROM inspection_events WHERE id = :id")
     suspend fun deleteById(id: UUID)
 
+    @Transaction
     @Query("SELECT * FROM inspection_events ORDER BY date DESC")
+    fun getAllWithPartsOrderByDate(): PagingSource<Int, InspectionEventWithParts>
+
+    @Transaction
+    @Query("SELECT * FROM inspection_events WHERE id = :id")
+    suspend fun getByIdWithParts(id: UUID): InspectionEventWithParts?
+
+    @Query("SELECT * FROM inspection_events")
     fun getAll(): Flow<List<InspectionEvent>>
 }

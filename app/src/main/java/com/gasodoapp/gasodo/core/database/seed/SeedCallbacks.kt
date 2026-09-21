@@ -20,6 +20,7 @@ class SeedCallbacks(
         super.onCreate(db)
         scope.launch(Dispatchers.IO) {
             provider.get().maintenanceServiceTypeDao().insertAll(MaintenanceServiceTypesSeed.list)
+            provider.get().inspectablePartDao().insertAll(InspectablePartsSeed.list)
         }
     }
 }

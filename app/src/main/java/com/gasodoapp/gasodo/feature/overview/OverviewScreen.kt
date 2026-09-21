@@ -73,7 +73,7 @@ fun OverviewScreen(
 
     val maintenanceData by viewModel.maintenanceData.collectAsState()
     val totalMaintenanceCost by viewModel.totalMaintenanceCost.collectAsState()
-    val maintenanceActions by viewModel.maintenanceAction.collectAsState()
+    val maintenanceActions by viewModel.maintenanceActions.collectAsState()
     val topMaintenanceActions by viewModel.topMaintenanceActions.collectAsState()
 
     TopBarScaffold(

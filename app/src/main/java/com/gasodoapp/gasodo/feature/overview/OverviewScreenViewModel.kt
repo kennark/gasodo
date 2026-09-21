@@ -58,7 +58,7 @@ class OverviewScreenViewModel @Inject constructor(
     val totalMaintenanceCost = _totalMaintenanceCost.asStateFlow()
 
     private val _maintenanceActions = MutableStateFlow<List<MaintenanceServiceType>>(emptyList())
-    val maintenanceAction = _maintenanceActions.asStateFlow()
+    val maintenanceActions = _maintenanceActions.asStateFlow()
 
     private val _topMaintenanceActions = MutableStateFlow<List<TopMaintenanceAction>>(emptyList())
     val topMaintenanceActions = _topMaintenanceActions.asStateFlow()
@@ -101,7 +101,7 @@ class OverviewScreenViewModel @Inject constructor(
         )
     }
 
-    private fun loadRefuelData(start: Long?, end: Long?) {
+    internal fun loadRefuelData(start: Long?, end: Long?) {
         viewModelScope.launch {
             if (start != null && end != null) {
                 _isLoading.value = true
@@ -119,7 +119,7 @@ class OverviewScreenViewModel @Inject constructor(
     }
 
 
-    private fun calculateRefuelStatistics(data: List<RefuelEvent>) {
+    internal fun calculateRefuelStatistics(data: List<RefuelEvent>) {
         if (data.isNotEmpty()) {
             _totalRefuelCost.value = data.sumOf { it.totalCost ?: BigDecimal.ZERO }
             _totalLiters.value = data.sumOf { it.amountLiters ?: BigDecimal.ZERO }
@@ -191,7 +191,7 @@ class OverviewScreenViewModel @Inject constructor(
         }
     }
 
-    private fun loadMaintenanceData(start: Long?, end: Long?) {
+    internal fun loadMaintenanceData(start: Long?, end: Long?) {
         viewModelScope.launch {
             if (start != null && end != null) {
                 _isLoading.value = true
@@ -208,7 +208,7 @@ class OverviewScreenViewModel @Inject constructor(
         }
     }
 
-    private fun calculateMaintenanceStatistics(data: List<MaintenanceEventWithServices>) {
+    internal fun calculateMaintenanceStatistics(data: List<MaintenanceEventWithServices>) {
         if (data.isNotEmpty()) {
             _totalMaintenanceCost.value = data.sumOf { it.event.totalCost ?: BigDecimal.ZERO }
             _maintenanceActions.value = data.flatMap { it.services }

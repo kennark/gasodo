@@ -4,12 +4,16 @@ package com.gasodoapp.gasodo.feature.overview
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.gasodoapp.gasodo.core.database.BaseColumns
+import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
+import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
+import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
+import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coVerify
@@ -39,6 +43,7 @@ class OverviewScreenViewModelTest {
     private lateinit var viewModel: OverviewScreenViewModel
     private lateinit var refuelRepository: RefuelRepository
     private lateinit var maintenanceRepository: MaintenanceRepository
+    private lateinit var inspectionRepository: InspectionRepository
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
@@ -49,12 +54,15 @@ class OverviewScreenViewModelTest {
 
         refuelRepository = mockk()
         maintenanceRepository = mockk()
+        inspectionRepository = mockk()
 
         // Default to empty flows so the ViewModel's init block can run without stubbing.
         every { refuelRepository.getAllWithinTime(any(), any()) } returns flowOf(emptyList())
         every { maintenanceRepository.getAllWithinTime(any(), any()) } returns flowOf(emptyList())
+        every { inspectionRepository.getAllWithinTime(any(), any()) } returns flowOf(emptyList())
 
-        viewModel = OverviewScreenViewModel(refuelRepository, maintenanceRepository)
+        viewModel =
+            OverviewScreenViewModel(refuelRepository, maintenanceRepository, inspectionRepository)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -88,6 +96,12 @@ class OverviewScreenViewModelTest {
         services = services.toList()
     )
 
+    private fun inspectionEvent(status: InspectionStatus?): InspectionEventWithParts =
+        InspectionEventWithParts(
+            event = InspectionEvent(base = BaseColumns(), status = status),
+            parts = emptyList()
+        )
+
     // endregion
 
     // region Initial state
@@ -96,6 +110,7 @@ class OverviewScreenViewModelTest {
     fun `initial state has empty data and zero totals`() {
         assertThat(viewModel.refuelData.value).isEmpty()
         assertThat(viewModel.maintenanceData.value).isEmpty()
+        assertThat(viewModel.inspectionData.value).isEmpty()
         assertThat(viewModel.totalRefuelCost.value).isEqualTo(BigDecimal.ZERO)
         assertThat(viewModel.totalLiters.value).isEqualTo(BigDecimal.ZERO)
         assertThat(viewModel.totalMileage.value).isNull()
@@ -105,6 +120,13 @@ class OverviewScreenViewModelTest {
         assertThat(viewModel.totalMaintenanceCost.value).isEqualTo(BigDecimal.ZERO)
         assertThat(viewModel.maintenanceActions.value).isEmpty()
         assertThat(viewModel.topMaintenanceActions.value).isEmpty()
+        assertThat(viewModel.inspectionCount.value).isEqualTo(0)
+        assertThat(viewModel.passCount.value).isEqualTo(0)
+        assertThat(viewModel.failCount.value).isEqualTo(0)
+        assertThat(viewModel.conditionalPassCount.value).isEqualTo(0)
+        assertThat(viewModel.passPercentage.value).isEqualTo(BigDecimal.ZERO)
+        assertThat(viewModel.failPercentage.value).isEqualTo(BigDecimal.ZERO)
+        assertThat(viewModel.conditionalPassPercentage.value).isEqualTo(BigDecimal.ZERO)
     }
 
     @Test
@@ -454,6 +476,66 @@ class OverviewScreenViewModelTest {
 
     // endregion
 
+    // region Inspection data loading
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `loadInspectionData collects data and clears loading state`() = runTest {
+        val data = listOf(
+            inspectionEvent(InspectionStatus.PASS),
+            inspectionEvent(InspectionStatus.FAIL)
+        )
+        every { inspectionRepository.getAllWithinTime(any(), any()) } returns flowOf(data)
+
+        viewModel.loadInspectionData(0L, 1000L)
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.inspectionData.value).isEqualTo(data)
+        assertThat(viewModel.inspectionCount.value).isEqualTo(2)
+        assertThat(viewModel.isLoading.value).isFalse()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `loadInspectionData does nothing when end is null`() = runTest {
+        // The init block already triggered one call; a null-bound call must not add another.
+        viewModel.loadInspectionData(0L, null)
+
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { inspectionRepository.getAllWithinTime(any(), any()) }
+        assertThat(viewModel.inspectionData.value).isEmpty()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `loadInspectionData does nothing when start is null`() = runTest {
+        // The init block already triggered one call; a null-bound call must not add another.
+        viewModel.loadInspectionData(null, 0L)
+
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { inspectionRepository.getAllWithinTime(any(), any()) }
+        assertThat(viewModel.inspectionData.value).isEmpty()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `loadInspectionData handles flow error by resetting data`() = runTest {
+        every { inspectionRepository.getAllWithinTime(any(), any()) } returns flow {
+            throw RuntimeException("boom")
+        }
+
+        viewModel.loadInspectionData(0L, 1000L)
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.inspectionData.value).isEmpty()
+    }
+
+    // endregion
+
     // region Maintenance statistics
 
     @Test
@@ -526,11 +608,115 @@ class OverviewScreenViewModelTest {
 
     // endregion
 
+    // region Inspection statistics
+
+    @Test
+    fun `calculateInspectionStatistics counts events by status`() {
+        val data = listOf(
+            inspectionEvent(InspectionStatus.PASS),
+            inspectionEvent(InspectionStatus.PASS),
+            inspectionEvent(InspectionStatus.FAIL),
+            inspectionEvent(InspectionStatus.CONDITIONAL_PASS)
+        )
+
+        viewModel.calculateInspectionStatistics(data)
+
+        assertThat(viewModel.inspectionCount.value).isEqualTo(4)
+        assertThat(viewModel.passCount.value).isEqualTo(2)
+        assertThat(viewModel.failCount.value).isEqualTo(1)
+        assertThat(viewModel.conditionalPassCount.value).isEqualTo(1)
+    }
+
+    @Test
+    fun `calculateInspectionStatistics computes percentages`() {
+        // 2 of 4 = 50.00%, 1 of 4 = 25.00%
+        val data = listOf(
+            inspectionEvent(InspectionStatus.PASS),
+            inspectionEvent(InspectionStatus.PASS),
+            inspectionEvent(InspectionStatus.FAIL),
+            inspectionEvent(InspectionStatus.CONDITIONAL_PASS)
+        )
+
+        viewModel.calculateInspectionStatistics(data)
+
+        assertThat(viewModel.passPercentage.value).isEqualTo(BigDecimal("50.00"))
+        assertThat(viewModel.failPercentage.value).isEqualTo(BigDecimal("25.00"))
+        assertThat(viewModel.conditionalPassPercentage.value).isEqualTo(BigDecimal("25.00"))
+    }
+
+    @Test
+    fun `calculateInspectionStatistics handles all pass`() {
+        val data = listOf(
+            inspectionEvent(InspectionStatus.PASS),
+            inspectionEvent(InspectionStatus.PASS),
+            inspectionEvent(InspectionStatus.PASS)
+        )
+
+        viewModel.calculateInspectionStatistics(data)
+
+        assertThat(viewModel.inspectionCount.value).isEqualTo(3)
+        assertThat(viewModel.passCount.value).isEqualTo(3)
+        assertThat(viewModel.failCount.value).isEqualTo(0)
+        assertThat(viewModel.conditionalPassCount.value).isEqualTo(0)
+        assertThat(viewModel.passPercentage.value).isEqualTo(BigDecimal("100.00"))
+        assertThat(viewModel.failPercentage.value).isEqualTo(BigDecimal("0.00"))
+        assertThat(viewModel.conditionalPassPercentage.value).isEqualTo(BigDecimal("0.00"))
+    }
+
+    @Test
+    fun `calculateInspectionStatistics calculates with null events`() {
+        val data = listOf(
+            inspectionEvent(InspectionStatus.PASS),
+            inspectionEvent(null),
+            inspectionEvent(InspectionStatus.FAIL)
+        )
+
+        viewModel.calculateInspectionStatistics(data)
+
+        assertThat(viewModel.inspectionCount.value).isEqualTo(3)
+        assertThat(viewModel.passCount.value).isEqualTo(1)
+        assertThat(viewModel.failCount.value).isEqualTo(1)
+        assertThat(viewModel.conditionalPassCount.value).isEqualTo(0)
+    }
+
+    @Test
+    fun `calculateInspectionStatistics handles empty data`() {
+        viewModel.calculateInspectionStatistics(emptyList())
+
+        assertThat(viewModel.inspectionCount.value).isEqualTo(0)
+        assertThat(viewModel.passCount.value).isEqualTo(0)
+        assertThat(viewModel.failCount.value).isEqualTo(0)
+        assertThat(viewModel.conditionalPassCount.value).isEqualTo(0)
+        assertThat(viewModel.passPercentage.value).isEqualTo(BigDecimal.ZERO)
+        assertThat(viewModel.failPercentage.value).isEqualTo(BigDecimal.ZERO)
+        assertThat(viewModel.conditionalPassPercentage.value).isEqualTo(BigDecimal.ZERO)
+    }
+
+    @Test
+    fun `calculateInspectionStatistics handles all events with null`() {
+        val data = listOf(
+            inspectionEvent(null),
+            inspectionEvent(null)
+        )
+
+        viewModel.calculateInspectionStatistics(data)
+
+        assertThat(viewModel.inspectionCount.value).isEqualTo(2)
+        assertThat(viewModel.passCount.value).isEqualTo(0)
+        assertThat(viewModel.failCount.value).isEqualTo(0)
+        assertThat(viewModel.conditionalPassCount.value).isEqualTo(0)
+        assertThat(viewModel.passPercentage.value).isEqualToIgnoringScale(BigDecimal.ZERO)
+        assertThat(viewModel.failPercentage.value).isEqualToIgnoringScale(BigDecimal.ZERO)
+        assertThat(viewModel.conditionalPassPercentage.value).isEqualToIgnoringScale(BigDecimal.ZERO)
+    }
+
+    // endregion
+
     // region Date selection
 
     @OptIn(ExperimentalCoroutinesApi::class, ExperimentalMaterial3Api::class)
     @Test
-    fun `onDateSelected reloads both refuel and maintenance data`() = runTest {
+    fun `onDateSelected reloads refuel, maintenance and inspection data`() = runTest {
         val refuelEvents = listOf(
             refuelEvent(
                 1000L,
@@ -542,10 +728,14 @@ class OverviewScreenViewModelTest {
         )
         val service = MaintenanceServiceType(id = 1, serviceName = "Oil change")
         val maintenanceEvents = listOf(maintenanceEvent(BigDecimal("50"), service))
+        val inspectionEvents = listOf(inspectionEvent(InspectionStatus.PASS))
 
         every { refuelRepository.getAllWithinTime(any(), any()) } returns flowOf(refuelEvents)
         every { maintenanceRepository.getAllWithinTime(any(), any()) } returns flowOf(
             maintenanceEvents
+        )
+        every { inspectionRepository.getAllWithinTime(any(), any()) } returns flowOf(
+            inspectionEvents
         )
 
         viewModel.onDateSelected()
@@ -555,8 +745,10 @@ class OverviewScreenViewModelTest {
         // init block + onDateSelected = 2 calls each
         coVerify(exactly = 2) { refuelRepository.getAllWithinTime(any(), any()) }
         coVerify(exactly = 2) { maintenanceRepository.getAllWithinTime(any(), any()) }
+        coVerify(exactly = 2) { inspectionRepository.getAllWithinTime(any(), any()) }
         assertThat(viewModel.refuelData.value).isEqualTo(refuelEvents)
         assertThat(viewModel.maintenanceData.value).isEqualTo(maintenanceEvents)
+        assertThat(viewModel.inspectionData.value).isEqualTo(inspectionEvents)
     }
 
     // endregion

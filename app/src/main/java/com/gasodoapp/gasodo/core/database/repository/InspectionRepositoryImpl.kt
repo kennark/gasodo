@@ -27,7 +27,7 @@ class InspectionRepositoryImpl @Inject constructor(
     override fun getAll(): Flow<List<InspectionEvent>> =
         dao.getAll()
 
-    override fun getAllPaged(): Flow<PagingData<InspectionEventWithParts>> {
+    override fun getAllByDatePaged(): Flow<PagingData<InspectionEventWithParts>> {
         return Pager(
             config = PagingConfig(
                 pageSize = 20,

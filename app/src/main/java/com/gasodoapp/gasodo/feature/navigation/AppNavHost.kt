@@ -11,6 +11,7 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
 import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.feature.addevent.AddEventScreen
+import com.gasodoapp.gasodo.feature.inspection.InspectionScreen
 import com.gasodoapp.gasodo.feature.maintenance.MaintenanceScreen
 import com.gasodoapp.gasodo.feature.overview.OverviewScreen
 import com.gasodoapp.gasodo.feature.refuel.RefuelScreen
@@ -36,6 +37,9 @@ fun AppNavHost(
                     })
                     BottomBarDestinations.MAINTENANCE -> MaintenanceScreen(onNavigateToEdit = { id: UUID ->
                         navController.navigate(editEventRoute(EventType.MAINTENANCE, id))
+                    })
+                    BottomBarDestinations.INSPECTION -> InspectionScreen(onNavigateToEdit = { id: UUID ->
+                        navController.navigate(editEventRoute(EventType.INSPECTION, id))
                     })
                 }
             }

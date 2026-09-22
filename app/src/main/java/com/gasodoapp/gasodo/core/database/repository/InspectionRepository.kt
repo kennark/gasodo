@@ -12,7 +12,7 @@ import java.util.UUID
  */
 interface InspectionRepository {
     fun getAll(): Flow<List<InspectionEvent>>
-    fun getAllPaged(): Flow<PagingData<InspectionEventWithParts>>
+    fun getAllByDatePaged(): Flow<PagingData<InspectionEventWithParts>>
     suspend fun getById(id: UUID): InspectionEvent?
     suspend fun getByIdWithParts(id: UUID): InspectionEventWithParts?
     suspend fun insert(event: InspectionEvent)

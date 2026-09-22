@@ -82,14 +82,14 @@ class InspectionRepositoryImplTest {
     }
 
     @Test
-    fun `getAllPaged delegates to DAO and returns Flow`() = runTest {
+    fun `getAllByDatePaged delegates to DAO and returns Flow`() = runTest {
         // Arrange
         val pagingSource = mockk<PagingSource<Int, InspectionEventWithParts>>()
         every { pagingSource.registerInvalidatedCallback(any()) } just runs
         every { dao.getAllWithPartsOrderByDate() } returns pagingSource
 
         // Act
-        val result = repository.getAllPaged()
+        val result = repository.getAllByDatePaged()
         result.take(1).collect()
 
         // Assert

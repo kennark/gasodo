@@ -22,4 +22,5 @@ interface InspectionRepository {
         event: InspectionEvent,
         parts: Set<InspectablePart> = emptySet()
     )
+    fun getAllWithinTime(start: Long, end: Long): Flow<List<InspectionEventWithParts>>
 }

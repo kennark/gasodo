@@ -7,9 +7,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
+import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
+import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
+import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +27,8 @@ import javax.inject.Inject
 @HiltViewModel
 class OverviewScreenViewModel @Inject constructor(
     private val refuelRepository: RefuelRepository,
-    private val maintenanceRepository: MaintenanceRepository
+    private val maintenanceRepository: MaintenanceRepository,
+    private val inspectionRepository: InspectionRepository
 ) : ViewModel() {
 
     // Refuel data for the selected period
@@ -63,6 +67,30 @@ class OverviewScreenViewModel @Inject constructor(
     private val _topMaintenanceActions = MutableStateFlow<List<TopMaintenanceAction>>(emptyList())
     val topMaintenanceActions = _topMaintenanceActions.asStateFlow()
 
+    private val _inspectionData = MutableStateFlow<List<InspectionEventWithParts>>(emptyList())
+    val inspectionData = _inspectionData.asStateFlow()
+
+    private val _inspectionCount = MutableStateFlow(0)
+    val inspectionCount = _inspectionCount.asStateFlow()
+
+    private val _passCount = MutableStateFlow(0)
+    val passCount = _passCount.asStateFlow()
+
+    private val _failCount = MutableStateFlow(0)
+    val failCount = _failCount.asStateFlow()
+
+    private val _conditionalPassCount = MutableStateFlow(0)
+    val conditionalPassCount = _conditionalPassCount.asStateFlow()
+
+    private val _passPercentage = MutableStateFlow(BigDecimal.ZERO)
+    val passPercentage = _passPercentage.asStateFlow()
+
+    private val _failPercentage = MutableStateFlow(BigDecimal.ZERO)
+    val failPercentage = _failPercentage.asStateFlow()
+
+    private val _conditionalPassPercentage = MutableStateFlow(BigDecimal.ZERO)
+    val conditionalPassPercentage = _conditionalPassPercentage.asStateFlow()
+
 
     // Loading state
     private val _isLoading = MutableStateFlow(true)
@@ -88,6 +116,10 @@ class OverviewScreenViewModel @Inject constructor(
             dateRangePickerState.selectedStartDateMillis,
             dateRangePickerState.selectedEndDateMillis
         )
+        loadInspectionData(
+            dateRangePickerState.selectedStartDateMillis,
+            dateRangePickerState.selectedEndDateMillis
+        )
     }
 
     fun onDateSelected() {
@@ -96,6 +128,10 @@ class OverviewScreenViewModel @Inject constructor(
             dateRangePickerState.selectedEndDateMillis
         )
         loadMaintenanceData(
+            dateRangePickerState.selectedStartDateMillis,
+            dateRangePickerState.selectedEndDateMillis
+        )
+        loadInspectionData(
             dateRangePickerState.selectedStartDateMillis,
             dateRangePickerState.selectedEndDateMillis
         )
@@ -220,4 +256,55 @@ class OverviewScreenViewModel @Inject constructor(
                 .take(3)
         }
     }
+
+    internal fun loadInspectionData(start: Long?, end: Long?) {
+        viewModelScope.launch {
+            if (start != null && end != null) {
+                _isLoading.value = true
+                inspectionRepository.getAllWithinTime(start, end)
+                    .catch { _ ->
+                        _inspectionData.value = emptyList()
+                    }
+                    .collect { data ->
+                        _inspectionData.value = data
+                        calculateInspectionStatistics(_inspectionData.value)
+                        _isLoading.value = false
+                    }
+            }
+        }
+    }
+
+    internal fun calculateInspectionStatistics(data: List<InspectionEventWithParts>) {
+        val totalCount = data.size
+
+        _inspectionCount.value = totalCount
+
+        if (totalCount == 0) {
+            _passCount.value = 0
+            _failCount.value = 0
+            _conditionalPassCount.value = 0
+            _passPercentage.value = BigDecimal.ZERO
+            _failPercentage.value = BigDecimal.ZERO
+            _conditionalPassPercentage.value = BigDecimal.ZERO
+            return
+        }
+
+        val passCount = data.count { it.event.status == InspectionStatus.PASS }
+        val failCount = data.count { it.event.status == InspectionStatus.FAIL }
+        val conditionalPassCount =
+            data.count { it.event.status == InspectionStatus.CONDITIONAL_PASS }
+
+        _passCount.value = passCount
+        _failCount.value = failCount
+        _conditionalPassCount.value = conditionalPassCount
+
+        _passPercentage.value = percentage(passCount, totalCount)
+        _failPercentage.value = percentage(failCount, totalCount)
+        _conditionalPassPercentage.value = percentage(conditionalPassCount, totalCount)
+    }
+
+    private fun percentage(count: Int, total: Int): BigDecimal =
+        BigDecimal(count)
+            .multiply(BigDecimal(100))
+            .divide(BigDecimal(total), 2, BigDecimalUtils.ROUNDING_MODE)
 }

@@ -73,4 +73,10 @@ class InspectionRepositoryImpl @Inject constructor(
             usedPartDao.insertAll(listToInsert)
         }
     }
+
+    override fun getAllWithinTime(
+        start: Long,
+        end: Long
+    ): Flow<List<InspectionEventWithParts>> =
+        dao.getAllInDateRange(start, end)
 }

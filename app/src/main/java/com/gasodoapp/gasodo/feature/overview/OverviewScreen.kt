@@ -1,5 +1,7 @@
 package com.gasodoapp.gasodo.feature.overview
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,6 +40,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -45,11 +51,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
+import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.ui.components.NoDataCard
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.build
+import com.gasodoapp.gasodo.ui.icons.content_paste_search
 import com.gasodoapp.gasodo.ui.icons.error
 import com.gasodoapp.gasodo.ui.icons.local_gas_station
 import java.math.BigDecimal
@@ -76,6 +84,15 @@ fun OverviewScreen(
     val maintenanceActions by viewModel.maintenanceActions.collectAsState()
     val topMaintenanceActions by viewModel.topMaintenanceActions.collectAsState()
 
+    val inspectionData by viewModel.inspectionData.collectAsState()
+    val inspectionCount by viewModel.inspectionCount.collectAsState()
+    val passCount by viewModel.passCount.collectAsState()
+    val failCount by viewModel.failCount.collectAsState()
+    val conditionalPassCount by viewModel.conditionalPassCount.collectAsState()
+    val passPercentage by viewModel.passPercentage.collectAsState()
+    val failPercentage by viewModel.failPercentage.collectAsState()
+    val conditionalPassPercentage by viewModel.conditionalPassPercentage.collectAsState()
+
     TopBarScaffold(
         title = "Overview"
     ) { paddingValues ->
@@ -94,7 +111,15 @@ fun OverviewScreen(
             maintenanceData,
             totalMaintenanceCost,
             maintenanceActions,
-            topMaintenanceActions
+            topMaintenanceActions,
+            inspectionData,
+            inspectionCount,
+            passCount,
+            failCount,
+            conditionalPassCount,
+            passPercentage,
+            failPercentage,
+            conditionalPassPercentage
         )
     }
 }
@@ -115,7 +140,15 @@ private fun MainContent(
     maintenanceData: List<MaintenanceEventWithServices>,
     totalMaintenanceCost: BigDecimal,
     maintenanceActions: List<MaintenanceServiceType>,
-    topMaintenanceActions: List<TopMaintenanceAction>
+    topMaintenanceActions: List<TopMaintenanceAction>,
+    inspectionData: List<InspectionEventWithParts>,
+    inspectionCount: Int,
+    passCount: Int,
+    failCount: Int,
+    conditionalPassCount: Int,
+    passPercentage: BigDecimal,
+    failPercentage: BigDecimal,
+    conditionalPassPercentage: BigDecimal
 ) {
     Column(
         modifier = modifier
@@ -158,6 +191,19 @@ private fun MainContent(
                     )
                 else
                     NoStatsCard(build, "maintenance")
+
+                if (inspectionData.isNotEmpty())
+                    InspectionStatsCard(
+                        inspectionCount = inspectionCount,
+                        passCount = passCount,
+                        failCount = failCount,
+                        conditionalPassCount = conditionalPassCount,
+                        passPercentage = passPercentage,
+                        failPercentage = failPercentage,
+                        conditionalPassPercentage = conditionalPassPercentage
+                    )
+                else
+                    NoStatsCard(content_paste_search, "inspection")
             }
         } else {
             NoDataCard(
@@ -435,6 +481,153 @@ fun MaintenanceStatsCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun InspectionStatsCard(
+    inspectionCount: Int,
+    passCount: Int,
+    failCount: Int,
+    conditionalPassCount: Int,
+    passPercentage: BigDecimal,
+    failPercentage: BigDecimal,
+    conditionalPassPercentage: BigDecimal
+) {
+    StatisticsCardFrame("Inspection Statistics", content_paste_search) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            InspectionDonutChart(
+                totalCount = inspectionCount,
+                passCount = passCount,
+                failCount = failCount,
+                conditionalPassCount = conditionalPassCount
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                LabelAndValueSpacing {
+                    LabelText("Total Inspections")
+                    ValueText("$inspectionCount inspections")
+                }
+                if (passCount > 0)
+                    InspectionLegendRow(
+                        label = "Pass",
+                        count = passCount,
+                        percentage = passPercentage,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                if (failCount > 0)
+                    InspectionLegendRow(
+                        label = "Fail",
+                        count = failCount,
+                        percentage = failPercentage,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                if (conditionalPassCount > 0)
+                    InspectionLegendRow(
+                        label = "Conditional Pass",
+                        count = conditionalPassCount,
+                        percentage = conditionalPassPercentage,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InspectionDonutChart(
+    totalCount: Int,
+    passCount: Int,
+    failCount: Int,
+    conditionalPassCount: Int
+) {
+    val total = totalCount.coerceAtLeast(1).toFloat()
+    val passFraction = passCount / total
+    val failFraction = failCount / total
+    val conditionalPassFraction = conditionalPassCount / total
+    val remainingFraction = (total - passCount - failCount - conditionalPassCount) / total
+
+    val passColor = MaterialTheme.colorScheme.primary
+    val failColor = MaterialTheme.colorScheme.error
+    val conditionalPassColor = MaterialTheme.colorScheme.tertiary
+    val remainingColor = MaterialTheme.colorScheme.outlineVariant
+
+    val strokeWidth = 10.dp
+    val diameter = 84.dp
+
+    Canvas(
+        modifier = Modifier
+            .size(diameter)
+            .padding(strokeWidth / 2)
+    ) {
+        val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Butt)
+        val startAngle = -90f
+        val passSweep = passFraction * 360f
+        val failSweep = failFraction * 360f
+        val conditionalPassSweep = conditionalPassFraction * 360f
+        val remainingSweep = remainingFraction * 360f
+
+        // Pass
+        drawArc(
+            color = passColor,
+            startAngle = startAngle,
+            sweepAngle = passSweep,
+            useCenter = false,
+            style = stroke
+        )
+        // Fail
+        drawArc(
+            color = failColor,
+            startAngle = startAngle + passSweep,
+            sweepAngle = failSweep,
+            useCenter = false,
+            style = stroke
+        )
+        // Conditional Pass
+        drawArc(
+            color = conditionalPassColor,
+            startAngle = startAngle + passSweep + failSweep,
+            sweepAngle = conditionalPassSweep,
+            useCenter = false,
+            style = stroke
+        )
+        // No status
+        drawArc(
+            color = remainingColor,
+            startAngle = startAngle + passSweep + failSweep + conditionalPassSweep,
+            sweepAngle = remainingSweep,
+            useCenter = false,
+            style = stroke
+        )
+    }
+}
+
+@Composable
+private fun InspectionLegendRow(
+    label: String,
+    count: Int,
+    percentage: BigDecimal,
+    color: Color
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .background(color = color, shape = CircleShape)
+        )
+        Text(
+            text = "$label ${percentage.toDisplayString(0)}% • $count",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

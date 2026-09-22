@@ -47,4 +47,8 @@ interface InspectionEventDao {
 
     @Query("SELECT * FROM inspection_events")
     fun getAll(): Flow<List<InspectionEvent>>
+
+    @Transaction
+    @Query("SELECT * FROM inspection_events WHERE date BETWEEN :start AND :end ORDER BY mileage DESC")
+    fun getAllInDateRange(start: Long, end: Long): Flow<List<InspectionEventWithParts>>
 }

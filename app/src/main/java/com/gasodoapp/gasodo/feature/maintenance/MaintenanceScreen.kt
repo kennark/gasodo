@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,7 +77,8 @@ fun MaintenanceScreen(
             Modifier.padding(paddingValues),
             pagedItems,
             viewModel::onDeleteMaintenanceEvent,
-            onNavigateToEdit
+            onNavigateToEdit,
+            viewModel::getSavedLocation
         )
     }
 }
@@ -86,7 +88,8 @@ fun MainContent(
     modifier: Modifier = Modifier,
     pagedItems: LazyPagingItems<MaintenanceEventWithServices>,
     onDeleteMaintenanceEvent: (MaintenanceEventWithServices) -> Unit,
-    onNavigateToEdit: (id: UUID) -> Unit
+    onNavigateToEdit: (id: UUID) -> Unit,
+    getSavedLocation: suspend (id: UUID) -> SavedLocation?
 ) {
     LazyColumn(
         modifier = modifier
@@ -104,7 +107,8 @@ fun MainContent(
                 MaintenanceEventRow(
                     eventWithServices = event,
                     onDeleteMaintenanceEvent = onDeleteMaintenanceEvent,
-                    onNavigateToEdit
+                    onNavigateToEdit,
+                    getSavedLocation
                 )
             }
         }
@@ -120,7 +124,8 @@ fun MainContent(
 fun MaintenanceEventRow(
     eventWithServices: MaintenanceEventWithServices,
     onDeleteMaintenanceEvent: (MaintenanceEventWithServices) -> Unit,
-    onNavigateToEdit: (id: UUID) -> Unit
+    onNavigateToEdit: (id: UUID) -> Unit,
+    getSavedLocation: suspend (id: UUID) -> SavedLocation?
 ) {
     val isExpanded = remember { mutableStateOf(false) }
 
@@ -281,6 +286,11 @@ fun MaintenanceEventRow(
                     ) {
                         var location: SavedLocation? by remember { mutableStateOf(null) }
 
+                        LaunchedEffect(eventWithServices) {
+                            location = eventWithServices.event.base.savedLocationId?.let {
+                                getSavedLocation(it)
+                            }
+                        }
                         MediumLabelText("Location")
 
                         if (location == null)

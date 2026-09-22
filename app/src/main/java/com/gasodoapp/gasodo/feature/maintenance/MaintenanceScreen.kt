@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,11 +51,11 @@ import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.ExtraDataText
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
+import com.gasodoapp.gasodo.ui.components.NoDataCard
 import com.gasodoapp.gasodo.ui.components.NoDataText
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.delete
 import com.gasodoapp.gasodo.ui.icons.edit
-import com.gasodoapp.gasodo.ui.icons.error
 import com.gasodoapp.gasodo.ui.icons.expand_circle_down
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -114,7 +113,7 @@ fun MainContent(
         }
 
         item {
-            NoDataCard()
+            NoDataCard("Maintenance ends here", "Register new maintenance events to show up here")
         }
     }
 }
@@ -351,37 +350,6 @@ fun MaintenanceEventRow(
 }
 
 
-@Composable
-fun NoDataCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = error,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(48.dp)
-            )
-            Text(
-                text = "Maintenance ends here",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Register new maintenance events to show up here",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

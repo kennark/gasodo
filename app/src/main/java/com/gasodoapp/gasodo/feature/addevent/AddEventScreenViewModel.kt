@@ -102,13 +102,82 @@ class AddEventScreenViewModel @Inject constructor(
     val pricePerLiterTextField = TextFieldState()
     val providerNameField = TextFieldState()
 
+    // region Baseline snapshots used to determine whether the user has made edits.
+    // Captured after the form is (possibly) populated with existing data so that
+    // autopopulated values, such as mileage, do not make the form appear dirty.
+    private var baselineMileage: String = ""
+    private var baselineNotes: String = ""
+    private var baselineAmount: String = ""
+    private var baselineCost: String = ""
+    private var baselinePricePerLiter: String = ""
+    private var baselineProviderName: String = ""
+    private var baselineDateMillis: Long? = null
+    private var baselineBaseUiState: AddEventTypeFormState = AddEventTypeFormState()
+    private var baselineRefuelUiState: RefuelEventFormState = RefuelEventFormState()
+    private var baselineMaintenanceUiState = MaintenanceEventFormState()
+    private var baselineInspectionUiState = InspectionEventFormState()
+
+    /**
+     * Snapshot the current form contents so that [isFormDirty] reports false
+     * until the user makes a change.
+     */
+    private fun captureDirtyBaseline() {
+        baselineMileage = mileageField.text.toString()
+        baselineNotes = notesField.text.toString()
+        baselineAmount = amountTextField.text.toString()
+        baselineCost = costTextField.text.toString()
+        baselinePricePerLiter = pricePerLiterTextField.text.toString()
+        baselineProviderName = providerNameField.text.toString()
+        baselineDateMillis = datePickerState.selectedDateMillis
+        baselineBaseUiState = _baseUiState.value
+        baselineRefuelUiState = _refuelUiState.value
+        baselineMaintenanceUiState = _maintenanceUiState.value
+        baselineInspectionUiState = _inspectionUiState.value
+    }
+
+    // endregion
+
+    /**
+     * Returns true if any of the form's text fields or UI states have been
+     * changed by the user relative to the captured baseline, otherwise false.
+     */
+    val isFormDirty: Boolean
+        get() {
+            val textFieldsEdited =
+                mileageField.text.toString() != baselineMileage ||
+                        notesField.text.toString() != baselineNotes ||
+                        amountTextField.text.toString() != baselineAmount ||
+                        costTextField.text.toString() != baselineCost ||
+                        pricePerLiterTextField.text.toString() != baselinePricePerLiter ||
+                        providerNameField.text.toString() != baselineProviderName ||
+                        datePickerState.selectedDateMillis != baselineDateMillis
+
+            val baseUiStateEdited =
+                _baseUiState.value != baselineBaseUiState
+
+            val refuelUiStateEdited =
+                _refuelUiState.value != baselineRefuelUiState
+
+            val maintenanceUiStateEdited =
+                _maintenanceUiState.value != baselineMaintenanceUiState
+
+            val inspectionUiStateEdited =
+                _inspectionUiState.value != baselineInspectionUiState
+
+            return textFieldsEdited ||
+                    baseUiStateEdited ||
+                    refuelUiStateEdited ||
+                    maintenanceUiStateEdited ||
+                    inspectionUiStateEdited
+        }
+
     @OptIn(ExperimentalMaterial3Api::class)
     val datePickerState = DatePickerState(
         locale = CalendarLocale.getDefault(),
         initialSelectedDate = LocalDate.now(),
     )
 
-    // onChange functions for all other types of edits (boolean switch, date, etc.)
+    // This is currently only used in tests
     fun onFormTypeChange(value: EventType) {
         _baseUiState.update { it.copy(type = value) }
     }
@@ -168,8 +237,8 @@ class AddEventScreenViewModel @Inject constructor(
     }
 
     init {
-        if (id != null) {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            if (id != null) {
                 when (type) {
                     EventType.REFUEL -> {
                         loadRefuelEvent(id)
@@ -183,13 +252,12 @@ class AddEventScreenViewModel @Inject constructor(
                         loadInspectionEvent(id)
                     }
                 }
-            }
-        } else {
-            viewModelScope.launch {
+            } else {
                 mileageField.setTextAndPlaceCursorAtEnd(
                     eventRepository.getHighestMileage()?.toString() ?: ""
                 )
             }
+            captureDirtyBaseline()
         }
     }
 
@@ -435,6 +503,7 @@ class AddEventScreenViewModel @Inject constructor(
 
         dismissDialog()
     }
+
     internal suspend fun storeInspectionEvent(
         inspectionState: InspectionEventFormState,
         baseState: AddEventTypeFormState

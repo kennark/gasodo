@@ -1,5 +1,6 @@
 package com.gasodoapp.gasodo.feature.addevent
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -24,6 +25,7 @@ import androidx.compose.foundation.text.input.byValue
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -127,11 +129,39 @@ fun AddEventScreen(
         }
     }
 
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = viewModel.isFormDirty) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            { showDiscardDialog = false },
+            { TextButton(onClick = { onDismiss() }) { Text("Leave") } },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDiscardDialog = false
+                }) { Text("Cancel") }
+            },
+            title = { Text("Leave?") },
+            text = { Text("Changes will not be saved.") }
+        )
+    }
+
+    fun checkConfirmOrDismiss() {
+        if (viewModel.isFormDirty) {
+            showDiscardDialog = true
+        } else {
+            onDismiss()
+        }
+    }
+
     TopBarScaffold(
         if (viewModel.id == null) "New Event" else "Edit Event",
         subtitle = formType.toString(),
         navigationIcon = {
-            IconButton(onClick = onDismiss) {
+            IconButton(onClick = { checkConfirmOrDismiss() }) {
                 Icon(imageVector = arrow_back, contentDescription = arrow_back.name)
             }
         },

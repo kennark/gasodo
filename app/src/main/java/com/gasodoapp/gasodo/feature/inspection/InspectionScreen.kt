@@ -55,7 +55,6 @@ import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.delete
 import com.gasodoapp.gasodo.ui.icons.edit
 import com.gasodoapp.gasodo.ui.icons.expand_circle_down
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.UUID
@@ -141,12 +140,10 @@ fun InspectionEventCard(
             ) {
                 Column(Modifier.weight(1f)) {
                     MediumLabelText("Date")
-                    // Convert the date from epoch milliseconds to epoch days
                     val dateString =
-                        LocalDate.ofEpochDay(eventWithParts.event.base.date?.div(86400000) ?: 0)
-                            .format(
-                                DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                            )
+                        eventWithParts.event.base.date
+                            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+                            .orEmpty()
                     Text(
                         text = dateString,
                         style = MaterialTheme.typography.bodyLarge,

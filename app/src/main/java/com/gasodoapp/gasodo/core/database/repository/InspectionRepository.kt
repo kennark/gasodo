@@ -5,6 +5,7 @@ import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -22,5 +23,5 @@ interface InspectionRepository {
         event: InspectionEvent,
         parts: Set<InspectablePart> = emptySet()
     )
-    fun getAllWithinTime(start: Long, end: Long): Flow<List<InspectionEventWithParts>>
+    fun getAllWithinTime(start: LocalDate, end: LocalDate): Flow<List<InspectionEventWithParts>>
 }

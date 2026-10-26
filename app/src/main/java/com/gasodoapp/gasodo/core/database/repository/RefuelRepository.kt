@@ -3,6 +3,7 @@ package com.gasodoapp.gasodo.core.database.repository
 import androidx.paging.PagingData
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -13,7 +14,7 @@ interface RefuelRepository {
 
     fun getAllByYearMonth(year: Int, month: Int): Flow<List<RefuelEvent>>
 
-    fun getAllWithinTime(start: Long, end: Long): Flow<List<RefuelEvent>>
+    fun getAllWithinTime(start: LocalDate, end: LocalDate): Flow<List<RefuelEvent>>
     suspend fun getById(id: UUID): RefuelEvent?
     suspend fun upsert(event: RefuelEvent)
     suspend fun update(event: RefuelEvent)

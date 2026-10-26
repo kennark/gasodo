@@ -2,6 +2,7 @@ package com.gasodoapp.gasodo.core.utils
 
 import androidx.room.TypeConverter
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -15,6 +16,13 @@ class DbConverterUtils {
 
     @TypeConverter
     fun toUuid(value: String?): UUID? = value?.let { UUID.fromString(it) }
+
+    // LocalDate ↔ Long (epoch day)
+    @TypeConverter
+    fun fromLocalDate(date: LocalDate?): Long? = date?.toEpochDay()
+
+    @TypeConverter
+    fun toLocalDate(value: Long?): LocalDate? = value?.let(LocalDate::ofEpochDay)
 
     // List<String> ↔ String (comma-separated)
     @TypeConverter

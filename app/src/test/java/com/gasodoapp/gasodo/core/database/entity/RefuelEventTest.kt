@@ -5,6 +5,7 @@ import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.UUID
 
 class RefuelEventTest {
@@ -12,7 +13,7 @@ class RefuelEventTest {
     @Test
     fun `constructor with all parameters sets correct values`() {
         val base = BaseColumns(
-            date = 1700000000,
+            date = LocalDate.of(2023, 11, 14),
             mileage = 50000,
             savedLocationId = null,
             photoUris = listOf(),
@@ -39,7 +40,7 @@ class RefuelEventTest {
     @Test
     fun `constructor with nullable fields handles null values`() {
         val base = BaseColumns(
-            date = 1700000000,
+            date = LocalDate.of(2023, 11, 14),
             mileage = 50000,
             savedLocationId = null,
             photoUris = listOf(),
@@ -67,7 +68,7 @@ class RefuelEventTest {
     fun `equality works for identical refuel events`() {
         val id = UUID.randomUUID()
         val base = BaseColumns(
-            date = 1700000000,
+            date = LocalDate.of(2023, 11, 14),
             mileage = 50000,
             savedLocationId = null,
             photoUris = listOf(),

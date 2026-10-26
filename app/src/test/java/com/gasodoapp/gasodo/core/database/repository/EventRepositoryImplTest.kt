@@ -30,7 +30,7 @@ class EventRepositoryImplTest {
     fun `getDateWithHigherMileage delegates to DAO and returns result`() = runTest {
         // Arrange
         val expectedMileage = 50000L
-        val expectedDate = LocalDate.of(2025, 6, 15).toEpochDay()
+        val expectedDate = LocalDate.of(2025, 6, 15)
         val expected = DateMileage(date = expectedDate, mileage = expectedMileage)
         val inputMileage = expectedMileage - 100
 
@@ -66,7 +66,7 @@ class EventRepositoryImplTest {
     fun `getDateWithLowerMileage delegates to DAO and returns result`() = runTest {
         // Arrange
         val expectedMileage = 45000L
-        val expectedDate = LocalDate.of(2025, 3, 20).toEpochDay()
+        val expectedDate = LocalDate.of(2025, 3, 20)
         val expected = DateMileage(date = expectedDate, mileage = expectedMileage)
         val inputMileage = expectedMileage + 100
 

@@ -3,6 +3,8 @@ package com.gasodoapp.gasodo.feature.overview
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.DateRangePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.getSelectedEndDate
+import androidx.compose.material3.getSelectedStartDate
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
@@ -108,36 +110,29 @@ class OverviewScreenViewModel @Inject constructor(
     )
 
     init {
-        loadRefuelData(
-            dateRangePickerState.selectedStartDateMillis,
-            dateRangePickerState.selectedEndDateMillis
-        )
-        loadMaintenanceData(
-            dateRangePickerState.selectedStartDateMillis,
-            dateRangePickerState.selectedEndDateMillis
-        )
-        loadInspectionData(
-            dateRangePickerState.selectedStartDateMillis,
-            dateRangePickerState.selectedEndDateMillis
-        )
+        loadDataForSelectedRange()
     }
 
     fun onDateSelected() {
-        loadRefuelData(
-            dateRangePickerState.selectedStartDateMillis,
-            dateRangePickerState.selectedEndDateMillis
-        )
-        loadMaintenanceData(
-            dateRangePickerState.selectedStartDateMillis,
-            dateRangePickerState.selectedEndDateMillis
-        )
-        loadInspectionData(
-            dateRangePickerState.selectedStartDateMillis,
-            dateRangePickerState.selectedEndDateMillis
-        )
+        loadDataForSelectedRange()
     }
 
-    internal fun loadRefuelData(start: Long?, end: Long?) {
+    /**
+     * Loads all three event types for the range currently selected in the date picker.
+     *
+     * The picker works in epoch milliseconds, so the conversion to [LocalDate] happens here, at the
+     * boundary, and everything downstream works with days.
+     */
+    private fun loadDataForSelectedRange() {
+        val start = dateRangePickerState.getSelectedStartDate()
+        val end = dateRangePickerState.getSelectedEndDate()
+
+        loadRefuelData(start, end)
+        loadMaintenanceData(start, end)
+        loadInspectionData(start, end)
+    }
+
+    internal fun loadRefuelData(start: LocalDate?, end: LocalDate?) {
         viewModelScope.launch {
             if (start != null && end != null) {
                 _isLoading.value = true
@@ -227,7 +222,7 @@ class OverviewScreenViewModel @Inject constructor(
         }
     }
 
-    internal fun loadMaintenanceData(start: Long?, end: Long?) {
+    internal fun loadMaintenanceData(start: LocalDate?, end: LocalDate?) {
         viewModelScope.launch {
             if (start != null && end != null) {
                 _isLoading.value = true
@@ -257,7 +252,7 @@ class OverviewScreenViewModel @Inject constructor(
         }
     }
 
-    internal fun loadInspectionData(start: Long?, end: Long?) {
+    internal fun loadInspectionData(start: LocalDate?, end: LocalDate?) {
         viewModelScope.launch {
             if (start != null && end != null) {
                 _isLoading.value = true

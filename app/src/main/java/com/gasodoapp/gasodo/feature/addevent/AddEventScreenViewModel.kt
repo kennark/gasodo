@@ -4,7 +4,8 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.DatePickerState
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.getSelectedDate
+import androidx.compose.material3.setSelectedDate
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -124,7 +125,7 @@ class AddEventScreenViewModel @Inject constructor(
     private var baselineCost: String = ""
     private var baselinePricePerLiter: String = ""
     private var baselineProviderName: String = ""
-    private var baselineDateMillis: Long? = null
+    private var baselineDate: LocalDate? = null
     private var baselineBaseUiState: AddEventTypeFormState = AddEventTypeFormState()
     private var baselineRefuelUiState: RefuelEventFormState = RefuelEventFormState()
     private var baselineMaintenanceUiState = MaintenanceEventFormState()
@@ -141,7 +142,7 @@ class AddEventScreenViewModel @Inject constructor(
         baselineCost = costTextField.text.toString()
         baselinePricePerLiter = pricePerLiterTextField.text.toString()
         baselineProviderName = providerNameField.text.toString()
-        baselineDateMillis = datePickerState.selectedDateMillis
+        baselineDate = datePickerState.getSelectedDate()
         baselineBaseUiState = _baseUiState.value
         baselineRefuelUiState = _refuelUiState.value
         baselineMaintenanceUiState = _maintenanceUiState.value
@@ -163,7 +164,7 @@ class AddEventScreenViewModel @Inject constructor(
                         costTextField.text.toString() != baselineCost ||
                         pricePerLiterTextField.text.toString() != baselinePricePerLiter ||
                         providerNameField.text.toString() != baselineProviderName ||
-                        datePickerState.selectedDateMillis != baselineDateMillis
+                        datePickerState.getSelectedDate() != baselineDate
 
             val baseUiStateEdited =
                 _baseUiState.value != baselineBaseUiState
@@ -184,7 +185,6 @@ class AddEventScreenViewModel @Inject constructor(
                     inspectionUiStateEdited
         }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     val datePickerState = DatePickerState(
         locale = CalendarLocale.getDefault(),
         initialSelectedDate = LocalDate.now(),
@@ -335,7 +335,7 @@ class AddEventScreenViewModel @Inject constructor(
                 eventWithServices.event.base.notes
             )
 
-            datePickerState.selectedDateMillis = eventWithServices.event.base.date
+            datePickerState.setSelectedDate(eventWithServices.event.base.date)
 
             eventWithServices.event.base.savedLocationId?.let { id ->
                 locationRepository.getById(id)?.let {
@@ -369,7 +369,7 @@ class AddEventScreenViewModel @Inject constructor(
                 eventWithParts.event.base.notes
             )
 
-            datePickerState.selectedDateMillis = eventWithParts.event.base.date
+            datePickerState.setSelectedDate(eventWithParts.event.base.date)
 
             eventWithParts.event.base.savedLocationId?.let { locationId ->
                 locationRepository.getById(locationId)?.let {
@@ -409,7 +409,7 @@ class AddEventScreenViewModel @Inject constructor(
                 event.pricePerLiter?.toString() ?: ""
             )
 
-            datePickerState.selectedDateMillis = event.base.date
+            datePickerState.setSelectedDate(event.base.date)
 
             event.base.savedLocationId?.let { id ->
                 locationRepository.getById(id)?.let {
@@ -427,7 +427,7 @@ class AddEventScreenViewModel @Inject constructor(
         // Extract text values from TextFieldStates for saving
         val mileageValue = mileageField.text.toString().trim().toLongOrNull()
         val notesValue = notesField.text.toString().ifEmpty { baseState.notes }
-        val dateValue = datePickerState.selectedDateMillis
+        val dateValue = datePickerState.getSelectedDate()
 
         val updatedBaseState = baseState.copy(
             mileage = mileageValue,
@@ -726,7 +726,7 @@ class AddEventScreenViewModel @Inject constructor(
 data class AddEventTypeFormState(
     val type: EventType = EventType.REFUEL,
     val mileage: Long? = null,
-    val date: Long? = LocalDate.now().toEpochDay(),
+    val date: LocalDate? = LocalDate.now(),
     val location: SavedLocation? = null,
     val notes: String = ""
 )

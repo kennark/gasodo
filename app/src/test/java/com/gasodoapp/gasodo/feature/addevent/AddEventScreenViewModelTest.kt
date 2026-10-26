@@ -1,6 +1,7 @@
 package com.gasodoapp.gasodo.feature.addevent
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.material3.getSelectedDate
 import androidx.lifecycle.SavedStateHandle
 import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.entity.InspectablePart
@@ -112,9 +113,7 @@ class AddEventScreenViewModelTest {
         assertThat(viewModel.providerNameField.text.length).isEqualTo(0)
 
         // Selected date is today
-        assertThat(viewModel.datePickerState.selectedDateMillis).isEqualTo(
-            LocalDate.now().toEpochDay().times(86400000L)
-        )
+        assertThat(viewModel.datePickerState.getSelectedDate()).isEqualTo(LocalDate.now())
 
         // No error or confirmation yet
         assertThat(viewModel.dismissDialog.value).isFalse()
@@ -154,10 +153,8 @@ class AddEventScreenViewModelTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `onSubmit with Refuel form, calculateCost true and all data correct`() = runTest {
-        val higherEvent =
-            DateMileage(LocalDate.now().plusDays(1).toEpochDay().times(86400000L), 1235)
-        val lowerEvent =
-            DateMileage(LocalDate.now().minusDays(1).toEpochDay().times(86400000L), 1233)
+        val higherEvent = DateMileage(LocalDate.now().plusDays(1), 1235)
+        val lowerEvent = DateMileage(LocalDate.now().minusDays(1), 1233)
         val mileage = 1234L
         val notes = "notes"
         val amount = "10.00"
@@ -398,7 +395,7 @@ class AddEventScreenViewModelTest {
     fun `validateBaseValues returns true when no higher or lower events exist`() = runTest {
         // Given
         val mileage = 1000L
-        val date = LocalDate.now().toEpochDay()
+        val date = LocalDate.now()
         val state = AddEventTypeFormState(mileage = mileage, date = date)
 
         coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
@@ -412,10 +409,10 @@ class AddEventScreenViewModelTest {
     fun `validateBaseValues returns false when higher mileage event has earlier date`() = runTest {
         // Given - an event with higher mileage that occurred in the past
         val currentMileage = 1000L
-        val currentDate = LocalDate.now().toEpochDay()
+        val currentDate = LocalDate.now()
         val state = AddEventTypeFormState(mileage = currentMileage, date = currentDate)
 
-        val earlierDate = currentDate - 86400000 // one day earlier
+        val earlierDate = currentDate.minusDays(1) // one day earlier
         val higherEvent = DateMileage(earlierDate, 1500L) // higher mileage, earlier date
 
         coEvery { eventRepository.getDateWithHigherMileage(any()) } returns higherEvent
@@ -430,10 +427,10 @@ class AddEventScreenViewModelTest {
         runTest {
             // Given - an event with higher mileage that occurred on or after the current date
             val currentMileage = 1000L
-            val currentDate = LocalDate.now().toEpochDay()
+            val currentDate = LocalDate.now()
             val state = AddEventTypeFormState(mileage = currentMileage, date = currentDate)
 
-            val laterDate = currentDate + 86400000 // one day later
+            val laterDate = currentDate.plusDays(1) // one day later
             val higherEvent = DateMileage(laterDate, 1500L) // higher mileage, later date
 
             coEvery { eventRepository.getDateWithHigherMileage(any()) } returns higherEvent
@@ -447,10 +444,10 @@ class AddEventScreenViewModelTest {
     fun `validateBaseValues returns false when lower mileage event has later date`() = runTest {
         // Given - an event with lower mileage that occurred in the future
         val currentMileage = 1000L
-        val currentDate = LocalDate.now().toEpochDay()
+        val currentDate = LocalDate.now()
         val state = AddEventTypeFormState(mileage = currentMileage, date = currentDate)
 
-        val laterDate = currentDate + 86400000 // one day later
+        val laterDate = currentDate.plusDays(1) // one day later
         val lowerEvent = DateMileage(laterDate, 500L) // lower mileage, later date
 
         coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
@@ -465,10 +462,10 @@ class AddEventScreenViewModelTest {
         runTest {
             // Given - an event with lower mileage that occurred on or before the current date
             val currentMileage = 1000L
-            val currentDate = LocalDate.now().toEpochDay()
+            val currentDate = LocalDate.now()
             val state = AddEventTypeFormState(mileage = currentMileage, date = currentDate)
 
-            val earlierDate = currentDate - 86400000 // one day earlier
+            val earlierDate = currentDate.minusDays(1) // one day earlier
             val lowerEvent = DateMileage(earlierDate, 500L) // lower mileage, earlier date
 
             coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
@@ -483,11 +480,11 @@ class AddEventScreenViewModelTest {
         runTest {
             // Given - both higher and lower mileage events exist with correct date ordering
             val currentMileage = 1000L
-            val currentDate = LocalDate.now().toEpochDay()
+            val currentDate = LocalDate.now()
             val state = AddEventTypeFormState(mileage = currentMileage, date = currentDate)
 
             // Higher mileage event is after the current date (valid)
-            val higherEvent = DateMileage(currentDate + 86400000, 1500L)
+            val higherEvent = DateMileage(currentDate.plusDays(1), 1500L)
 
             coEvery { eventRepository.getDateWithHigherMileage(any()) } returns higherEvent
             coEvery { eventRepository.getDateWithLowerMileage(any()) } returns null
@@ -508,7 +505,7 @@ class AddEventScreenViewModelTest {
     @Test
     fun `validateBaseValues returns true when mileage is null`() = runTest {
         // Given - state with no milestone set
-        val currentDate = LocalDate.now().toEpochDay()
+        val currentDate = LocalDate.now()
         val state = AddEventTypeFormState(mileage = null, date = currentDate)
 
         // When & Then - validation passes through because milestone is null
@@ -518,7 +515,7 @@ class AddEventScreenViewModelTest {
     @Test
     fun `storeRefuelEvent creates correct RefuelEvent and shows confirmation`() = runTest {
         val baseState = AddEventTypeFormState(
-            date = LocalDate.now().toEpochDay().times(86400000),
+            date = LocalDate.now(),
             mileage = 1234,
             location = null,
             notes = "notes"
@@ -540,7 +537,7 @@ class AddEventScreenViewModelTest {
         val expectedEvent = RefuelEvent(
             id = slot.captured.id,
             base = BaseColumns(
-                date = LocalDate.now().toEpochDay().times(86400000),
+                date = LocalDate.now(),
                 mileage = 1234,
                 savedLocationId = null,
                 notes = "notes"
@@ -565,11 +562,11 @@ class AddEventScreenViewModelTest {
     fun `onSubmit with validation failure sets hasError`() = runTest {
         // Given - state that will fail validation
         val currentMileage = 1000L
-        val currentDate = LocalDate.now().toEpochDay()
+        val currentDate = LocalDate.now()
         val state = AddEventTypeFormState(mileage = currentMileage, date = currentDate)
 
         // Mock a higher mileage event with earlier date to trigger failure
-        val earlierDate = currentDate - 86400000
+        val earlierDate = currentDate.minusDays(1)
         val higherEvent = DateMileage(earlierDate, 1500L)
 
         coEvery { eventRepository.getDateWithHigherMileage(any()) } returns higherEvent
@@ -648,10 +645,8 @@ class AddEventScreenViewModelTest {
     @Test
     fun `onSubmit with Inspection form stores inspection event`() = runTest {
         // Given
-        val higherEvent =
-            DateMileage(LocalDate.now().plusDays(1).toEpochDay().times(86400000L), 1235)
-        val lowerEvent =
-            DateMileage(LocalDate.now().minusDays(1).toEpochDay().times(86400000L), 1233)
+        val higherEvent = DateMileage(LocalDate.now().plusDays(1), 1235)
+        val lowerEvent = DateMileage(LocalDate.now().minusDays(1), 1233)
         val mileage = 1234L
         val notes = "inspection notes"
         val part = InspectablePart(partName = "Brakes")
@@ -704,10 +699,8 @@ class AddEventScreenViewModelTest {
             savedStateHandle
         )
 
-        val higherEvent =
-            DateMileage(LocalDate.now().plusDays(1).toEpochDay().times(86400000L), 1001)
-        val lowerEvent =
-            DateMileage(LocalDate.now().minusDays(1).toEpochDay().times(86400000L), 999)
+        val higherEvent = DateMileage(LocalDate.now().plusDays(1), 1001)
+        val lowerEvent = DateMileage(LocalDate.now().minusDays(1), 999)
         val mileage = 1000L
         val part = InspectablePart(partName = "Engine")
 
@@ -741,7 +734,7 @@ class AddEventScreenViewModelTest {
     fun `storeInspectionEvent inserts new InspectionEvent and shows confirmation`() = runTest {
         // Given
         val baseState = AddEventTypeFormState(
-            date = LocalDate.now().toEpochDay().times(86400000),
+            date = LocalDate.now(),
             mileage = 1234,
             location = null,
             notes = "inspection notes"
@@ -790,7 +783,7 @@ class AddEventScreenViewModelTest {
         )
 
         val baseState = AddEventTypeFormState(
-            date = LocalDate.now().toEpochDay().times(86400000),
+            date = LocalDate.now(),
             mileage = 1000,
             location = null,
             notes = "edit notes"
@@ -848,7 +841,7 @@ class AddEventScreenViewModelTest {
     fun `storeMaintenanceEvent inserts MaintenanceEvent with used services`() = runTest {
         // Given
         val baseState = AddEventTypeFormState(
-            date = LocalDate.now().toEpochDay().times(86400000),
+            date = LocalDate.now(),
             mileage = 1500,
             location = null,
             notes = "oil change"
@@ -897,7 +890,7 @@ class AddEventScreenViewModelTest {
         )
 
         val baseState = AddEventTypeFormState(
-            date = LocalDate.now().toEpochDay().times(86400000),
+            date = LocalDate.now(),
             mileage = 2000,
             location = null,
             notes = "edit work"
@@ -931,7 +924,7 @@ class AddEventScreenViewModelTest {
         val draftType = MaintenanceServiceType(serviceName = "New Service")
         viewModel.onCreateNewServiceType(draftType)
         val baseState = AddEventTypeFormState(
-            date = LocalDate.now().toEpochDay().times(86400000),
+            date = LocalDate.now(),
             mileage = 1800,
             location = null,
             notes = ""
@@ -964,7 +957,7 @@ class AddEventScreenViewModelTest {
         val inspectionEvent = InspectionEvent(
             id = existingId,
             base = BaseColumns(
-                date = LocalDate.now().toEpochDay().times(86400000),
+                date = LocalDate.now(),
                 mileage = 2000,
                 savedLocationId = null,
                 notes = "Inspection notes"
@@ -1035,7 +1028,7 @@ class AddEventScreenViewModelTest {
         val refuelEvent = RefuelEvent(
             id = existingId,
             base = BaseColumns(
-                date = LocalDate.now().toEpochDay().times(86400000),
+                date = LocalDate.now(),
                 mileage = 3000,
                 savedLocationId = null,
                 notes = "refuel notes"
@@ -1087,7 +1080,7 @@ class AddEventScreenViewModelTest {
         val maintenanceEvent = MaintenanceEvent(
             id = existingId,
             base = BaseColumns(
-                date = LocalDate.now().toEpochDay().times(86400000),
+                date = LocalDate.now(),
                 mileage = 4000,
                 savedLocationId = null,
                 notes = "maintenance notes"
@@ -1132,7 +1125,7 @@ class AddEventScreenViewModelTest {
         viewModel.mileageField.setTextAndPlaceCursorAtEnd("1000")
 
         // Mock a higher mileage event with earlier date to trigger validation failure
-        val earlierDate = LocalDate.now().minusDays(1).toEpochDay().times(86400000)
+        val earlierDate = LocalDate.now().minusDays(1)
         val higherEvent = DateMileage(earlierDate, 1500L)
         coEvery { eventRepository.getDateWithHigherMileage(1000L) } returns higherEvent
         coEvery { eventRepository.getDateWithLowerMileage(1000L) } returns null
@@ -1316,7 +1309,7 @@ class AddEventScreenViewModelTest {
         viewModel.costTextField.setTextAndPlaceCursorAtEnd("20.00")
         viewModel.onServiceTypeChange(MaintenanceServiceType(id = 1L, serviceName = "Oil"))
 
-        val earlierDate = LocalDate.now().minusDays(1).toEpochDay().times(86400000L)
+        val earlierDate = LocalDate.now().minusDays(1)
         coEvery { eventRepository.getDateWithHigherMileage(1000L) } returns
                 DateMileage(earlierDate, 1500L)
         coEvery { eventRepository.getDateWithLowerMileage(1000L) } returns null

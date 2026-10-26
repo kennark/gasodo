@@ -2,6 +2,7 @@ package com.gasodoapp.gasodo.core.database.views
 
 import androidx.room.DatabaseView
 import com.gasodoapp.gasodo.core.enums.EventType
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -22,7 +23,7 @@ import java.util.UUID
 data class AllEventsBaseColumnsView(
     val id: UUID,
     val eventType: EventType,
-    val date: Long?,
+    val date: LocalDate?,
     val mileage: Long?,
     val savedLocationId: UUID?,
     val photoUris: List<String>,

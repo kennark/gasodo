@@ -58,7 +58,6 @@ import com.gasodoapp.gasodo.ui.icons.delete
 import com.gasodoapp.gasodo.ui.icons.edit
 import com.gasodoapp.gasodo.ui.icons.expand_circle_down
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.UUID
@@ -145,12 +144,10 @@ fun MaintenanceEventRow(
             ) {
                 Column(Modifier.weight(1f)) {
                     MediumLabelText("Date")
-                    // Convert the date from epoch milliseconds to epoch days
                     val dateString =
-                        LocalDate.ofEpochDay(eventWithServices.event.base.date?.div(86400000) ?: 0)
-                            .format(
-                                DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                            )
+                        eventWithServices.event.base.date
+                            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+                            .orEmpty()
                     Text(
                         text = dateString,
                         style = MaterialTheme.typography.bodyLarge,

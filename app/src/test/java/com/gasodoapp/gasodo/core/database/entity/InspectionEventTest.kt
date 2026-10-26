@@ -4,12 +4,13 @@ import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import java.time.LocalDate
 
 class InspectionEventTest {
     @Test
     fun `constructor with all parameters sets correct values`() {
         val base = BaseColumns(
-            date = 1700000000,
+            date = LocalDate.of(2023, 11, 14),
             mileage = 50000,
             savedLocationId = null,
             photoUris = emptyList(),

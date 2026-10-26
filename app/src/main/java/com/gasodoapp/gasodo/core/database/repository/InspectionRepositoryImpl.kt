@@ -12,6 +12,7 @@ import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.entity.UsedInspectablePart
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
 
@@ -75,8 +76,8 @@ class InspectionRepositoryImpl @Inject constructor(
     }
 
     override fun getAllWithinTime(
-        start: Long,
-        end: Long
+        start: LocalDate,
+        end: LocalDate
     ): Flow<List<InspectionEventWithParts>> =
         dao.getAllInDateRange(start, end)
 }

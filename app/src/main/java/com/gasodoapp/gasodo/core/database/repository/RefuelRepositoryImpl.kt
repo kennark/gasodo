@@ -30,17 +30,15 @@ class RefuelRepositoryImpl @Inject constructor(
 
     override fun getAllByYearMonth(year: Int, month: Int): Flow<List<RefuelEvent>> {
         val startDate = LocalDate.of(year, month, 1)
-        val endDate = LocalDate.of(year, month + 1, 1)
+        // The range is inclusive on both ends, so end on the last day of the month.
+        val endDate = startDate.plusMonths(1).minusDays(1)
 
-        return getAllWithinTime(
-            startDate.toEpochDay().times(86400000L),
-            endDate.toEpochDay().times(86400000L)
-        )
+        return getAllWithinTime(startDate, endDate)
     }
 
     override fun getAllWithinTime(
-        start: Long,
-        end: Long
+        start: LocalDate,
+        end: LocalDate
     ): Flow<List<RefuelEvent>> {
         return dao.getAllInDateRange(start, end)
     }

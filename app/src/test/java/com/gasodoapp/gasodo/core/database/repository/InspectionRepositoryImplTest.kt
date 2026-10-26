@@ -52,8 +52,8 @@ class InspectionRepositoryImplTest {
     fun `getAll returns Flow from DAO`() = runTest {
         // Arrange
         val expectedEvents = listOf(
-            makeInspectionEvent(date = LocalDate.of(2025, 6, 1).toEpochDay()),
-            makeInspectionEvent(date = LocalDate.of(2025, 5, 15).toEpochDay())
+            makeInspectionEvent(date = LocalDate.of(2025, 6, 1)),
+            makeInspectionEvent(date = LocalDate.of(2025, 5, 15))
         )
 
         every { dao.getAll() } returns flowOf(expectedEvents)
@@ -209,7 +209,7 @@ class InspectionRepositoryImplTest {
 
     private fun makeInspectionEvent(
         id: UUID = UUID.randomUUID(),
-        date: Long = LocalDate.of(2025, 6, 15).toEpochDay(),
+        date: LocalDate? = LocalDate.of(2025, 6, 15),
         mileage: Long = 50000,
         status: InspectionStatus = InspectionStatus.PASS,
         findings: List<String> = listOf("All systems nominal")

@@ -10,6 +10,7 @@ import androidx.room.Update
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.projections.DateMileage
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -40,7 +41,7 @@ interface RefuelEventDao {
     fun getAllOrderByDate(): PagingSource<Int, RefuelEvent>
 
     @Query("SELECT * FROM refuel_events WHERE date BETWEEN :startRange AND :endRange ORDER BY mileage DESC")
-    fun getAllInDateRange(startRange: Long, endRange: Long): Flow<List<RefuelEvent>>
+    fun getAllInDateRange(startRange: LocalDate, endRange: LocalDate): Flow<List<RefuelEvent>>
 
     @Query("SELECT date, mileage FROM refuel_events WHERE mileage >= :mileage ORDER BY mileage ASC LIMIT 1")
     suspend fun getDateWithHigherMileage(mileage: Long): DateMileage?

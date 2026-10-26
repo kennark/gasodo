@@ -149,7 +149,7 @@ class MaintenanceRepositoryImplTest {
 
     private fun makeMaintenanceEvent(
         id: UUID = UUID.randomUUID(),
-        date: Long = LocalDate.of(2025, 6, 15).toEpochDay(),
+        date: LocalDate? = LocalDate.of(2025, 6, 15),
         mileage: Long = 50000,
         totalCost: BigDecimal? = BigDecimal("89.99")
     ): MaintenanceEvent {

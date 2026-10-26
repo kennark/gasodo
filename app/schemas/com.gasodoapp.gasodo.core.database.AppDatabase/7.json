@@ -1,0 +1,485 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 7,
+    "identityHash": "d2bdf401990a0a561c0848a0c756aabe",
+    "entities": [
+      {
+        "tableName": "saved_locations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `latitude` REAL, `longitude` REAL, `address` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "refuel_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `amount_liters` TEXT, `price_per_liter` TEXT, `total_cost` TEXT, `payment_method` TEXT, `full_fill_up` INTEGER NOT NULL, `date` INTEGER, `mileage` INTEGER, `saved_location_id` TEXT, `photo_uris` TEXT NOT NULL, `notes` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`saved_location_id`) REFERENCES `saved_locations`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountLiters",
+            "columnName": "amount_liters",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pricePerLiter",
+            "columnName": "price_per_liter",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "totalCost",
+            "columnName": "total_cost",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "paymentMethod",
+            "columnName": "payment_method",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fullFillUp",
+            "columnName": "full_fill_up",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "base.date",
+            "columnName": "date",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "base.mileage",
+            "columnName": "mileage",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "base.savedLocationId",
+            "columnName": "saved_location_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "base.photoUris",
+            "columnName": "photo_uris",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "base.notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_refuel_events_saved_location_id",
+            "unique": false,
+            "columnNames": [
+              "saved_location_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_refuel_events_saved_location_id` ON `${TABLE_NAME}` (`saved_location_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "saved_locations",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "saved_location_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "maintenance_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`event_id` TEXT NOT NULL, `total_cost` TEXT, `date` INTEGER, `mileage` INTEGER, `saved_location_id` TEXT, `photo_uris` TEXT NOT NULL, `notes` TEXT NOT NULL, PRIMARY KEY(`event_id`), FOREIGN KEY(`saved_location_id`) REFERENCES `saved_locations`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "event_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalCost",
+            "columnName": "total_cost",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "base.date",
+            "columnName": "date",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "base.mileage",
+            "columnName": "mileage",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "base.savedLocationId",
+            "columnName": "saved_location_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "base.photoUris",
+            "columnName": "photo_uris",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "base.notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "event_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_maintenance_events_saved_location_id",
+            "unique": false,
+            "columnNames": [
+              "saved_location_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_maintenance_events_saved_location_id` ON `${TABLE_NAME}` (`saved_location_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "saved_locations",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "saved_location_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "inspection_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `status` TEXT, `findings` TEXT NOT NULL, `date` INTEGER, `mileage` INTEGER, `saved_location_id` TEXT, `photo_uris` TEXT NOT NULL, `notes` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`saved_location_id`) REFERENCES `saved_locations`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "findings",
+            "columnName": "findings",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "base.date",
+            "columnName": "date",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "base.mileage",
+            "columnName": "mileage",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "base.savedLocationId",
+            "columnName": "saved_location_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "base.photoUris",
+            "columnName": "photo_uris",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "base.notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_inspection_events_saved_location_id",
+            "unique": false,
+            "columnNames": [
+              "saved_location_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_inspection_events_saved_location_id` ON `${TABLE_NAME}` (`saved_location_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "saved_locations",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "saved_location_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "maintenance_service_types",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`service_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `service_name` TEXT NOT NULL, `notes` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "service_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serviceName",
+            "columnName": "service_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "service_id"
+          ]
+        }
+      },
+      {
+        "tableName": "used_maintenance_services",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`event_id` TEXT NOT NULL, `service_id` INTEGER NOT NULL, PRIMARY KEY(`event_id`, `service_id`), FOREIGN KEY(`event_id`) REFERENCES `maintenance_events`(`event_id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`service_id`) REFERENCES `maintenance_service_types`(`service_id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "maintenanceEventId",
+            "columnName": "event_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serviceId",
+            "columnName": "service_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "event_id",
+            "service_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_used_maintenance_services_service_id",
+            "unique": false,
+            "columnNames": [
+              "service_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_used_maintenance_services_service_id` ON `${TABLE_NAME}` (`service_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "maintenance_events",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "event_id"
+            ],
+            "referencedColumns": [
+              "event_id"
+            ]
+          },
+          {
+            "table": "maintenance_service_types",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "service_id"
+            ],
+            "referencedColumns": [
+              "service_id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "inspectable_parts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`service_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `service_name` TEXT NOT NULL, `notes` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "service_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "partName",
+            "columnName": "service_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "service_id"
+          ]
+        }
+      },
+      {
+        "tableName": "used_inspectable_parts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`inspection_event_id` TEXT NOT NULL, `part_id` INTEGER NOT NULL, PRIMARY KEY(`inspection_event_id`, `part_id`), FOREIGN KEY(`inspection_event_id`) REFERENCES `inspection_events`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`part_id`) REFERENCES `inspectable_parts`(`service_id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "inspectionEventId",
+            "columnName": "inspection_event_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "partId",
+            "columnName": "part_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "inspection_event_id",
+            "part_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_used_inspectable_parts_part_id",
+            "unique": false,
+            "columnNames": [
+              "part_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_used_inspectable_parts_part_id` ON `${TABLE_NAME}` (`part_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "inspection_events",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "inspection_event_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "inspectable_parts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "part_id"
+            ],
+            "referencedColumns": [
+              "service_id"
+            ]
+          }
+        ]
+      }
+    ],
+    "views": [
+      {
+        "viewName": "AllEventsBaseColumnsView",
+        "createSql": "CREATE VIEW `${VIEW_NAME}` AS SELECT id, 'REFUEL' as eventType, date, mileage, saved_location_id, photo_uris, notes\n        FROM refuel_events\n        UNION ALL\n        SELECT event_id, 'MAINTENANCE' as eventType, date, mileage, saved_location_id, photo_uris, notes\n        FROM maintenance_events\n        UNION ALL\n        SELECT id, 'INSPECTION' as eventType, date, mileage, saved_location_id, photo_uris, notes\n        FROM inspection_events"
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd2bdf401990a0a561c0848a0c756aabe')"
+    ]
+  }
+}

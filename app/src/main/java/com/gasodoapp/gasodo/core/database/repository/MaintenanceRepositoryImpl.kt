@@ -12,6 +12,7 @@ import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.UsedMaintenanceService
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
 
@@ -73,8 +74,8 @@ class MaintenanceRepositoryImpl @Inject constructor(
     }
 
     override fun getAllWithinTime(
-        start: Long,
-        end: Long
+        start: LocalDate,
+        end: LocalDate
     ): Flow<List<MaintenanceEventWithServices>> =
         eventDao.getAllInDateRange(start, end)
 }

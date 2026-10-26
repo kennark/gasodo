@@ -147,11 +147,10 @@ fun RefuelEventRow(
             ) {
                 Column(Modifier.weight(1f)) {
                     MediumLabelText("Date")
-                    // Convert the date from epoch milliseconds to epoch days
                     val dateString =
-                        LocalDate.ofEpochDay(refuelEvent.base.date?.div(86400000) ?: 0).format(
-                            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                        )
+                        refuelEvent.base.date
+                            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+                            .orEmpty()
                     Text(
                         text = dateString,
                         style = MaterialTheme.typography.bodyLarge,
@@ -373,7 +372,7 @@ fun RefuelCardPreview() {
     RefuelEventRow(
         refuelEvent = RefuelEvent(
             base = BaseColumns(
-                date = 1000000000000,
+                date = LocalDate.of(2024, 1, 15),
                 mileage = 123543,
             ),
             amountLiters = BigDecimal.TEN,

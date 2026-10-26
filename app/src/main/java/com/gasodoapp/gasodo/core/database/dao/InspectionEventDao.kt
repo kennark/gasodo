@@ -11,6 +11,7 @@ import androidx.room.Update
 import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -50,5 +51,5 @@ interface InspectionEventDao {
 
     @Transaction
     @Query("SELECT * FROM inspection_events WHERE date BETWEEN :start AND :end ORDER BY mileage DESC")
-    fun getAllInDateRange(start: Long, end: Long): Flow<List<InspectionEventWithParts>>
+    fun getAllInDateRange(start: LocalDate, end: LocalDate): Flow<List<InspectionEventWithParts>>
 }

@@ -3,6 +3,7 @@ package com.gasodoapp.gasodo.core.di
 import android.content.Context
 import androidx.room.Room
 import com.gasodoapp.gasodo.core.database.AppDatabase
+import com.gasodoapp.gasodo.core.database.MIGRATION_6_7
 import com.gasodoapp.gasodo.core.database.dao.EventDao
 import com.gasodoapp.gasodo.core.database.dao.InspectablePartDao
 import com.gasodoapp.gasodo.core.database.dao.InspectionEventDao
@@ -38,8 +39,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "car_refuel_tracker.db"
         )
-            // Drop all data on database updates
-            .fallbackToDestructiveMigration(true)
+            .addMigrations(MIGRATION_6_7)
             .addCallback(SeedCallbacks(provider, scope))
             .build()
 

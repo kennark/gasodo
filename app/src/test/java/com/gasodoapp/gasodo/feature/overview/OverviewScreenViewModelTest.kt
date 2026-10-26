@@ -32,6 +32,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.ZoneOffset
 
 /**
@@ -44,6 +45,12 @@ class OverviewScreenViewModelTest {
     private lateinit var refuelRepository: RefuelRepository
     private lateinit var maintenanceRepository: MaintenanceRepository
     private lateinit var inspectionRepository: InspectionRepository
+
+    private companion object {
+        /** Arbitrary, non-null bounds used to drive the explicit loading functions. */
+        val RANGE_START: LocalDate = LocalDate.of(2025, 1, 1)
+        val RANGE_END: LocalDate = LocalDate.of(2025, 6, 30)
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
@@ -131,9 +138,9 @@ class OverviewScreenViewModelTest {
 
     @Test
     fun `initial date range defaults to current month`() {
-        val now = java.time.LocalDate.now()
+        val now = LocalDate.now()
         assertThat(viewModel.dateRangePickerState.selectedStartDateMillis).isEqualTo(
-            java.time.LocalDate.of(now.year, now.monthValue, 1).atStartOfDay(ZoneOffset.UTC)
+            LocalDate.of(now.year, now.monthValue, 1).atStartOfDay(ZoneOffset.UTC)
                 .toInstant().toEpochMilli()
         )
         assertThat(viewModel.dateRangePickerState.selectedEndDateMillis).isEqualTo(
@@ -166,7 +173,7 @@ class OverviewScreenViewModelTest {
         )
         every { refuelRepository.getAllWithinTime(any(), any()) } returns flowOf(events)
 
-        viewModel.loadRefuelData(0L, 1000L)
+        viewModel.loadRefuelData(RANGE_START, RANGE_END)
 
         advanceUntilIdle()
 
@@ -178,7 +185,7 @@ class OverviewScreenViewModelTest {
     @Test
     fun `loadRefuelData does nothing when end is null`() = runTest {
         // The init block already triggered one call; a null-bound call must not add another.
-        viewModel.loadRefuelData(0L, null)
+        viewModel.loadRefuelData(RANGE_START, null)
 
         advanceUntilIdle()
 
@@ -190,7 +197,7 @@ class OverviewScreenViewModelTest {
     @Test
     fun `loadRefuelData does nothing when start is null`() = runTest {
         // The init block already triggered one call; a null-bound call must not add another.
-        viewModel.loadRefuelData(null, 0L)
+        viewModel.loadRefuelData(null, RANGE_END)
 
         advanceUntilIdle()
 
@@ -205,7 +212,7 @@ class OverviewScreenViewModelTest {
             throw RuntimeException("boom")
         }
 
-        viewModel.loadRefuelData(0L, 1000L)
+        viewModel.loadRefuelData(RANGE_START, RANGE_END)
 
         advanceUntilIdle()
 
@@ -428,7 +435,7 @@ class OverviewScreenViewModelTest {
         val data = listOf(maintenanceEvent(BigDecimal("50"), service))
         every { maintenanceRepository.getAllWithinTime(any(), any()) } returns flowOf(data)
 
-        viewModel.loadMaintenanceData(0L, 1000L)
+        viewModel.loadMaintenanceData(RANGE_START, RANGE_END)
 
         advanceUntilIdle()
 
@@ -440,7 +447,7 @@ class OverviewScreenViewModelTest {
     @Test
     fun `loadMaintenanceData does nothing when end is null`() = runTest {
         // The init block already triggered one call; a null-bound call must not add another.
-        viewModel.loadMaintenanceData(0L, null)
+        viewModel.loadMaintenanceData(RANGE_START, null)
 
         advanceUntilIdle()
 
@@ -452,7 +459,7 @@ class OverviewScreenViewModelTest {
     @Test
     fun `loadMaintenanceData does nothing when start is null`() = runTest {
         // The init block already triggered one call; a null-bound call must not add another.
-        viewModel.loadMaintenanceData(null, 0L)
+        viewModel.loadMaintenanceData(null, RANGE_END)
 
         advanceUntilIdle()
 
@@ -467,7 +474,7 @@ class OverviewScreenViewModelTest {
             throw RuntimeException("boom")
         }
 
-        viewModel.loadMaintenanceData(0L, 1000L)
+        viewModel.loadMaintenanceData(RANGE_START, RANGE_END)
 
         advanceUntilIdle()
 
@@ -487,7 +494,7 @@ class OverviewScreenViewModelTest {
         )
         every { inspectionRepository.getAllWithinTime(any(), any()) } returns flowOf(data)
 
-        viewModel.loadInspectionData(0L, 1000L)
+        viewModel.loadInspectionData(RANGE_START, RANGE_END)
 
         advanceUntilIdle()
 
@@ -500,7 +507,7 @@ class OverviewScreenViewModelTest {
     @Test
     fun `loadInspectionData does nothing when end is null`() = runTest {
         // The init block already triggered one call; a null-bound call must not add another.
-        viewModel.loadInspectionData(0L, null)
+        viewModel.loadInspectionData(RANGE_START, null)
 
         advanceUntilIdle()
 
@@ -512,7 +519,7 @@ class OverviewScreenViewModelTest {
     @Test
     fun `loadInspectionData does nothing when start is null`() = runTest {
         // The init block already triggered one call; a null-bound call must not add another.
-        viewModel.loadInspectionData(null, 0L)
+        viewModel.loadInspectionData(null, RANGE_END)
 
         advanceUntilIdle()
 
@@ -527,7 +534,7 @@ class OverviewScreenViewModelTest {
             throw RuntimeException("boom")
         }
 
-        viewModel.loadInspectionData(0L, 1000L)
+        viewModel.loadInspectionData(RANGE_START, RANGE_END)
 
         advanceUntilIdle()
 

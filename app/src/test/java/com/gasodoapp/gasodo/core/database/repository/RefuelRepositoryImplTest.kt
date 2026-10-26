@@ -1,3 +1,5 @@
+@file:Suppress("UnusedFlow")
+
 package com.gasodoapp.gasodo.core.database.repository
 
 import com.gasodoapp.gasodo.core.database.BaseColumns
@@ -9,6 +11,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -37,11 +40,14 @@ class RefuelRepositoryImplTest {
         // Arrange
         val year = 2025
         val month = 6
-        val startDate = LocalDate.of(year, month, 1).toEpochDay().times(86400000L)
-        val endDate = LocalDate.of(year, month + 1, 1).toEpochDay().times(86400000L)
+        val startDate = LocalDate.of(year, month, 1)
+        // The DAO query uses `date BETWEEN :start AND :end`, which is inclusive on both ends,
+        // so the end bound must be the last day of the month. Ending on the 1st of the next
+        // month (the old behaviour) wrongly included events dated July 1st.
+        val endDate = LocalDate.of(year, month, 30)
         val expectedEvents = listOf(
-            makeRefuelEvent(date = LocalDate.of(2025, 6, 10).toEpochDay().times(86400000L)),
-            makeRefuelEvent(date = LocalDate.of(2025, 6, 20).toEpochDay().times(86400000L))
+            makeRefuelEvent(date = LocalDate.of(2025, 6, 10)),
+            makeRefuelEvent(date = LocalDate.of(2025, 6, 20))
         )
         every { dao.getAllInDateRange(startDate, endDate) } returns flowOf(expectedEvents)
 
@@ -49,7 +55,11 @@ class RefuelRepositoryImplTest {
         var result: List<RefuelEvent> = emptyList()
         repository.getAllByYearMonth(year, month).collect { value -> result = value }
 
-        // Assert
+        // Assert - the query is scoped to the whole month but never spills into the next one
+        verify(exactly = 1) { dao.getAllInDateRange(startDate, endDate) }
+        verify(exactly = 0) {
+            dao.getAllInDateRange(startDate, LocalDate.of(2025, 7, 1))
+        }
         assertThat(result).isEqualTo(expectedEvents)
         assertThat(result).hasSize(2)
     }
@@ -57,10 +67,10 @@ class RefuelRepositoryImplTest {
     @Test
     fun `getAllWithinTime delegates to DAO with correct date range`() = runTest {
         // Arrange
-        val start = LocalDate.of(2025, 1, 1).toEpochDay()
-        val end = LocalDate.of(2025, 6, 30).toEpochDay()
+        val start = LocalDate.of(2025, 1, 1)
+        val end = LocalDate.of(2025, 6, 30)
         val expectedEvents = listOf(
-            makeRefuelEvent(date = LocalDate.of(2025, 3, 15).toEpochDay())
+            makeRefuelEvent(date = LocalDate.of(2025, 3, 15))
         )
         every { dao.getAllInDateRange(start, end) } returns flowOf(expectedEvents)
 
@@ -146,7 +156,7 @@ class RefuelRepositoryImplTest {
 
     private fun makeRefuelEvent(
         id: UUID = UUID.randomUUID(),
-        date: Long = LocalDate.of(2025, 6, 15).toEpochDay(),
+        date: LocalDate? = LocalDate.of(2025, 6, 15),
         mileage: Long = 50000,
         amountLiters: BigDecimal? = BigDecimal("45.5"),
         pricePerLiter: BigDecimal? = BigDecimal("6.50"),

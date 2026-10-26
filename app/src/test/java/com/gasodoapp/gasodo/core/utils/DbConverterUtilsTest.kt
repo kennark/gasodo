@@ -3,6 +3,7 @@ package com.gasodoapp.gasodo.core.utils
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.UUID
 
 class DbConverterUtilsTest {
@@ -112,5 +113,56 @@ class DbConverterUtilsTest {
     @Test
     fun `toBigDecimal with invalid string returns null`() {
         assertThat(utils.toBigDecimal("asdf")).isNull()
+    }
+
+    // LocalDate ↔ Long (epoch day)
+
+    @Test
+    fun `fromLocalDate with LocalDate returns epoch day`() {
+        assertThat(utils.fromLocalDate(LocalDate.of(2025, 6, 15))).isEqualTo(20254L)
+    }
+
+    @Test
+    fun `fromLocalDate with epoch date returns zero`() {
+        assertThat(utils.fromLocalDate(LocalDate.of(1970, 1, 2))).isEqualTo(1L)
+    }
+
+    @Test
+    fun `fromLocalDate with null returns null`() {
+        assertThat(utils.fromLocalDate(null)).isNull()
+    }
+
+    @Test
+    fun `toLocalDate with epoch day returns LocalDate`() {
+        assertThat(utils.toLocalDate(20254L)).isEqualTo(LocalDate.of(2025, 6, 15))
+    }
+
+    @Test
+    fun `toLocalDate with one returns day after epoch`() {
+        assertThat(utils.toLocalDate(1L)).isEqualTo(LocalDate.of(1970, 1, 2))
+    }
+
+    @Test
+    fun `toLocalDate with null returns null`() {
+        assertThat(utils.toLocalDate(null)).isNull()
+    }
+
+    @Test
+    fun `LocalDate round-trips through epoch day`() {
+        val date = LocalDate.of(2025, 6, 15)
+        assertThat(utils.toLocalDate(utils.fromLocalDate(date))).isEqualTo(date)
+    }
+
+    @Test
+    fun `null LocalDate round-trips to null`() {
+        assertThat(utils.toLocalDate(utils.fromLocalDate(null))).isNull()
+    }
+
+    @Test
+    fun `negative epoch day converts both ways (dates before 1970-01-01)`() {
+        val date = LocalDate.of(1969, 12, 31)
+
+        assertThat(utils.fromLocalDate(date)).isEqualTo(-1L)
+        assertThat(utils.toLocalDate(-1L)).isEqualTo(date)
     }
 } 

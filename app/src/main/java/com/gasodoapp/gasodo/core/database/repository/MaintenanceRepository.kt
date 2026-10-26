@@ -5,6 +5,7 @@ import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -22,5 +23,5 @@ interface MaintenanceRepository {
         services: Set<MaintenanceServiceType> = emptySet()
     )
 
-    fun getAllWithinTime(start: Long, end: Long): Flow<List<MaintenanceEventWithServices>>
+    fun getAllWithinTime(start: LocalDate, end: LocalDate): Flow<List<MaintenanceEventWithServices>>
 }

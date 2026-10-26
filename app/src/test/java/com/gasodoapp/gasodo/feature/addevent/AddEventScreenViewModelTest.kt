@@ -167,6 +167,7 @@ class AddEventScreenViewModelTest {
         viewModel.amountTextField.setTextAndPlaceCursorAtEnd(amount)
         viewModel.pricePerLiterTextField.setTextAndPlaceCursorAtEnd(pricePerLiter)
         viewModel.onCalculateCostChange(true)
+        viewModel.onPaymentMethodChange(PaymentMethod.CARD)
         viewModel.notesField.setTextAndPlaceCursorAtEnd(notes)
 
         coEvery { eventRepository.getDateWithHigherMileage(mileage) } returns higherEvent
@@ -1147,4 +1148,207 @@ class AddEventScreenViewModelTest {
         coVerify(exactly = 0) { maintenanceRepository.insertWithUsedServices(any(), any()) }
         coVerify(exactly = 0) { maintenanceRepository.update(any(), any()) }
     }
+
+    // region Per-field validation
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onSubmit with completely empty form succeeds`() = runTest {
+        // Given - nothing filled in at all; empty fields are allowed by design
+        advanceUntilIdle()
+        viewModel.onFormTypeChange(EventType.MAINTENANCE)
+        coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
+        coEvery { eventRepository.getDateWithLowerMileage(any()) } returns null
+        coEvery { maintenanceRepository.insertWithUsedServices(any(), any()) } returns Unit
+
+        // When
+        viewModel.onSubmit()
+        advanceUntilIdle()
+
+        // Then - no field complains and the event is stored
+        assertThat(viewModel.formErrors.value).isEqualTo(AddEventFormErrors())
+        assertThat(viewModel.hasError.value).isFalse()
+        coVerify(exactly = 1) { maintenanceRepository.insertWithUsedServices(any(), any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onSubmit with unparsable amount reports invalid amount`() = runTest {
+        // Given - the input transformation allows multiple separators through
+        advanceUntilIdle()
+        viewModel.onFormTypeChange(EventType.REFUEL)
+        viewModel.mileageField.setTextAndPlaceCursorAtEnd("1000")
+        viewModel.amountTextField.setTextAndPlaceCursorAtEnd("1,2,3")
+        viewModel.onCalculateCostChange(true)
+        viewModel.pricePerLiterTextField.setTextAndPlaceCursorAtEnd("2.00")
+        coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
+        coEvery { eventRepository.getDateWithLowerMileage(any()) } returns null
+
+        // When
+        viewModel.onSubmit()
+        advanceUntilIdle()
+
+        // Then
+        assertThat(viewModel.formErrors.value.amount).isEqualTo(FieldError.AMOUNT_INVALID)
+        coVerify(exactly = 0) { refuelRepository.upsert(any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onSubmit with zero amount reports non positive amount`() = runTest {
+        // Given - a 0 amount would make the derived price per liter divide by zero
+        advanceUntilIdle()
+        viewModel.onFormTypeChange(EventType.REFUEL)
+        viewModel.mileageField.setTextAndPlaceCursorAtEnd("1000")
+        viewModel.amountTextField.setTextAndPlaceCursorAtEnd("0")
+        viewModel.costTextField.setTextAndPlaceCursorAtEnd("20.00")
+        coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
+        coEvery { eventRepository.getDateWithLowerMileage(any()) } returns null
+
+        // When
+        viewModel.onSubmit()
+        advanceUntilIdle()
+
+        // Then
+        assertThat(viewModel.formErrors.value.amount)
+            .isEqualTo(FieldError.AMOUNT_NOT_POSITIVE)
+        coVerify(exactly = 0) { refuelRepository.upsert(any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onSubmit with negative cost reports negative cost`() = runTest {
+        // Given
+        advanceUntilIdle()
+        viewModel.onFormTypeChange(EventType.MAINTENANCE)
+        viewModel.mileageField.setTextAndPlaceCursorAtEnd("1000")
+        viewModel.costTextField.setTextAndPlaceCursorAtEnd("-5")
+        coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
+        coEvery { eventRepository.getDateWithLowerMileage(any()) } returns null
+
+        // When
+        viewModel.onSubmit()
+        advanceUntilIdle()
+
+        // Then
+        assertThat(viewModel.formErrors.value.cost).isEqualTo(FieldError.COST_NEGATIVE)
+        coVerify(exactly = 0) { maintenanceRepository.insertWithUsedServices(any(), any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onSubmit with too many mileage digits reports invalid mileage`() = runTest {
+        // Given - a value that does not fit in a Long
+        advanceUntilIdle()
+        viewModel.onFormTypeChange(EventType.MAINTENANCE)
+        viewModel.mileageField.setTextAndPlaceCursorAtEnd("99999999999999999999")
+        coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
+        coEvery { eventRepository.getDateWithLowerMileage(any()) } returns null
+
+        // When
+        viewModel.onSubmit()
+        advanceUntilIdle()
+
+        // Then
+        assertThat(viewModel.formErrors.value.mileage).isEqualTo(FieldError.MILEAGE_INVALID)
+        coVerify(exactly = 0) { maintenanceRepository.insertWithUsedServices(any(), any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onSubmit with empty Refuel form reports no errors`() = runTest {
+        // Given - only the mileage is filled in, everything else is intentionally blank
+        advanceUntilIdle()
+        viewModel.onFormTypeChange(EventType.REFUEL)
+        viewModel.mileageField.setTextAndPlaceCursorAtEnd("1000")
+        viewModel.onCalculateCostChange(true)
+        coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
+        coEvery { eventRepository.getDateWithLowerMileage(any()) } returns null
+        coEvery { refuelRepository.upsert(any()) } returns Unit
+
+        // When
+        viewModel.onSubmit()
+        advanceUntilIdle()
+
+        // Then
+        assertThat(viewModel.formErrors.value).isEqualTo(AddEventFormErrors())
+        assertThat(viewModel.formErrors.value.hasAnyError).isFalse()
+        coVerify(exactly = 1) { refuelRepository.upsert(any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `fixing an invalid value clears its error on the next submit`() = runTest {
+        // Given - an invalid amount left an error behind
+        advanceUntilIdle()
+        viewModel.onFormTypeChange(EventType.REFUEL)
+        viewModel.mileageField.setTextAndPlaceCursorAtEnd("1000")
+        viewModel.amountTextField.setTextAndPlaceCursorAtEnd("abc")
+        viewModel.onCalculateCostChange(true)
+        viewModel.pricePerLiterTextField.setTextAndPlaceCursorAtEnd("2.00")
+        coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
+        coEvery { eventRepository.getDateWithLowerMileage(any()) } returns null
+        coEvery { refuelRepository.upsert(any()) } returns Unit
+        viewModel.onSubmit()
+        advanceUntilIdle()
+        assertThat(viewModel.formErrors.value.amount).isEqualTo(FieldError.AMOUNT_INVALID)
+
+        // When - the user fixes the amount and submits again
+        viewModel.amountTextField.setTextAndPlaceCursorAtEnd("12.5")
+        viewModel.onSubmit()
+        advanceUntilIdle()
+
+        // Then
+        assertThat(viewModel.formErrors.value.amount).isNull()
+        coVerify(exactly = 1) { refuelRepository.upsert(any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onSubmit with conflicting mileage and date reports conflict on both fields`() = runTest {
+        // Let the init coroutine settle first: it seeds the mileage field, exactly like it
+        // does before the user can touch the form in the real app.
+        advanceUntilIdle()
+
+        // Given - a higher mileage event that happened in the past
+        viewModel.onFormTypeChange(EventType.MAINTENANCE)
+        viewModel.mileageField.setTextAndPlaceCursorAtEnd("1000")
+        viewModel.costTextField.setTextAndPlaceCursorAtEnd("20.00")
+        viewModel.onServiceTypeChange(MaintenanceServiceType(id = 1L, serviceName = "Oil"))
+
+        val earlierDate = LocalDate.now().minusDays(1).toEpochDay().times(86400000L)
+        coEvery { eventRepository.getDateWithHigherMileage(1000L) } returns
+                DateMileage(earlierDate, 1500L)
+        coEvery { eventRepository.getDateWithLowerMileage(1000L) } returns null
+
+        viewModel.onSubmit()
+        advanceUntilIdle()
+
+        assertThat(viewModel.formErrors.value.mileage)
+            .isEqualTo(FieldError.DATE_MILEAGE_CONFLICT)
+        assertThat(viewModel.formErrors.value.date)
+            .isEqualTo(FieldError.DATE_MILEAGE_CONFLICT)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `hasError is true while a field holds an invalid value`() = runTest {
+        // Given
+        advanceUntilIdle()
+        viewModel.onFormTypeChange(EventType.REFUEL)
+        viewModel.mileageField.setTextAndPlaceCursorAtEnd("1000")
+        viewModel.amountTextField.setTextAndPlaceCursorAtEnd("0")
+        coEvery { eventRepository.getDateWithHigherMileage(any()) } returns null
+        coEvery { eventRepository.getDateWithLowerMileage(any()) } returns null
+
+        // When
+        viewModel.onSubmit()
+        advanceUntilIdle()
+
+        // Then
+        assertThat(viewModel.hasError.value).isTrue()
+        assertThat(viewModel.formErrors.value.errorCount).isEqualTo(1)
+    }
+
+    // endregion
 }

@@ -103,7 +103,7 @@ fun AddEventScreen(
     val inspectionState by viewModel.inspectionUiState.collectAsStateWithLifecycle()
     val maintenanceState by viewModel.maintenanceUiState.collectAsStateWithLifecycle()
     val dismissDialog by viewModel.dismissDialog.collectAsStateWithLifecycle()
-    val hasError by viewModel.hasError.collectAsStateWithLifecycle()
+    val formErrors by viewModel.formErrors.collectAsStateWithLifecycle()
     val formType = viewModel.type
     val locations by viewModel.locations.collectAsStateWithLifecycle(initialValue = emptyList())
     val serviceTypes by viewModel.serviceTypes.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -192,7 +192,7 @@ fun AddEventScreen(
             locations,
             serviceTypes,
             inspectableParts,
-            hasError,
+            formErrors,
         )
     }
 }
@@ -208,7 +208,7 @@ private fun FormContent(
     locations: List<SavedLocation>,
     serviceTypes: List<MaintenanceServiceType>,
     inspectableParts: List<InspectablePart>,
-    hasError: Boolean
+    formErrors: AddEventFormErrors
 ) {
     Column(
         modifier = Modifier
@@ -224,7 +224,8 @@ private fun FormContent(
             onLocationChange = viewModel::onLocationChange,
             notesState = viewModel.notesField,
             datePickerState = viewModel.datePickerState,
-            locations = locations
+            locations = locations,
+            errors = formErrors
         )
 
         when (baseState.type) {
@@ -236,7 +237,8 @@ private fun FormContent(
                     costState = viewModel.costTextField,
                     pricePerLiterState = viewModel.pricePerLiterTextField,
                     onPaymentMethodChange = viewModel::onPaymentMethodChange,
-                    onFullFillUpChange = viewModel::onFullFillUpChange
+                    onFullFillUpChange = viewModel::onFullFillUpChange,
+                    errors = formErrors
                 )
             }
 
@@ -246,7 +248,8 @@ private fun FormContent(
                     costState = viewModel.costTextField,
                     serviceTypes = serviceTypes,
                     onServiceTypeChange = viewModel::onServiceTypeChange,
-                    onCreateNewServiceType = viewModel::onCreateNewServiceType
+                    onCreateNewServiceType = viewModel::onCreateNewServiceType,
+                    errors = formErrors
                 )
             }
 
@@ -266,14 +269,15 @@ private fun FormContent(
             horizontalArrangement = Arrangement.spacedBy(3.dp, alignment = Alignment.End),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (hasError) {
+            if (formErrors.hasAnyError) {
                 Icon(
                     imageVector = error,
                     contentDescription = error.name,
                     tint = MaterialTheme.colorScheme.error
                 )
                 Text(
-                    text = "Validation error",
+                    text = if (formErrors.errorCount == 1) "1 field needs attention"
+                    else "${formErrors.errorCount} fields need attention",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(end = 2.dp)
@@ -282,7 +286,6 @@ private fun FormContent(
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -293,6 +296,7 @@ fun BaseForm(
     notesState: TextFieldState,
     datePickerState: DatePickerState,
     locations: List<SavedLocation>,
+    errors: AddEventFormErrors = AddEventFormErrors(),
 ) {
     Column(
         modifier = Modifier
@@ -307,6 +311,8 @@ fun BaseForm(
             modifier = Modifier.fillMaxWidth(),
             trailingIcon = { Text("km") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            isError = errors.mileage != null,
+            supportingText = errors.mileage?.let { error -> { Text(error.message()) } },
             inputTransformation = InputTransformation.byValue { current, proposed ->
                 if ("""\D""".toRegex() in proposed) current else proposed
             }
@@ -325,6 +331,8 @@ fun BaseForm(
             label = { Text("Date") },
             readOnly = true,
             singleLine = true,
+            isError = errors.date != null,
+            supportingText = errors.date?.let { error -> { Text(error.message()) } },
             modifier = Modifier
                 .fillMaxWidth()
                 .pointerInput(datePickerState) {
@@ -414,7 +422,8 @@ fun RefuelForm(
     costState: TextFieldState,
     pricePerLiterState: TextFieldState,
     onPaymentMethodChange: (PaymentMethod) -> Unit,
-    onFullFillUpChange: (Boolean) -> Unit
+    onFullFillUpChange: (Boolean) -> Unit,
+    errors: AddEventFormErrors = AddEventFormErrors(),
 ) {
     Column(
         modifier = Modifier
@@ -434,6 +443,8 @@ fun RefuelForm(
             lineLimits = TextFieldLineLimits.SingleLine,
             modifier = Modifier.fillMaxWidth(),
             trailingIcon = { Text("L") },
+            isError = errors.amount != null,
+            supportingText = errors.amount?.let { error -> { Text(error.message()) } },
             inputTransformation = InputTransformation.byValue { current, proposed ->
                 if ("""[^0-9,.]""".toRegex() in proposed) current else proposed
             }
@@ -465,6 +476,10 @@ fun RefuelForm(
                     lineLimits = TextFieldLineLimits.SingleLine,
                     modifier = Modifier.weight(2f),
                     trailingIcon = { Text("€/L") },
+                    isError = errors.pricePerLiter != null,
+                    supportingText = errors.pricePerLiter?.let { error ->
+                        { Text(error.message()) }
+                    },
                     inputTransformation = InputTransformation.byValue { current, proposed ->
                         if ("""[^0-9,.]""".toRegex() in proposed) current else proposed
                     }
@@ -496,6 +511,8 @@ fun RefuelForm(
                     modifier = Modifier.weight(2f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     trailingIcon = { Text("€") },
+                    isError = errors.cost != null,
+                    supportingText = errors.cost?.let { error -> { Text(error.message()) } },
                     inputTransformation = InputTransformation.byValue { current, proposed ->
                         if ("""[^0-9,.]""".toRegex() in proposed) current else proposed
                     }
@@ -649,6 +666,7 @@ fun MaintenanceForm(
     serviceTypes: List<MaintenanceServiceType>,
     onServiceTypeChange: (MaintenanceServiceType) -> Unit,
     onCreateNewServiceType: (MaintenanceServiceType) -> Unit,
+    errors: AddEventFormErrors = AddEventFormErrors(),
 ) {
     val searchTextFieldState = rememberTextFieldState()
     Column(
@@ -662,6 +680,8 @@ fun MaintenanceForm(
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             trailingIcon = { Text("€") },
+            isError = errors.cost != null,
+            supportingText = errors.cost?.let { error -> { Text(error.message()) } },
             inputTransformation = InputTransformation.byValue { current, proposed ->
                 if ("""[^0-9,.]""".toRegex() in proposed) current else proposed
             }

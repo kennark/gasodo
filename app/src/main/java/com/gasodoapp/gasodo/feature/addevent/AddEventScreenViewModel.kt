@@ -5,6 +5,7 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -32,10 +33,13 @@ import com.gasodoapp.gasodo.feature.navigation.ADD_EVENT_TYPE_ARG
 import com.gasodoapp.gasodo.feature.navigation.EDIT_EVENT_ID_ARG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -64,14 +68,23 @@ class AddEventScreenViewModel @Inject constructor(
     }
 
     private val _dismissDialog = MutableStateFlow(false)
-    private val _hasError = MutableStateFlow(false)
+    private val _formErrors = MutableStateFlow(AddEventFormErrors())
     private val _baseUiState = MutableStateFlow(AddEventTypeFormState(type = type))
     private val _refuelUiState = MutableStateFlow(RefuelEventFormState())
     private val _maintenanceUiState = MutableStateFlow(MaintenanceEventFormState())
     private val _inspectionUiState = MutableStateFlow(InspectionEventFormState())
 
     val dismissDialog: StateFlow<Boolean> = _dismissDialog.asStateFlow()
-    val hasError: StateFlow<Boolean> = _hasError.asStateFlow()
+    val formErrors: StateFlow<AddEventFormErrors> = _formErrors.asStateFlow()
+
+    /**
+     * True while at least one field is invalid. Kept as a derived flow so that existing
+     * consumers (and tests) of a single error flag keep working.
+     */
+    val hasError: StateFlow<Boolean> =
+        _formErrors
+            .map { it.hasAnyError }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val baseUiState: StateFlow<AddEventTypeFormState> = _baseUiState.asStateFlow()
     val refuelUiState: StateFlow<RefuelEventFormState> = _refuelUiState.asStateFlow()
     val maintenanceUiState: StateFlow<MaintenanceEventFormState> = _maintenanceUiState.asStateFlow()
@@ -259,6 +272,38 @@ class AddEventScreenViewModel @Inject constructor(
             }
             captureDirtyBaseline()
         }
+
+        observeFieldEditsToClearErrors()
+    }
+
+    /**
+     * The text fields use TextFieldState, there is no onValueChange
+     * to clear an error from. Watch the states instead and remove the field's error when user edits it.
+     */
+    private fun observeFieldEditsToClearErrors() {
+        launchClearingOnEdit(mileageField) {
+            it.copy(mileage = null, date = null)
+        }
+        launchClearingOnEdit(amountTextField) {
+            it.copy(amount = null)
+        }
+        launchClearingOnEdit(costTextField) {
+            it.copy(cost = null, pricePerLiter = null)
+        }
+        launchClearingOnEdit(pricePerLiterTextField) {
+            it.copy(pricePerLiter = null, cost = null)
+        }
+    }
+
+    private fun launchClearingOnEdit(
+        field: TextFieldState,
+        clear: (AddEventFormErrors) -> AddEventFormErrors
+    ) {
+        viewModelScope.launch {
+            snapshotFlow { field.text.toString() }
+                .drop(1)
+                .collect { _formErrors.update(clear) }
+        }
     }
 
     private suspend fun loadMaintenanceEvent(id: UUID) {
@@ -391,35 +436,114 @@ class AddEventScreenViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            if (validateBaseValues(updatedBaseState)) {
+            val errors = validate(updatedBaseState)
+            _formErrors.value = errors
+            if (errors.hasAnyError) return@launch
 
-                baseState.location?.let { savedLocation -> storeLocationIfNotExist(savedLocation) }
+            baseState.location?.let { savedLocation -> storeLocationIfNotExist(savedLocation) }
 
-                when (updatedBaseState.type) {
-                    EventType.REFUEL -> {
-                        val updatedRefuelState = calculateRefuelEventData()
+            when (updatedBaseState.type) {
+                EventType.REFUEL -> {
+                    val updatedRefuelState = calculateRefuelEventData()
 
-                        storeRefuelEvent(updatedRefuelState, updatedBaseState)
-                    }
-
-                    EventType.INSPECTION -> {
-                        val state = _inspectionUiState.value
-
-                        storeInspectionEvent(state, updatedBaseState)
-                    }
-
-                    EventType.MAINTENANCE -> {
-                        val state = _maintenanceUiState.value.copy(
-                            cost = costTextField.text.toString().toBigDecimalOrNull()
-                        )
-
-                        storeMaintenanceEvent(state, updatedBaseState)
-                    }
+                    storeRefuelEvent(updatedRefuelState, updatedBaseState)
                 }
-            } else {
-                _hasError.value = true
+
+                EventType.INSPECTION -> {
+                    val state = _inspectionUiState.value
+
+                    storeInspectionEvent(state, updatedBaseState)
+                }
+
+                EventType.MAINTENANCE -> {
+                    val state = _maintenanceUiState.value.copy(
+                        cost = costTextField.text.toString().toBigDecimalOrNull()
+                    )
+
+                    storeMaintenanceEvent(state, updatedBaseState)
+                }
             }
         }
+    }
+
+    /**
+     * Validates the values of the form and returns the problems found, keyed by field.
+     *
+     * Empty fields are valid by design; only values that cannot be stored as entered are
+     * reported. Purely computational apart from [validateBaseValues], which queries the
+     * database for the date/mileage consistency rule.
+     */
+    internal suspend fun validate(baseState: AddEventTypeFormState): AddEventFormErrors =
+        baseState.type.let { type ->
+            when (type) {
+                EventType.REFUEL -> validateRefuel()
+                EventType.MAINTENANCE -> validateMaintenance()
+                EventType.INSPECTION -> AddEventFormErrors()
+            }
+        }.let { errors ->
+            when {
+                // Mileage is optional, but something that does not fit in a Long
+                // would otherwise be silently dropped on save.
+                mileageField.text.isNotBlank() && baseState.mileage == null ->
+                    errors.copy(mileage = FieldError.MILEAGE_INVALID)
+
+                !validateBaseValues(baseState) ->
+                    errors.copy(
+                        mileage = FieldError.DATE_MILEAGE_CONFLICT,
+                        date = FieldError.DATE_MILEAGE_CONFLICT
+                    )
+
+                else -> errors
+            }
+        }
+
+    private fun validateRefuel(): AddEventFormErrors {
+        val state = _refuelUiState.value
+        val amountRaw = amountTextField.text
+        val costRaw = costTextField.text
+        val pricePerLiterRaw = pricePerLiterTextField.text
+        val amount = amountRaw.toString().toBigDecimalOrNull()
+        val cost = costRaw.toString().toBigDecimalOrNull()
+        val pricePerLiter = pricePerLiterRaw.toString().toBigDecimalOrNull()
+
+        return AddEventFormErrors(
+            amount = when {
+                amountRaw.isBlank() -> null
+                amount == null -> FieldError.AMOUNT_INVALID
+
+                // a 0 would throw instead of saving
+                amount <= BigDecimal.ZERO -> FieldError.AMOUNT_NOT_POSITIVE
+                else -> null
+            },
+            // Only one field is validated, the other is calculated based on calculateCost
+            cost = if (state.calculateCost) null else when {
+                costRaw.isBlank() -> null
+                cost == null -> FieldError.COST_INVALID
+                cost < BigDecimal.ZERO -> FieldError.COST_NEGATIVE
+                else -> null
+            },
+            pricePerLiter = if (!state.calculateCost) null else when {
+                pricePerLiterRaw.isBlank() -> null
+                pricePerLiter == null -> FieldError.PRICE_PER_LITER_INVALID
+                // a 0 price is meaningless
+                pricePerLiter <= BigDecimal.ZERO -> FieldError.PRICE_PER_LITER_NOT_POSITIVE
+                else -> null
+            }
+        )
+    }
+
+    private fun validateMaintenance(): AddEventFormErrors {
+        val costRaw = costTextField.text
+        val cost = costRaw.toString().toBigDecimalOrNull()
+
+        return AddEventFormErrors(
+            cost = when {
+                costRaw.isBlank() -> null
+                cost == null -> FieldError.COST_INVALID
+                cost < BigDecimal.ZERO -> FieldError.COST_NEGATIVE
+                else -> null
+            }
+        )
     }
 
     internal fun calculateRefuelEventData(): RefuelEventFormState {

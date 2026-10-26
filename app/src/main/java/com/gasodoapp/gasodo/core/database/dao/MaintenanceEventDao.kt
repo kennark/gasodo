@@ -45,6 +45,7 @@ interface MaintenanceEventDao {
     @Query("SELECT * FROM maintenance_events WHERE event_id = :id")
     suspend fun getByIdWithServiceTypes(id: UUID): MaintenanceEventWithServices?
 
+    @Transaction
     @Query("SELECT * FROM maintenance_events WHERE date BETWEEN :startRange AND :endRange ORDER BY mileage DESC")
     fun getAllInDateRange(
         startRange: Long,

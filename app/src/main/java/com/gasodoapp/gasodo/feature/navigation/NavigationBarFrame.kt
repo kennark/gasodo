@@ -42,11 +42,12 @@ import com.gasodoapp.gasodo.ui.icons.local_gas_station
 @Composable
 fun NavigationBarFrame() {
     val navController = rememberNavController()
-    val startDestination = BottomBarDestinations.OVERVIEW
+    val startDestination = Destinations.OVERVIEW
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
-    val bottomNavRoutes = BottomBarDestinations.entries.map { it.route }
-    val showBottomBar = currentRoute == null || currentRoute in bottomNavRoutes
+    val currentDestination = Destinations.getFromRoute(currentRoute)
+    // Keep the bar visible while the back stack is still empty (currentDestination == null).
+    val showBottomBar = currentDestination?.showBottomBar ?: true
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(currentBackStackEntry) {
@@ -146,7 +147,7 @@ private fun BottomNavigationBar(
     navController: NavHostController
 ) {
     NavigationBar(windowInsets = NavigationBarDefaults.windowInsets) {
-        BottomBarDestinations.entries.forEach { destination ->
+        Destinations.entries.filter { it.showBottomBar }.forEach { destination ->
             NavigationBarItem(
                 selected = currentRoute == destination.route,
                 onClick = {
@@ -157,10 +158,12 @@ private fun BottomNavigationBar(
                     }
                 },
                 icon = {
-                    Icon(
-                        imageVector = destination.icon,
-                        contentDescription = destination.label
-                    )
+                    destination.icon?.let {
+                        Icon(
+                            imageVector = it,
+                            contentDescription = destination.label
+                        )
+                    }
                 },
                 label = { Text(destination.label) }
             )

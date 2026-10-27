@@ -8,34 +8,6 @@ import com.gasodoapp.gasodo.ui.icons.local_gas_station
 import com.gasodoapp.gasodo.ui.icons.overview
 import java.util.UUID
 
-
-enum class BottomBarDestinations(
-    val route: String,
-    val label: String,
-    val icon: ImageVector
-) {
-    OVERVIEW(
-        "overview",
-        "Overview",
-        overview
-    ),
-    REFUELS(
-        "refuels",
-        "Refuels",
-        local_gas_station
-    ),
-    MAINTENANCE(
-        "maintenance",
-        "Maintenance",
-        build
-    ),
-    INSPECTION(
-        "inspection",
-        "Inspection",
-        content_paste_search
-    )
-}
-
 enum class DialogDestinations(
     val route: String,
     val label: String,
@@ -53,11 +25,48 @@ enum class DialogDestinations(
 enum class Destinations(
     val route: String,
     val label: String,
+    val showBottomBar: Boolean = false,
+    val icon: ImageVector? = null
 ) {
     MANAGE_MAINTENANCE_SERVICE_TYPES(
         "manage/maintenance-service-types",
         "Maintenance Services"
-    )
+    ),
+    OVERVIEW(
+        "overview",
+        "Overview",
+        true,
+        overview
+    ),
+    REFUELS(
+        "refuels",
+        "Refuels",
+        true,
+        local_gas_station
+    ),
+    MAINTENANCE(
+        "maintenance",
+        "Maintenance",
+        true,
+        build
+    ),
+    INSPECTION(
+        "inspection",
+        "Inspection",
+        true,
+        content_paste_search
+    );
+
+    companion object {
+        /**
+         * Resolves a navigation route back to its [Destinations] entry.
+         *
+         * Returns `null` for routes that don't belong to this enum (for example dialog
+         * routes or a not-yet-initialized back stack).
+         */
+        fun getFromRoute(route: String?): Destinations? =
+            entries.firstOrNull { it.route == route }
+    }
 }
 
 const val ADD_EVENT_TYPE_ARG = "type"

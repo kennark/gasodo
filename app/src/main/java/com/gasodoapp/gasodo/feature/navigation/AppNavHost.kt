@@ -21,7 +21,7 @@ import java.util.UUID
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    startDestination: BottomBarDestinations,
+    startDestination: Destinations,
     modifier: Modifier
 ) {
     NavHost(
@@ -33,42 +33,35 @@ fun AppNavHost(
             navController.navigate(Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES.route)
         }
 
-        BottomBarDestinations.entries.forEach { destination ->
+        Destinations.entries.forEach { destination ->
             composable(destination.route) {
                 when (destination) {
-                    BottomBarDestinations.OVERVIEW -> OverviewScreen(
+                    Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES -> MaintenanceServiceTypeScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                    Destinations.OVERVIEW -> OverviewScreen(
                         onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
                     )
 
-                    BottomBarDestinations.REFUELS -> RefuelScreen(
+                    Destinations.REFUELS -> RefuelScreen(
                         onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes,
                         onNavigateToEdit = { id: UUID ->
                             navController.navigate(editEventRoute(EventType.REFUEL, id))
                         }
                     )
 
-                    BottomBarDestinations.MAINTENANCE -> MaintenanceScreen(
+                    Destinations.MAINTENANCE -> MaintenanceScreen(
                         onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes,
                         onNavigateToEdit = { id: UUID ->
                             navController.navigate(editEventRoute(EventType.MAINTENANCE, id))
                         }
                     )
 
-                    BottomBarDestinations.INSPECTION -> InspectionScreen(
+                    Destinations.INSPECTION -> InspectionScreen(
                         onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes,
                         onNavigateToEdit = { id: UUID ->
                             navController.navigate(editEventRoute(EventType.INSPECTION, id))
                         }
-                    )
-                }
-            }
-        }
-
-        Destinations.entries.forEach { destination ->
-            composable(destination.route) {
-                when (destination) {
-                    Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES -> MaintenanceServiceTypeScreen(
-                        onBack = { navController.popBackStack() }
                     )
                 }
             }

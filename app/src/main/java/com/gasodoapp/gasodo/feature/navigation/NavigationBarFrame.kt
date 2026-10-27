@@ -46,6 +46,7 @@ fun NavigationBarFrame() {
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
     val bottomNavRoutes = BottomBarDestinations.entries.map { it.route }
+    val showBottomBar = currentRoute == null || currentRoute in bottomNavRoutes
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(currentBackStackEntry) {
@@ -61,10 +62,12 @@ fun NavigationBarFrame() {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
-            FAB(currentRoute, navController)
+            FAB(showBottomBar, navController)
         },
         bottomBar = {
-            BottomNavigationBar(currentRoute, navController)
+            if (showBottomBar) {
+                BottomNavigationBar(currentRoute, navController)
+            }
         }
     ) { innerPadding ->
         AppNavHost(navController, startDestination, modifier = Modifier.padding(innerPadding))
@@ -73,7 +76,7 @@ fun NavigationBarFrame() {
 
 @Composable
 private fun FAB(
-    currentRoute: String?,
+    showBottomBar: Boolean,
     navController: NavHostController
 ) {
     var fabMenuExpanded by remember { mutableStateOf(false) }
@@ -89,7 +92,8 @@ private fun FAB(
                 modifier =
                     Modifier
                         .animateFloatingActionButton(
-                            visible = currentRoute != addEventRoute || fabMenuExpanded,
+                            visible = showBottomBar ||
+                                    fabMenuExpanded,
                             alignment = Alignment.BottomEnd,
                         )
                         .focusRequester(focusRequester),

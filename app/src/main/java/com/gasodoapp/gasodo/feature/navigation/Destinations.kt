@@ -36,7 +36,7 @@ enum class BottomBarDestinations(
     )
 }
 
-enum class Destinations(
+enum class DialogDestinations(
     val route: String,
     val label: String,
 ) {
@@ -50,13 +50,24 @@ enum class Destinations(
     )
 }
 
+enum class Destinations(
+    val route: String,
+    val label: String,
+) {
+    MANAGE_MAINTENANCE_SERVICE_TYPES(
+        "manage/maintenance-service-types",
+        "Maintenance Services"
+    )
+}
+
 const val ADD_EVENT_TYPE_ARG = "type"
 const val EDIT_EVENT_ID_ARG = "id"
 
 // route pattern used in NavHost registration
-val addEventRoute = "${Destinations.ADD.route}/{$ADD_EVENT_TYPE_ARG}"
-val editEventRoute = "${Destinations.EDIT.route}/{$ADD_EVENT_TYPE_ARG}/{$EDIT_EVENT_ID_ARG}"
+val addEventRoute = "${DialogDestinations.ADD.route}/{$ADD_EVENT_TYPE_ARG}"
+val editEventRoute = "${DialogDestinations.EDIT.route}/{$ADD_EVENT_TYPE_ARG}/{$EDIT_EVENT_ID_ARG}"
 
 // helper to build a concrete navigable route
-fun addEventRoute(type: EventType) = "${Destinations.ADD.route}/${type.name}"
-fun editEventRoute(type: EventType, id: UUID) = "${Destinations.EDIT.route}/${type.name}/${id}"
+fun addEventRoute(type: EventType) = "${DialogDestinations.ADD.route}/${type.name}"
+fun editEventRoute(type: EventType, id: UUID) =
+    "${DialogDestinations.EDIT.route}/${type.name}/${id}"

@@ -13,6 +13,7 @@ import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.feature.addevent.AddEventScreen
 import com.gasodoapp.gasodo.feature.inspection.InspectionScreen
 import com.gasodoapp.gasodo.feature.maintenance.MaintenanceScreen
+import com.gasodoapp.gasodo.feature.manage.maintenanceservicetype.MaintenanceServiceTypeScreen
 import com.gasodoapp.gasodo.feature.overview.OverviewScreen
 import com.gasodoapp.gasodo.feature.refuel.RefuelScreen
 import java.util.UUID
@@ -28,19 +29,47 @@ fun AppNavHost(
         startDestination = startDestination.route,
         modifier = modifier
     ) {
+        val onNavigateToMaintenanceServiceTypes = {
+            navController.navigate(Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES.route)
+        }
+
         BottomBarDestinations.entries.forEach { destination ->
             composable(destination.route) {
                 when (destination) {
-                    BottomBarDestinations.OVERVIEW -> OverviewScreen()
-                    BottomBarDestinations.REFUELS -> RefuelScreen(onNavigateToEdit = { id: UUID ->
-                        navController.navigate(editEventRoute(EventType.REFUEL, id))
-                    })
-                    BottomBarDestinations.MAINTENANCE -> MaintenanceScreen(onNavigateToEdit = { id: UUID ->
-                        navController.navigate(editEventRoute(EventType.MAINTENANCE, id))
-                    })
-                    BottomBarDestinations.INSPECTION -> InspectionScreen(onNavigateToEdit = { id: UUID ->
-                        navController.navigate(editEventRoute(EventType.INSPECTION, id))
-                    })
+                    BottomBarDestinations.OVERVIEW -> OverviewScreen(
+                        onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
+                    )
+
+                    BottomBarDestinations.REFUELS -> RefuelScreen(
+                        onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes,
+                        onNavigateToEdit = { id: UUID ->
+                            navController.navigate(editEventRoute(EventType.REFUEL, id))
+                        }
+                    )
+
+                    BottomBarDestinations.MAINTENANCE -> MaintenanceScreen(
+                        onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes,
+                        onNavigateToEdit = { id: UUID ->
+                            navController.navigate(editEventRoute(EventType.MAINTENANCE, id))
+                        }
+                    )
+
+                    BottomBarDestinations.INSPECTION -> InspectionScreen(
+                        onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes,
+                        onNavigateToEdit = { id: UUID ->
+                            navController.navigate(editEventRoute(EventType.INSPECTION, id))
+                        }
+                    )
+                }
+            }
+        }
+
+        Destinations.entries.forEach { destination ->
+            composable(destination.route) {
+                when (destination) {
+                    Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES -> MaintenanceServiceTypeScreen(
+                        onBack = { navController.popBackStack() }
+                    )
                 }
             }
         }

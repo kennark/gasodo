@@ -48,6 +48,7 @@ import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.utils.toDisplayString
+import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.ExtraDataText
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
@@ -65,12 +66,20 @@ import java.util.UUID
 
 @Composable
 fun MaintenanceScreen(
+    onNavigateToMaintenanceServiceTypes: () -> Unit,
     viewModel: MaintenanceScreenViewModel = hiltViewModel<MaintenanceScreenViewModel>(),
     onNavigateToEdit: (id: UUID) -> Unit
 ) {
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
 
-    TopBarScaffold(title = "Recent Maintenance Entries") { paddingValues ->
+    TopBarScaffold(
+        title = "Recent Maintenance Entries",
+        actions = {
+            AppOverflowMenu(
+                onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
+            )
+        }
+    ) { paddingValues ->
         MainContent(
             Modifier.padding(paddingValues),
             pagedItems,

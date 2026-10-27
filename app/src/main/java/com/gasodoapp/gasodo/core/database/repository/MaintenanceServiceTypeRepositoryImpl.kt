@@ -1,12 +1,14 @@
 package com.gasodoapp.gasodo.core.database.repository
 
 import com.gasodoapp.gasodo.core.database.dao.MaintenanceServiceTypeDao
+import com.gasodoapp.gasodo.core.database.dao.UsedMaintenanceServiceDao
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class MaintenanceServiceTypeRepositoryImpl @Inject constructor(
     private val dao: MaintenanceServiceTypeDao,
+    private val usedServiceDao: UsedMaintenanceServiceDao,
 ) : MaintenanceServiceTypeRepository {
 
     override fun getAll(): Flow<List<MaintenanceServiceType>> =
@@ -25,4 +27,7 @@ class MaintenanceServiceTypeRepositoryImpl @Inject constructor(
     override suspend fun delete(entity: MaintenanceServiceType) {
         dao.delete(entity)
     }
+
+    override suspend fun countUsage(id: Long): Int =
+        usedServiceDao.countByServiceId(id)
 }

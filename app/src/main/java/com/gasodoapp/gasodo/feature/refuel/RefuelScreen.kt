@@ -41,6 +41,7 @@ import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.gasodoapp.gasodo.core.utils.toDisplayString
+import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.ExtraDataText
 import com.gasodoapp.gasodo.ui.components.LoadingPlaceholder
@@ -61,12 +62,20 @@ import java.util.UUID
 
 @Composable
 fun RefuelScreen(
+    onNavigateToMaintenanceServiceTypes: () -> Unit,
     viewModel: RefuelScreenViewModel = hiltViewModel<RefuelScreenViewModel>(),
     onNavigateToEdit: (id: UUID) -> Unit
 ) {
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
 
-    TopBarScaffold("Recent Refuels") { paddingValues ->
+    TopBarScaffold(
+        title = "Recent Refuels",
+        actions = {
+            AppOverflowMenu(
+                onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
+            )
+        }
+    ) { paddingValues ->
         MainContent(
             Modifier.padding(paddingValues),
             pagedItems,

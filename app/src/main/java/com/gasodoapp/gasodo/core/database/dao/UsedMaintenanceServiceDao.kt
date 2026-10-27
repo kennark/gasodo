@@ -21,4 +21,7 @@ interface UsedMaintenanceServiceDao {
 
     @Query("DELETE FROM used_maintenance_services WHERE event_id = :id")
     suspend fun deleteByEventId(id: UUID)
+
+    @Query("SELECT COUNT(*) FROM used_maintenance_services WHERE service_id = :serviceId")
+    suspend fun countByServiceId(serviceId: Long): Int
 }

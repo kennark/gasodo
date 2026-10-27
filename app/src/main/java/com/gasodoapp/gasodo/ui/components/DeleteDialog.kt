@@ -24,17 +24,24 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun DeleteDialog(
     onDismissRequest: () -> Unit,
-    onConfirmRequest: () -> Unit
+    onConfirmRequest: () -> Unit,
+    title: String = "Delete this event?",
+    message: String = "Deleted items can not be recovered."
 ) {
     BasicAlertDialog(
         { onDismissRequest() }
     ) {
-        DeleteDialogContent(onDismissRequest, onConfirmRequest)
+        DeleteDialogContent(onDismissRequest, onConfirmRequest, title, message)
     }
 }
 
 @Composable
-private fun DeleteDialogContent(onDismissRequest: () -> Unit, onConfirmRequest: () -> Unit) {
+private fun DeleteDialogContent(
+    onDismissRequest: () -> Unit,
+    onConfirmRequest: () -> Unit,
+    title: String = "Delete this event?",
+    message: String = "Deleted items can not be recovered."
+) {
     Card(
         modifier = Modifier
             .wrapContentWidth()
@@ -43,13 +50,13 @@ private fun DeleteDialogContent(onDismissRequest: () -> Unit, onConfirmRequest: 
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(
-                text = "Delete this event?",
+                text = title,
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "Deleted items can not be recovered."
+                text = message
             )
             Spacer(modifier = Modifier.height(24.dp))
             Row(

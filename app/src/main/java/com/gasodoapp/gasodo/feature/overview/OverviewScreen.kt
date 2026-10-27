@@ -55,9 +55,8 @@ import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.utils.toDisplayString
+import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
 import com.gasodoapp.gasodo.ui.components.NoDataCard
-import com.gasodoapp.gasodo.ui.components.OverflowMenu
-import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.build
 import com.gasodoapp.gasodo.ui.icons.content_paste_search
@@ -70,6 +69,7 @@ import java.time.format.FormatStyle
 
 @Composable
 fun OverviewScreen(
+    onNavigateToMaintenanceServiceTypes: () -> Unit,
     viewModel: OverviewScreenViewModel = hiltViewModel<OverviewScreenViewModel>()
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
@@ -96,14 +96,13 @@ fun OverviewScreen(
     val failPercentage by viewModel.failPercentage.collectAsState()
     val conditionalPassPercentage by viewModel.conditionalPassPercentage.collectAsState()
 
-    val overflowMenuItems = listOf(
-        OverflowMenuItem(label = "Settings", onClick = {}),
-        OverflowMenuItem(label = "About", onClick = {})
-    )
-
     TopBarScaffold(
         title = "Overview",
-        actions = { OverflowMenu(overflowMenuItems) }
+        actions = {
+            AppOverflowMenu(
+                onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
+            )
+        }
     ) { paddingValues ->
         MainContent(
             Modifier.padding(paddingValues),

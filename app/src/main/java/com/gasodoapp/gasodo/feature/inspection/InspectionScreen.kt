@@ -46,6 +46,7 @@ import androidx.paging.compose.itemKey
 import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
+import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.ExtraDataText
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
@@ -61,13 +62,21 @@ import java.util.UUID
 
 @Composable
 fun InspectionScreen(
+    onNavigateToMaintenanceServiceTypes: () -> Unit,
     viewModel: InspectionScreenViewModel = hiltViewModel<InspectionScreenViewModel>(),
     onNavigateToEdit: (id: UUID) -> Unit
 ) {
 
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
 
-    TopBarScaffold("Recent Inspections") { paddingValues ->
+    TopBarScaffold(
+        title = "Recent Inspections",
+        actions = {
+            AppOverflowMenu(
+                onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
+            )
+        }
+    ) { paddingValues ->
         MainContent(
             Modifier.padding(paddingValues),
             pagedItems,

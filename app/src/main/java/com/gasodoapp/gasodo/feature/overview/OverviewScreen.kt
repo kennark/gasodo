@@ -24,7 +24,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DateRangePickerState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +56,8 @@ import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.ui.components.NoDataCard
+import com.gasodoapp.gasodo.ui.components.OverflowMenu
+import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.build
 import com.gasodoapp.gasodo.ui.icons.content_paste_search
@@ -66,7 +67,7 @@ import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun OverviewScreen(
     viewModel: OverviewScreenViewModel = hiltViewModel<OverviewScreenViewModel>()
@@ -95,8 +96,14 @@ fun OverviewScreen(
     val failPercentage by viewModel.failPercentage.collectAsState()
     val conditionalPassPercentage by viewModel.conditionalPassPercentage.collectAsState()
 
+    val overflowMenuItems = listOf(
+        OverflowMenuItem(label = "Settings", onClick = {}),
+        OverflowMenuItem(label = "About", onClick = {})
+    )
+
     TopBarScaffold(
-        title = "Overview"
+        title = "Overview",
+        actions = { OverflowMenu(overflowMenuItems) }
     ) { paddingValues ->
         MainContent(
             Modifier.padding(paddingValues),
@@ -217,7 +224,7 @@ private fun MainContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun YearMonthSelectorCard(
     dateRangePickerState: DateRangePickerState, onDateSelected: () -> Unit

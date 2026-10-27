@@ -14,7 +14,71 @@ import androidx.compose.ui.unit.dp
  */
 
 @Suppress("CheckReturnValue")
-public val delete: ImageVector
+val more_vert: ImageVector
+    get() {
+        if (_more_vert != null) {
+            return _more_vert!!
+        }
+        _more_vert =
+            ImageVector.Builder(
+                name = "more_vert",
+                defaultWidth = 24.dp,
+                defaultHeight = 24.dp,
+                viewportWidth = 24f,
+                viewportHeight = 24f,
+            )
+                .apply {
+                    path(
+                        fill = SolidColor(Color.Black),
+                        fillAlpha = 1f,
+                        stroke = null,
+                        strokeAlpha = 1f,
+                        strokeLineWidth = 1f,
+                        strokeLineCap = StrokeCap.Butt,
+                        strokeLineJoin = StrokeJoin.Bevel,
+                        strokeLineMiter = 1f,
+                        pathFillType = PathFillType.NonZero,
+                    ) {
+                        moveTo(12f, 20f)
+                        quadToRelative(-0.82f, 0f, -1.41f, -0.59f)
+                        reflectiveQuadTo(10f, 18f)
+                        reflectiveQuadToRelative(0.59f, -1.41f)
+                        reflectiveQuadTo(12f, 16f)
+                        reflectiveQuadToRelative(1.41f, 0.59f)
+                        quadTo(14f, 17.18f, 14f, 18f)
+                        reflectiveQuadToRelative(-0.59f, 1.41f)
+                        reflectiveQuadTo(12f, 20f)
+                        close()
+                        moveToRelative(0f, -6f)
+                        quadToRelative(-0.82f, 0f, -1.41f, -0.59f)
+                        reflectiveQuadTo(10f, 12f)
+                        reflectiveQuadToRelative(0.59f, -1.41f)
+                        reflectiveQuadTo(12f, 10f)
+                        reflectiveQuadToRelative(1.41f, 0.59f)
+                        quadTo(14f, 11.18f, 14f, 12f)
+                        reflectiveQuadToRelative(-0.59f, 1.41f)
+                        reflectiveQuadTo(12f, 14f)
+                        close()
+                        moveTo(12f, 8f)
+                        quadTo(11.18f, 8f, 10.59f, 7.41f)
+                        reflectiveQuadTo(10f, 6f)
+                        reflectiveQuadTo(10.59f, 4.59f)
+                        reflectiveQuadTo(12f, 4f)
+                        reflectiveQuadToRelative(1.41f, 0.59f)
+                        quadTo(14f, 5.18f, 14f, 6f)
+                        reflectiveQuadTo(13.41f, 7.41f)
+                        reflectiveQuadTo(12f, 8f)
+                        close()
+                    }
+                }
+                .build()
+        return _more_vert!!
+    }
+
+private var _more_vert: ImageVector? = null
+
+@Suppress("CheckReturnValue")
+val delete: ImageVector
     get() {
         if (_delete != null) {
             return _delete!!
@@ -88,7 +152,7 @@ public val delete: ImageVector
 private var _delete: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val edit: ImageVector
+val edit: ImageVector
     get() {
         if (_edit != null) {
             return _edit!!
@@ -153,7 +217,7 @@ public val edit: ImageVector
 private var _edit: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val content_paste_search: ImageVector
+val content_paste_search: ImageVector
     get() {
         if (_content_paste_search != null) {
             return _content_paste_search!!
@@ -249,7 +313,7 @@ public val content_paste_search: ImageVector
 private var _content_paste_search: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val build: ImageVector
+val build: ImageVector
     get() {
         if (_build != null) {
             return _build!!
@@ -329,7 +393,7 @@ public val build: ImageVector
 private var _build: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val close: ImageVector
+val close: ImageVector
     get() {
         if (_close != null) {
             return _close!!
@@ -377,7 +441,7 @@ public val close: ImageVector
 private var _close: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val arrow_back: ImageVector
+val arrow_back: ImageVector
     get() {
         if (_arrow_back != null) {
             return _arrow_back!!
@@ -422,7 +486,7 @@ public val arrow_back: ImageVector
 private var _arrow_back: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val check: ImageVector
+val check: ImageVector
     get() {
         if (_check != null) {
             return _check!!
@@ -464,7 +528,7 @@ public val check: ImageVector
 private var _check: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val overview: ImageVector
+val overview: ImageVector
     get() {
         if (_overview != null) {
             return _overview!!
@@ -567,7 +631,7 @@ public val overview: ImageVector
 private var _overview: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val add: ImageVector
+val add: ImageVector
     get() {
         if (_add != null) {
             return _add!!
@@ -615,7 +679,7 @@ public val add: ImageVector
 private var _add: ImageVector? = null
 
 @Suppress("CheckReturnValue")
-public val error: ImageVector
+val error: ImageVector
     get() {
         if (_error != null) {
             return _error!!

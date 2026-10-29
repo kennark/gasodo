@@ -17,8 +17,13 @@ android {
         applicationId = "com.gasodoapp.gasodo"
         minSdk = 33
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.3.0"
+
+        // versionCode derived from current time
+        val nowMillis = System.currentTimeMillis()
+        val timestampVersionCode = (nowMillis / (60000)).toInt()
+        versionCode = timestampVersionCode
+
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

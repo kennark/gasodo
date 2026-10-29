@@ -2,7 +2,6 @@ package com.gasodoapp.gasodo.feature.overview
 
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.DateRangePickerState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.getSelectedEndDate
 import androidx.compose.material3.getSelectedStartDate
 import androidx.lifecycle.ViewModel
@@ -98,7 +97,6 @@ class OverviewScreenViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    @OptIn(ExperimentalMaterial3Api::class)
     val dateRangePickerState = DateRangePickerState(
         locale = CalendarLocale.getDefault(),
         initialSelectedStartDate = LocalDate.of(

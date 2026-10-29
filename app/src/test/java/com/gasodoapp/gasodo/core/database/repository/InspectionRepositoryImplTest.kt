@@ -17,7 +17,6 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
@@ -47,7 +46,6 @@ class InspectionRepositoryImplTest {
         repository = InspectionRepositoryImpl(db, dao, usedPartDao)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `getAll returns Flow from DAO`() = runTest {
         // Arrange
@@ -67,7 +65,6 @@ class InspectionRepositoryImplTest {
         assertThat(result).hasSize(2)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `getAll returns empty list when DAO returns empty`() = runTest {
         // Arrange

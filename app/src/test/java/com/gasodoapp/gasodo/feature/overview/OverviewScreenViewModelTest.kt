@@ -2,7 +2,6 @@
 
 package com.gasodoapp.gasodo.feature.overview
 
-import androidx.compose.material3.ExperimentalMaterial3Api
 import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
@@ -721,7 +720,7 @@ class OverviewScreenViewModelTest {
 
     // region Date selection
 
-    @OptIn(ExperimentalCoroutinesApi::class, ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `onDateSelected reloads refuel, maintenance and inspection data`() = runTest {
         val refuelEvents = listOf(

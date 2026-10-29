@@ -628,7 +628,6 @@ class AddEventScreenViewModelTest {
         assertThat(viewModel.inspectionUiState.value.inspectedParts).doesNotContain(part)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `onCreateNewInspectablePart adds draft part and selects it`() = runTest {
         // Given

@@ -13,6 +13,7 @@ import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.feature.addevent.AddEventScreen
 import com.gasodoapp.gasodo.feature.inspection.InspectionScreen
 import com.gasodoapp.gasodo.feature.maintenance.MaintenanceScreen
+import com.gasodoapp.gasodo.feature.manage.inspectablepart.InspectablePartScreen
 import com.gasodoapp.gasodo.feature.manage.maintenanceservicetype.MaintenanceServiceTypeScreen
 import com.gasodoapp.gasodo.feature.overview.OverviewScreen
 import com.gasodoapp.gasodo.feature.refuel.RefuelScreen
@@ -29,8 +30,8 @@ fun AppNavHost(
         startDestination = startDestination.route,
         modifier = modifier
     ) {
-        val onNavigateToMaintenanceServiceTypes = {
-            navController.navigate(Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES.route)
+        val onNavigateToManageDestination: (Destinations) -> Unit = { destination ->
+            navController.navigate(destination.route)
         }
 
         Destinations.entries.forEach { destination ->
@@ -39,26 +40,30 @@ fun AppNavHost(
                     Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES -> MaintenanceServiceTypeScreen(
                         onBack = { navController.popBackStack() }
                     )
+
+                    Destinations.MANAGE_INSPECTABLE_PARTS -> InspectablePartScreen(
+                        onBack = { navController.popBackStack() }
+                    )
                     Destinations.OVERVIEW -> OverviewScreen(
-                        onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
+                        onNavigateToManageDestination = onNavigateToManageDestination
                     )
 
                     Destinations.REFUELS -> RefuelScreen(
-                        onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes,
+                        onNavigateToManageDestination = onNavigateToManageDestination,
                         onNavigateToEdit = { id: UUID ->
                             navController.navigate(editEventRoute(EventType.REFUEL, id))
                         }
                     )
 
                     Destinations.MAINTENANCE -> MaintenanceScreen(
-                        onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes,
+                        onNavigateToManageDestination = onNavigateToManageDestination,
                         onNavigateToEdit = { id: UUID ->
                             navController.navigate(editEventRoute(EventType.MAINTENANCE, id))
                         }
                     )
 
                     Destinations.INSPECTION -> InspectionScreen(
-                        onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes,
+                        onNavigateToManageDestination = onNavigateToManageDestination,
                         onNavigateToEdit = { id: UUID ->
                             navController.navigate(editEventRoute(EventType.INSPECTION, id))
                         }

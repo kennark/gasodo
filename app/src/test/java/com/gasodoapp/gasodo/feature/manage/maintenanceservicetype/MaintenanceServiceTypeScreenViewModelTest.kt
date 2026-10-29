@@ -2,6 +2,7 @@ package com.gasodoapp.gasodo.feature.manage.maintenanceservicetype
 
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceServiceTypeRepository
+import com.gasodoapp.gasodo.ui.components.catalogue.NameError
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -216,7 +217,7 @@ class MaintenanceServiceTypeScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        assertThat(viewModel.editor.value?.nameError).isEqualTo(ServiceTypeNameError.EMPTY)
+        assertThat(viewModel.editor.value?.nameError).isEqualTo(NameError.EMPTY)
         assertThat(viewModel.editor.value).isNotNull()
         coVerify(exactly = 0) { repository.insert(any()) }
     }
@@ -234,7 +235,7 @@ class MaintenanceServiceTypeScreenViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        assertThat(viewModel.editor.value?.nameError).isEqualTo(ServiceTypeNameError.DUPLICATE)
+        assertThat(viewModel.editor.value?.nameError).isEqualTo(NameError.DUPLICATE)
         coVerify(exactly = 0) { repository.insert(any()) }
     }
 

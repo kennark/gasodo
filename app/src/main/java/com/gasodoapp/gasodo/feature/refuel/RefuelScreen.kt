@@ -42,6 +42,7 @@ import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
+import com.gasodoapp.gasodo.feature.navigation.Destinations
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.ExtraDataText
 import com.gasodoapp.gasodo.ui.components.LoadingPlaceholder
@@ -62,7 +63,7 @@ import java.util.UUID
 
 @Composable
 fun RefuelScreen(
-    onNavigateToMaintenanceServiceTypes: () -> Unit,
+    onNavigateToManageDestination: (Destinations) -> Unit,
     viewModel: RefuelScreenViewModel = hiltViewModel<RefuelScreenViewModel>(),
     onNavigateToEdit: (id: UUID) -> Unit
 ) {
@@ -72,7 +73,7 @@ fun RefuelScreen(
         title = "Recent Refuels",
         actions = {
             AppOverflowMenu(
-                onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
+                onNavigateToManageDestination = onNavigateToManageDestination
             )
         }
     ) { paddingValues ->

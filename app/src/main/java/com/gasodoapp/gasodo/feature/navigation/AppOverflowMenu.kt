@@ -6,20 +6,30 @@ import com.gasodoapp.gasodo.ui.components.OverflowMenu
 import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
 
 /**
+ * Every destination that is reachable from the overflow menu, in display order
+ */
+private val manageDestinations = listOf(
+    Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES,
+    Destinations.MANAGE_INSPECTABLE_PARTS,
+)
+
+/**
  * Overflow menu shown in the app bar.
+ *
+ * @param onNavigateToManageDestination invoked with the selected manage destination.
  */
 @Composable
 fun AppOverflowMenu(
-    onNavigateToMaintenanceServiceTypes: () -> Unit,
+    onNavigateToManageDestination: (Destinations) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Items to show in the menu
-    val items = listOf(
+    val items = manageDestinations.map { destination ->
         OverflowMenuItem(
-            label = Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES.label,
-            onClick = onNavigateToMaintenanceServiceTypes
-        ),
-    )
+            label = destination.label,
+            onClick = { onNavigateToManageDestination(destination) }
+        )
+    }
 
     OverflowMenu(items = items, modifier = modifier)
 }

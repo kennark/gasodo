@@ -10,4 +10,5 @@ interface InspectablePartRepository {
     suspend fun insert(entity: InspectablePart): Long
     suspend fun update(entity: InspectablePart)
     suspend fun delete(entity: InspectablePart)
+    suspend fun countUsage(id: Long): Int
 }

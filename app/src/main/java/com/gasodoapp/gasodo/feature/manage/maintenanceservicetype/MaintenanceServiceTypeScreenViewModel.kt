@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceServiceTypeRepository
+import com.gasodoapp.gasodo.ui.components.catalogue.CatalogueEditorState
+import com.gasodoapp.gasodo.ui.components.catalogue.NameError
+import com.gasodoapp.gasodo.ui.components.catalogue.PendingCatalogueDelete
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,54 +20,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Reason why the name typed into the editor cannot be saved.
- *
- * The enum carries no user facing text, so the ViewModel stays free of `Context` lookups and
- * validation remains a pure function. The wording lives in the UI layer via [message].
- */
-enum class ServiceTypeNameError {
-    /** The name is blank once trimmed. */
-    EMPTY,
-
-    /** Another service type already uses this name (case insensitive). */
-    DUPLICATE,
-}
-
-/**
- * User facing message for a [ServiceTypeNameError].
- */
-fun ServiceTypeNameError.message(): String = when (this) {
-    ServiceTypeNameError.EMPTY -> "Enter a name"
-    ServiceTypeNameError.DUPLICATE -> "A service with this name already exists"
-}
-
-/**
- * State of the create/edit dialog.
- *
- * @property id identifier of the edited row, or `0L` when a new type is being created.
- */
-data class ServiceTypeEditor(
-    val id: Long = 0L,
-    val name: String = "",
-    val notes: String = "",
-    val nameError: ServiceTypeNameError? = null,
-) {
-    val isNew: Boolean
-        get() = id == 0L
-}
-
-/**
- * A delete request waiting for confirmation.
- *
- * @property usageCount number of maintenance events referencing the type, or `null` while it is
- *   still being looked up.
- */
-data class PendingServiceTypeDelete(
-    val target: MaintenanceServiceType,
-    val usageCount: Int? = null,
-)
-
-/**
  * Manages the user defined [MaintenanceServiceType] catalogue: listing, filtering, creating,
  * editing and deleting.
  */
@@ -76,11 +31,13 @@ class MaintenanceServiceTypeScreenViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _editor = MutableStateFlow<ServiceTypeEditor?>(null)
-    val editor: StateFlow<ServiceTypeEditor?> = _editor.asStateFlow()
+    private val _editor = MutableStateFlow<CatalogueEditorState?>(null)
+    val editor: StateFlow<CatalogueEditorState?> = _editor.asStateFlow()
 
-    private val _pendingDelete = MutableStateFlow<PendingServiceTypeDelete?>(null)
-    val pendingDelete: StateFlow<PendingServiceTypeDelete?> = _pendingDelete.asStateFlow()
+    private val _pendingDelete =
+        MutableStateFlow<PendingCatalogueDelete<MaintenanceServiceType>?>(null)
+    val pendingDelete: StateFlow<PendingCatalogueDelete<MaintenanceServiceType>?> =
+        _pendingDelete.asStateFlow()
 
     /**
      * Every known service type, kept hot because [onEditorConfirm] validates new names against it
@@ -114,11 +71,11 @@ class MaintenanceServiceTypeScreenViewModel @Inject constructor(
     }
 
     fun onCreateClick() {
-        _editor.value = ServiceTypeEditor()
+        _editor.value = CatalogueEditorState()
     }
 
     fun onEditClick(item: MaintenanceServiceType) {
-        _editor.value = ServiceTypeEditor(
+        _editor.value = CatalogueEditorState(
             id = item.id,
             name = item.serviceName,
             notes = item.notes.orEmpty()
@@ -143,7 +100,7 @@ class MaintenanceServiceTypeScreenViewModel @Inject constructor(
     /**
      * Validates and persists the editor contents, then closes the dialog.
      *
-     * Does nothing but set [ServiceTypeEditor.nameError] when the name is blank or taken by
+     * Does nothing but set [CatalogueEditorState.nameError] when the name is blank or taken by
      * another entry.
      */
     fun onEditorConfirm() {
@@ -151,7 +108,7 @@ class MaintenanceServiceTypeScreenViewModel @Inject constructor(
         val name = current.name.trim()
 
         if (name.isBlank()) {
-            _editor.value = current.copy(nameError = ServiceTypeNameError.EMPTY)
+            _editor.value = current.copy(nameError = NameError.EMPTY)
             return
         }
 
@@ -162,7 +119,7 @@ class MaintenanceServiceTypeScreenViewModel @Inject constructor(
                 existing.id != current.id && existing.serviceName.equals(name, ignoreCase = true)
             }
             if (isDuplicate) {
-                _editor.value = current.copy(nameError = ServiceTypeNameError.DUPLICATE)
+                _editor.value = current.copy(nameError = NameError.DUPLICATE)
                 return@launch
             }
 
@@ -187,7 +144,7 @@ class MaintenanceServiceTypeScreenViewModel @Inject constructor(
      * user can be warned that past maintenance events will lose this service.
      */
     fun onDeleteClick(item: MaintenanceServiceType) {
-        _pendingDelete.value = PendingServiceTypeDelete(target = item, usageCount = null)
+        _pendingDelete.value = PendingCatalogueDelete(target = item, usageCount = null)
 
         viewModelScope.launch {
             val count = repository.countUsage(item.id)

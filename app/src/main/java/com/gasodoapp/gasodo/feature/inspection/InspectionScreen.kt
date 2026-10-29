@@ -47,6 +47,7 @@ import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
+import com.gasodoapp.gasodo.feature.navigation.Destinations
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.ExtraDataText
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
@@ -62,7 +63,7 @@ import java.util.UUID
 
 @Composable
 fun InspectionScreen(
-    onNavigateToMaintenanceServiceTypes: () -> Unit,
+    onNavigateToManageDestination: (Destinations) -> Unit,
     viewModel: InspectionScreenViewModel = hiltViewModel<InspectionScreenViewModel>(),
     onNavigateToEdit: (id: UUID) -> Unit
 ) {
@@ -73,7 +74,7 @@ fun InspectionScreen(
         title = "Recent Inspections",
         actions = {
             AppOverflowMenu(
-                onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
+                onNavigateToManageDestination = onNavigateToManageDestination
             )
         }
     ) { paddingValues ->

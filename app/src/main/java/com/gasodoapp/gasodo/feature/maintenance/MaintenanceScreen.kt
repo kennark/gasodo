@@ -49,6 +49,7 @@ import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
+import com.gasodoapp.gasodo.feature.navigation.Destinations
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.ExtraDataText
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
@@ -66,7 +67,7 @@ import java.util.UUID
 
 @Composable
 fun MaintenanceScreen(
-    onNavigateToMaintenanceServiceTypes: () -> Unit,
+    onNavigateToManageDestination: (Destinations) -> Unit,
     viewModel: MaintenanceScreenViewModel = hiltViewModel<MaintenanceScreenViewModel>(),
     onNavigateToEdit: (id: UUID) -> Unit
 ) {
@@ -76,7 +77,7 @@ fun MaintenanceScreen(
         title = "Recent Maintenance Entries",
         actions = {
             AppOverflowMenu(
-                onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
+                onNavigateToManageDestination = onNavigateToManageDestination
             )
         }
     ) { paddingValues ->

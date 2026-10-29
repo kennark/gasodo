@@ -21,4 +21,7 @@ interface UsedInspectablePartDao {
 
     @Query("DELETE FROM used_inspectable_parts WHERE inspection_event_id = :id")
     suspend fun deleteByInspectionEventId(id: UUID)
+
+    @Query("SELECT COUNT(*) FROM used_inspectable_parts WHERE part_id = :partId")
+    suspend fun countByPartId(partId: Long): Int
 }

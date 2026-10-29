@@ -56,6 +56,7 @@ import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
+import com.gasodoapp.gasodo.feature.navigation.Destinations
 import com.gasodoapp.gasodo.ui.components.NoDataCard
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.build
@@ -69,7 +70,7 @@ import java.time.format.FormatStyle
 
 @Composable
 fun OverviewScreen(
-    onNavigateToMaintenanceServiceTypes: () -> Unit,
+    onNavigateToManageDestination: (Destinations) -> Unit,
     viewModel: OverviewScreenViewModel = hiltViewModel<OverviewScreenViewModel>()
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
@@ -100,7 +101,7 @@ fun OverviewScreen(
         title = "Overview",
         actions = {
             AppOverflowMenu(
-                onNavigateToMaintenanceServiceTypes = onNavigateToMaintenanceServiceTypes
+                onNavigateToManageDestination = onNavigateToManageDestination
             )
         }
     ) { paddingValues ->

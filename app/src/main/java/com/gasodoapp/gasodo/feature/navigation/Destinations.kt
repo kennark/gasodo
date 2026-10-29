@@ -32,6 +32,10 @@ enum class Destinations(
         "manage/maintenance-service-types",
         "Maintenance Services"
     ),
+    MANAGE_INSPECTABLE_PARTS(
+        "manage/inspectable-parts",
+        "Inspectable Parts"
+    ),
     OVERVIEW(
         "overview",
         "Overview",

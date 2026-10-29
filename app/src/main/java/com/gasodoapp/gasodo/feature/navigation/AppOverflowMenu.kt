@@ -11,6 +11,7 @@ import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
 private val manageDestinations = listOf(
     Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES,
     Destinations.MANAGE_INSPECTABLE_PARTS,
+    Destinations.MANAGE_SAVED_LOCATIONS,
 )
 
 /**

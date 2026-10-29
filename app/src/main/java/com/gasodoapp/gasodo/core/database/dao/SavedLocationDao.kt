@@ -35,4 +35,20 @@ interface SavedLocationDao {
 
     @Query("DELETE FROM saved_locations WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    /**
+     * Number of events (of any type) currently referencing the location [id].
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM (
+            SELECT saved_location_id FROM refuel_events WHERE saved_location_id = :id
+            UNION ALL
+            SELECT saved_location_id FROM maintenance_events WHERE saved_location_id = :id
+            UNION ALL
+            SELECT saved_location_id FROM inspection_events WHERE saved_location_id = :id
+        )
+        """,
+    )
+    suspend fun countUsage(id: String): Int
 }

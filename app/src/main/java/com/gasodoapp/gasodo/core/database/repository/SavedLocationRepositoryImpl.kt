@@ -30,4 +30,7 @@ class SavedLocationRepositoryImpl @Inject constructor(
     override suspend fun delete(location: SavedLocation) {
         dao.delete(location)
     }
+
+    override suspend fun countUsage(id: UUID): Int =
+        dao.countUsage(id.toString())
 }

@@ -130,6 +130,20 @@ class SavedLocationRepositoryImplTest {
         coVerify { dao.delete(location) }
     }
 
+    @Test
+    fun `countUsage delegates to DAO using the string id`() = runTest {
+        // Arrange
+        val id = UUID.randomUUID()
+        coEvery { dao.countUsage(id.toString()) } returns 3
+
+        // Act
+        val result = repository.countUsage(id)
+
+        // Assert
+        assertThat(result).isEqualTo(3)
+        coVerify { dao.countUsage(id.toString()) }
+    }
+
     private fun makeSavedLocation(
         id: UUID = UUID.randomUUID(),
         name: String = "Test Location",

@@ -13,4 +13,9 @@ interface SavedLocationRepository {
     suspend fun insert(location: SavedLocation)
     suspend fun update(location: SavedLocation)
     suspend fun delete(location: SavedLocation)
+
+    /**
+     * Number of events referencing the location [id].
+     */
+    suspend fun countUsage(id: UUID): Int
 }

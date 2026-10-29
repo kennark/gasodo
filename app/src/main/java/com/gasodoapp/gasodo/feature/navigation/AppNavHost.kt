@@ -15,6 +15,7 @@ import com.gasodoapp.gasodo.feature.inspection.InspectionScreen
 import com.gasodoapp.gasodo.feature.maintenance.MaintenanceScreen
 import com.gasodoapp.gasodo.feature.manage.inspectablepart.InspectablePartScreen
 import com.gasodoapp.gasodo.feature.manage.maintenanceservicetype.MaintenanceServiceTypeScreen
+import com.gasodoapp.gasodo.feature.manage.savedlocation.SavedLocationScreen
 import com.gasodoapp.gasodo.feature.overview.OverviewScreen
 import com.gasodoapp.gasodo.feature.refuel.RefuelScreen
 import java.util.UUID
@@ -42,6 +43,10 @@ fun AppNavHost(
                     )
 
                     Destinations.MANAGE_INSPECTABLE_PARTS -> InspectablePartScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+
+                    Destinations.MANAGE_SAVED_LOCATIONS -> SavedLocationScreen(
                         onBack = { navController.popBackStack() }
                     )
                     Destinations.OVERVIEW -> OverviewScreen(

@@ -36,6 +36,10 @@ enum class Destinations(
         "manage/inspectable-parts",
         "Inspectable Parts"
     ),
+    MANAGE_SAVED_LOCATIONS(
+        "manage/saved-locations",
+        "Saved Locations"
+    ),
     OVERVIEW(
         "overview",
         "Overview",

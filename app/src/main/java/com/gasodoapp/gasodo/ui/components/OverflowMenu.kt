@@ -2,6 +2,8 @@ package com.gasodoapp.gasodo.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
@@ -44,7 +46,7 @@ data class OverflowMenuItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OverflowMenu(
-    items: List<OverflowMenuItem>,
+    items: List<List<OverflowMenuItem>>,
     modifier: Modifier = Modifier,
     contentDescription: String = "More options",
 ) {
@@ -70,29 +72,32 @@ fun OverflowMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            DropdownMenuGroup(
-                shapes = MenuDefaults.groupShape(index = 0, count = 1),
-                interactionSource = groupInteractionSource,
-            ) {
-                items.forEachIndexed { index, (label, onClick, icon) ->
-                    DropdownMenuItem(
-                        onClick = {
-                            expanded = false
-                            onClick()
-                        },
-                        text = { Text(label) },
-                        shape = menuItemShape(index, items.size),
-                        leadingIcon = icon?.let { vector ->
-                            {
-                                Icon(
-                                    imageVector = vector,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(MenuDefaults.LeadingIconSize),
-                                )
-                            }
-                        },
-                    )
+            items.forEach { items ->
+                DropdownMenuGroup(
+                    shapes = MenuDefaults.groupShape(index = 0, count = 1),
+                    interactionSource = groupInteractionSource,
+                ) {
+                    items.forEachIndexed { index, (label, onClick, icon) ->
+                        DropdownMenuItem(
+                            onClick = {
+                                expanded = false
+                                onClick()
+                            },
+                            text = { Text(label) },
+                            shape = menuItemShape(index, items.size),
+                            leadingIcon = icon?.let { vector ->
+                                {
+                                    Icon(
+                                        imageVector = vector,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(MenuDefaults.LeadingIconSize),
+                                    )
+                                }
+                            },
+                        )
+                    }
                 }
+                Spacer(Modifier.height(MenuDefaults.GroupSpacing))
             }
         }
     }

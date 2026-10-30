@@ -7,11 +7,17 @@ import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
 
 /**
  * Every destination that is reachable from the overflow menu, in display order
+ * Different menu groups are separated in own lists
  */
-private val manageDestinations = listOf(
+private val overflowDestinations = listOf(
+    listOf(
     Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES,
     Destinations.MANAGE_INSPECTABLE_PARTS,
     Destinations.MANAGE_SAVED_LOCATIONS,
+    ),
+    listOf(
+        Destinations.ABOUT,
+    )
 )
 
 /**
@@ -25,11 +31,13 @@ fun AppOverflowMenu(
     modifier: Modifier = Modifier,
 ) {
     // Items to show in the menu
-    val items = manageDestinations.map { destination ->
-        OverflowMenuItem(
-            label = destination.label,
-            onClick = { onNavigateToManageDestination(destination) }
-        )
+    val items = overflowDestinations.map { listOfDestinations ->
+        listOfDestinations.map { destination ->
+            OverflowMenuItem(
+                label = destination.label,
+                onClick = { onNavigateToManageDestination(destination) }
+            )
+        }
     }
 
     OverflowMenu(items = items, modifier = modifier)

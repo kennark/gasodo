@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
 import com.gasodoapp.gasodo.core.enums.EventType
+import com.gasodoapp.gasodo.feature.about.AboutScreen
 import com.gasodoapp.gasodo.feature.addevent.AddEventScreen
 import com.gasodoapp.gasodo.feature.inspection.InspectionScreen
 import com.gasodoapp.gasodo.feature.maintenance.MaintenanceScreen
@@ -49,6 +50,11 @@ fun AppNavHost(
                     Destinations.MANAGE_SAVED_LOCATIONS -> SavedLocationScreen(
                         onBack = { navController.popBackStack() }
                     )
+
+                    Destinations.ABOUT -> AboutScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+
                     Destinations.OVERVIEW -> OverviewScreen(
                         onNavigateToManageDestination = onNavigateToManageDestination
                     )

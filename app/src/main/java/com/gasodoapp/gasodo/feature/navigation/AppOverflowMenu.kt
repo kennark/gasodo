@@ -11,11 +11,12 @@ import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
  */
 private val overflowDestinations = listOf(
     listOf(
-    Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES,
-    Destinations.MANAGE_INSPECTABLE_PARTS,
-    Destinations.MANAGE_SAVED_LOCATIONS,
+        Destinations.MANAGE_MAINTENANCE_SERVICE_TYPES,
+        Destinations.MANAGE_INSPECTABLE_PARTS,
+        Destinations.MANAGE_SAVED_LOCATIONS,
     ),
     listOf(
+        Destinations.SETTINGS,
         Destinations.ABOUT,
     )
 )

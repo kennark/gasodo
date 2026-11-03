@@ -40,6 +40,10 @@ enum class Destinations(
         "manage/saved-locations",
         "Saved Locations"
     ),
+    SETTINGS(
+        "settings",
+        "Settings"
+    ),
     ABOUT(
         "about",
         "About"

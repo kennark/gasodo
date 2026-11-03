@@ -19,6 +19,7 @@ import com.gasodoapp.gasodo.feature.manage.maintenanceservicetype.MaintenanceSer
 import com.gasodoapp.gasodo.feature.manage.savedlocation.SavedLocationScreen
 import com.gasodoapp.gasodo.feature.overview.OverviewScreen
 import com.gasodoapp.gasodo.feature.refuel.RefuelScreen
+import com.gasodoapp.gasodo.feature.settings.SettingsScreen
 import java.util.UUID
 
 @Composable
@@ -48,6 +49,10 @@ fun AppNavHost(
                     )
 
                     Destinations.MANAGE_SAVED_LOCATIONS -> SavedLocationScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+
+                    Destinations.SETTINGS -> SettingsScreen(
                         onBack = { navController.popBackStack() }
                     )
 

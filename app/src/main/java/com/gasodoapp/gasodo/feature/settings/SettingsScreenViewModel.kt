@@ -1,0 +1,39 @@
+package com.gasodoapp.gasodo.feature.settings
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.settings.AppSettings
+import com.gasodoapp.gasodo.core.settings.SettingsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * Exposes the stored preferences and forwards user edits to [SettingsRepository].
+ */
+@HiltViewModel
+class SettingsScreenViewModel @Inject constructor(
+    private val repository: SettingsRepository,
+) : ViewModel() {
+
+    val settings: StateFlow<AppSettings> =
+        repository.settings
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = AppSettings(),
+            )
+
+    /**
+     * Stores the selected theme, including [ThemeMode.SYSTEM] to go back to following the device.
+     */
+    fun onThemeModeChange(mode: ThemeMode) {
+        viewModelScope.launch {
+            repository.setThemeMode(mode)
+        }
+    }
+}

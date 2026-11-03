@@ -14,6 +14,8 @@ import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepositoryImpl
 import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
 import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepositoryImpl
+import com.gasodoapp.gasodo.core.settings.SettingsRepository
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -65,4 +67,10 @@ abstract class RepositoryModule {
     abstract fun bindInspectablePartRepository(
         impl: InspectablePartRepositoryImpl
     ): InspectablePartRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSettingsRepository(
+        impl: SettingsRepositoryImpl
+    ): SettingsRepository
 }

@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -86,6 +85,7 @@ import com.gasodoapp.gasodo.ui.icons.add
 import com.gasodoapp.gasodo.ui.icons.arrow_back
 import com.gasodoapp.gasodo.ui.icons.check
 import com.gasodoapp.gasodo.ui.icons.error
+import com.gasodoapp.gasodo.ui.theme.LocalIsDarkTheme
 import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -110,7 +110,8 @@ fun AddEventScreen(
     val inspectableParts by viewModel.inspectableParts.collectAsStateWithLifecycle(initialValue = emptyList())
 
     val view = LocalView.current
-    val darkIcons = !isSystemInDarkTheme()
+    // Read the app's own theme rather than the device setting
+    val darkIcons = !LocalIsDarkTheme.current
 
     // Fix white status bar icons on white mode dialog
     SideEffect {

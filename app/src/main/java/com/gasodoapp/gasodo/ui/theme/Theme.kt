@@ -8,7 +8,19 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
+
+/**
+ * Whether the app is currently rendered with the dark colour scheme.
+ *
+ * [MaterialTheme] only exposes the resolved colours, so components that need to know the mode
+ * itself (for example to pick system bar icon appearance) read it from here. Unlike
+ * `isSystemInDarkTheme()` this respects an in-app [com.gasodoapp.gasodo.core.enums.ThemeMode]
+ * override.
+ */
+val LocalIsDarkTheme = staticCompositionLocalOf { false }
 
 @Composable
 fun GasodoTheme(
@@ -25,11 +37,13 @@ fun GasodoTheme(
         else -> lightScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalIsDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
 
 private val lightScheme = lightColorScheme(

@@ -5,6 +5,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.Liquid
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DISTANCE_UNIT_KEY
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.LIQUID_UNIT_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.THEME_MODE_KEY
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -20,13 +24,18 @@ class SettingsRepositoryImpl @Inject constructor(
 ) : SettingsRepository {
 
     override val settings: Flow<AppSettings> =
-        dataStore.data
-            // A corrupt or unreadable file must not crash the app, fall back to the defaults.
-            .catch { error ->
-                if (error is IOException) emit(emptyPreferences()) else throw error
-            }
+        readablePreferences()
             .map { preferences ->
-                AppSettings(themeMode = preferences.readThemeMode())
+                AppSettings(themeMode = ThemeMode.fromName(preferences[THEME_MODE_KEY]))
+            }
+
+    override val units: Flow<Units> =
+        readablePreferences()
+            .map { preferences ->
+                Units(
+                    distance = Distance.fromName(preferences[DISTANCE_UNIT_KEY]),
+                    liquid = Liquid.fromName(preferences[LIQUID_UNIT_KEY]),
+                )
             }
 
     override suspend fun setThemeMode(mode: ThemeMode) {
@@ -34,15 +43,28 @@ class SettingsRepositoryImpl @Inject constructor(
             preferences[THEME_MODE_KEY] = mode.name
         }
     }
-}
 
-/**
- * Reads the stored [ThemeMode], falling back to [ThemeMode.SYSTEM] for a missing or unknown value.
- *
- * An unknown name can only happen after downgrading from a version that knew more modes, so
- * treating it as the default keeps the app usable instead of crashing on `valueOf`.
- */
-private fun Preferences.readThemeMode(): ThemeMode {
-    val stored = this[THEME_MODE_KEY] ?: return ThemeMode.SYSTEM
-    return ThemeMode.entries.firstOrNull { it.name == stored } ?: ThemeMode.SYSTEM
+    override suspend fun setDistanceUnit(unit: Distance) {
+        dataStore.edit { preferences ->
+            preferences[DISTANCE_UNIT_KEY] = unit.name
+        }
+    }
+
+    override suspend fun setLiquidUnit(unit: Liquid) {
+        dataStore.edit { preferences ->
+            preferences[LIQUID_UNIT_KEY] = unit.name
+        }
+    }
+
+    /**
+     * Raw preferences, with unreadable files replaced by an empty set.
+     *
+     * A corrupt or unreadable file must not crash the app, falling back to the defaults lets every
+     * `map` below resolve its own default through the enum `fromName` helpers.
+     */
+    private fun readablePreferences(): Flow<Preferences> =
+        dataStore.data
+            .catch { error ->
+                if (error is IOException) emit(emptyPreferences()) else throw error
+            }
 }

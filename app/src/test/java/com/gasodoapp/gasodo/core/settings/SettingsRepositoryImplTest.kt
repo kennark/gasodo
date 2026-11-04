@@ -5,6 +5,10 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.Liquid
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DISTANCE_UNIT_KEY
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.LIQUID_UNIT_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.THEME_MODE_KEY
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -102,5 +106,97 @@ class SettingsRepositoryImplTest {
 
         // Assert
         assertThat(settings.themeMode).isEqualTo(ThemeMode.SYSTEM)
+    }
+
+    @Test
+    fun `units default to KILOMETER and LITER`() = runTest {
+        // Act
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.distance).isEqualTo(Distance.KILOMETER)
+        assertThat(units.liquid).isEqualTo(Liquid.LITER)
+    }
+
+    @Test
+    fun `setDistanceUnit MILE is emitted by the units flow`() = runTest {
+        // Act
+        repository.setDistanceUnit(Distance.MILE)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.distance).isEqualTo(Distance.MILE)
+    }
+
+    @Test
+    fun `setLiquidUnit GALLON is emitted by the units flow`() = runTest {
+        // Act
+        repository.setLiquidUnit(Liquid.GALLON)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.liquid).isEqualTo(Liquid.GALLON)
+    }
+
+    @Test
+    fun `setDistanceUnit overwrites the previously stored value`() = runTest {
+        // Act
+        repository.setDistanceUnit(Distance.MILE)
+        repository.setDistanceUnit(Distance.KILOMETER)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.distance).isEqualTo(Distance.KILOMETER)
+    }
+
+    @Test
+    fun `setLiquidUnit overwrites the previously stored value`() = runTest {
+        // Act
+        repository.setLiquidUnit(Liquid.GALLON)
+        repository.setLiquidUnit(Liquid.LITER)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.liquid).isEqualTo(Liquid.LITER)
+    }
+
+    @Test
+    fun `storing one unit does not change the other`() = runTest {
+        // Act
+        repository.setDistanceUnit(Distance.MILE)
+        repository.setLiquidUnit(Liquid.GALLON)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.distance).isEqualTo(Distance.MILE)
+        assertThat(units.liquid).isEqualTo(Liquid.GALLON)
+    }
+
+    @Test
+    fun `an unknown stored distance unit falls back to KILOMETER`() = runTest {
+        // Arrange
+        dataStore.edit { preferences ->
+            preferences[DISTANCE_UNIT_KEY] = "FURLONG"
+        }
+
+        // Act
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.distance).isEqualTo(Distance.KILOMETER)
+    }
+
+    @Test
+    fun `an unknown stored liquid unit falls back to LITER`() = runTest {
+        // Arrange
+        dataStore.edit { preferences ->
+            preferences[LIQUID_UNIT_KEY] = "PINT"
+        }
+
+        // Act
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.liquid).isEqualTo(Liquid.LITER)
     }
 }

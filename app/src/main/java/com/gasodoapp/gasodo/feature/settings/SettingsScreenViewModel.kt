@@ -3,8 +3,11 @@ package com.gasodoapp.gasodo.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.AppSettings
 import com.gasodoapp.gasodo.core.settings.SettingsRepository
+import com.gasodoapp.gasodo.core.settings.Units
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,12 +31,38 @@ class SettingsScreenViewModel @Inject constructor(
                 initialValue = AppSettings(),
             )
 
+    val units: StateFlow<Units> =
+        repository.units
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = Units(),
+            )
+
     /**
      * Stores the selected theme, including [ThemeMode.SYSTEM] to go back to following the device.
      */
     fun onThemeModeChange(mode: ThemeMode) {
         viewModelScope.launch {
             repository.setThemeMode(mode)
+        }
+    }
+
+    /**
+     * Stores the unit distances and mileage are shown in.
+     */
+    fun onDistanceUnitChange(unit: Distance) {
+        viewModelScope.launch {
+            repository.setDistanceUnit(unit)
+        }
+    }
+
+    /**
+     * Stores the unit fuel volumes are shown in.
+     */
+    fun onLiquidUnitChange(unit: Liquid) {
+        viewModelScope.launch {
+            repository.setLiquidUnit(unit)
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.gasodoapp.gasodo.core.settings
 
 import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.Liquid
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -14,7 +16,25 @@ interface SettingsRepository {
     val settings: Flow<AppSettings>
 
     /**
+     * Current unit preferences. Emits again whenever either unit changes.
+     *
+     * Separate from [settings] so consumers that only format values do not depend on unrelated
+     * preferences.
+     */
+    val units: Flow<Units>
+
+    /**
      * Stores the [mode] the app should render with, overriding the system setting.
      */
     suspend fun setThemeMode(mode: ThemeMode)
+
+    /**
+     * Stores the unit used for distances and mileage.
+     */
+    suspend fun setDistanceUnit(unit: Distance)
+
+    /**
+     * Stores the unit used for fuel volumes.
+     */
+    suspend fun setLiquidUnit(unit: Liquid)
 }

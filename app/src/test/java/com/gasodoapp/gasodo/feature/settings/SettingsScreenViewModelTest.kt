@@ -1,8 +1,11 @@
 package com.gasodoapp.gasodo.feature.settings
 
 import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.AppSettings
 import com.gasodoapp.gasodo.core.settings.SettingsRepository
+import com.gasodoapp.gasodo.core.settings.Units
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -26,7 +29,7 @@ import org.junit.Test
 
 /**
  * Unit tests for [SettingsScreenViewModel].
- * Tests cover the initial state and the theme mode selection.
+ * Tests cover the initial state and the theme and unit selections.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsScreenViewModelTest {
@@ -34,14 +37,19 @@ class SettingsScreenViewModelTest {
     private lateinit var repository: SettingsRepository
     private lateinit var viewModel: SettingsScreenViewModel
     private lateinit var stored: MutableStateFlow<AppSettings>
+    private lateinit var storedUnits: MutableStateFlow<Units>
 
     @Before
     fun setup() {
         Dispatchers.setMain(StandardTestDispatcher())
         repository = mockk()
         stored = MutableStateFlow(AppSettings())
+        storedUnits = MutableStateFlow(Units())
         every { repository.settings } returns stored
+        every { repository.units } returns storedUnits
         coEvery { repository.setThemeMode(any()) } just runs
+        coEvery { repository.setDistanceUnit(any()) } just runs
+        coEvery { repository.setLiquidUnit(any()) } just runs
         viewModel = SettingsScreenViewModel(repository)
     }
 
@@ -112,5 +120,61 @@ class SettingsScreenViewModelTest {
 
         // Assert
         coVerify(exactly = 1) { repository.setThemeMode(ThemeMode.SYSTEM) }
+    }
+
+    @Test
+    fun `units default to KILOMETER and LITER`() = runTest {
+        // Arrange
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.units.collect {}
+        }
+
+        // Act
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.units.value).isEqualTo(Units())
+        assertThat(viewModel.units.value.distance).isEqualTo(Distance.KILOMETER)
+        assertThat(viewModel.units.value.liquid).isEqualTo(Liquid.LITER)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `stored units are exposed by the units state`() = runTest {
+        // Arrange
+        storedUnits.value = Units(distance = Distance.MILE, liquid = Liquid.GALLON)
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.units.collect {}
+        }
+
+        // Act
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.units.value.distance).isEqualTo(Distance.MILE)
+        assertThat(viewModel.units.value.liquid).isEqualTo(Liquid.GALLON)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `onDistanceUnitChange MILE stores the value in the repository`() = runTest {
+        // Act
+        viewModel.onDistanceUnitChange(Distance.MILE)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 1) { repository.setDistanceUnit(Distance.MILE) }
+    }
+
+    @Test
+    fun `onLiquidUnitChange GALLON stores the value in the repository`() = runTest {
+        // Act
+        viewModel.onLiquidUnitChange(Liquid.GALLON)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 1) { repository.setLiquidUnit(Liquid.GALLON) }
     }
 }

@@ -26,4 +26,23 @@ enum class ThemeMode(val displayName: String) {
     }
 
     override fun toString(): String = displayName
+
+    companion object {
+
+        /**
+         * Entry used when nothing has been stored yet.
+         */
+        val DEFAULT: ThemeMode = SYSTEM
+
+        /**
+         * Resolves a persisted [name] (an enum constant name), falling back to [DEFAULT] when the
+         * value is absent or unknown.
+         *
+         * An unknown name can only happen after downgrading from a version that knew more modes,
+         * or from a hand edited preferences file, so treating it as the default keeps the app
+         * usable instead of crashing on `valueOf`.
+         */
+        fun fromName(name: String?): ThemeMode =
+            entries.firstOrNull { it.name == name } ?: DEFAULT
+    }
 }

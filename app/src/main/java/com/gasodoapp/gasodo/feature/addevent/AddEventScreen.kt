@@ -78,6 +78,7 @@ import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
+import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
@@ -108,6 +109,7 @@ fun AddEventScreen(
     val locations by viewModel.locations.collectAsStateWithLifecycle(initialValue = emptyList())
     val serviceTypes by viewModel.serviceTypes.collectAsStateWithLifecycle(initialValue = emptyList())
     val inspectableParts by viewModel.inspectableParts.collectAsStateWithLifecycle(initialValue = emptyList())
+    val units by viewModel.units.collectAsStateWithLifecycle()
 
     val view = LocalView.current
     // Read the app's own theme rather than the device setting
@@ -194,6 +196,7 @@ fun AddEventScreen(
             serviceTypes,
             inspectableParts,
             formErrors,
+            units,
         )
     }
 }
@@ -209,7 +212,8 @@ private fun FormContent(
     locations: List<SavedLocation>,
     serviceTypes: List<MaintenanceServiceType>,
     inspectableParts: List<InspectablePart>,
-    formErrors: AddEventFormErrors
+    formErrors: AddEventFormErrors,
+    units: Units
 ) {
     Column(
         modifier = Modifier
@@ -227,7 +231,8 @@ private fun FormContent(
             notesState = viewModel.notesField,
             datePickerState = viewModel.datePickerState,
             locations = locations,
-            errors = formErrors
+            errors = formErrors,
+            units = units
         )
 
         when (baseState.type) {
@@ -240,7 +245,8 @@ private fun FormContent(
                     pricePerLiterState = viewModel.pricePerLiterTextField,
                     onPaymentMethodChange = viewModel::onPaymentMethodChange,
                     onFullFillUpChange = viewModel::onFullFillUpChange,
-                    errors = formErrors
+                    errors = formErrors,
+                    units = units
                 )
             }
 
@@ -251,7 +257,8 @@ private fun FormContent(
                     serviceTypes = serviceTypes,
                     onServiceTypeChange = viewModel::onServiceTypeChange,
                     onCreateNewServiceType = viewModel::onCreateNewServiceType,
-                    errors = formErrors
+                    errors = formErrors,
+                    units = units
                 )
             }
 
@@ -298,6 +305,7 @@ fun BaseForm(
     datePickerState: DatePickerState,
     locations: List<SavedLocation>,
     errors: AddEventFormErrors = AddEventFormErrors(),
+    units: Units = Units(),
 ) {
     Column(
         modifier = Modifier
@@ -310,7 +318,7 @@ fun BaseForm(
             label = { Text("Mileage") },
             lineLimits = TextFieldLineLimits.SingleLine,
             modifier = Modifier.fillMaxWidth(),
-            trailingIcon = { Text("km") },
+            trailingIcon = { Text(units.distanceLabel) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = errors.mileage != null,
             supportingText = errors.mileage?.let { error -> { Text(error.message()) } },
@@ -424,6 +432,7 @@ fun RefuelForm(
     onPaymentMethodChange: (PaymentMethod) -> Unit,
     onFullFillUpChange: (Boolean) -> Unit,
     errors: AddEventFormErrors = AddEventFormErrors(),
+    units: Units = Units(),
 ) {
     Column(
         modifier = Modifier
@@ -435,14 +444,14 @@ fun RefuelForm(
             style = MaterialTheme.typography.titleMedium
         )
 
-        // Amount Field (Liters)
+        // Amount Field (fuel volume)
         OutlinedTextField(
             state = amountState,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             label = { Text("Amount") },
             lineLimits = TextFieldLineLimits.SingleLine,
             modifier = Modifier.fillMaxWidth(),
-            trailingIcon = { Text("L") },
+            trailingIcon = { Text(units.liquidLabel) },
             isError = errors.amount != null,
             supportingText = errors.amount?.let { error -> { Text(error.message()) } },
             inputTransformation = InputTransformation.byValue { current, proposed ->
@@ -475,7 +484,7 @@ fun RefuelForm(
                     label = { Text("Price per Liter") },
                     lineLimits = TextFieldLineLimits.SingleLine,
                     modifier = Modifier.weight(2f),
-                    trailingIcon = { Text("€/L") },
+                    trailingIcon = { Text(units.pricePerLiquidLabel) },
                     isError = errors.pricePerLiter != null,
                     supportingText = errors.pricePerLiter?.let { error ->
                         { Text(error.message()) }
@@ -510,7 +519,7 @@ fun RefuelForm(
                     lineLimits = TextFieldLineLimits.SingleLine,
                     modifier = Modifier.weight(2f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    trailingIcon = { Text("€") },
+                    trailingIcon = { Text(units.currencyLabel) },
                     isError = errors.cost != null,
                     supportingText = errors.cost?.let { error -> { Text(error.message()) } },
                     inputTransformation = InputTransformation.byValue { current, proposed ->
@@ -667,6 +676,7 @@ fun MaintenanceForm(
     onServiceTypeChange: (MaintenanceServiceType) -> Unit,
     onCreateNewServiceType: (MaintenanceServiceType) -> Unit,
     errors: AddEventFormErrors = AddEventFormErrors(),
+    units: Units = Units(),
 ) {
     val searchTextFieldState = rememberTextFieldState()
     Column(
@@ -679,7 +689,7 @@ fun MaintenanceForm(
             lineLimits = TextFieldLineLimits.SingleLine,
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            trailingIcon = { Text("€") },
+            trailingIcon = { Text(units.currencyLabel) },
             isError = errors.cost != null,
             supportingText = errors.cost?.let { error -> { Text(error.message()) } },
             inputTransformation = InputTransformation.byValue { current, proposed ->

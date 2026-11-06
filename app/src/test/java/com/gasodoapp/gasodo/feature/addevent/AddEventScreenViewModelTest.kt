@@ -23,6 +23,8 @@ import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
 import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
+import com.gasodoapp.gasodo.core.settings.SettingsRepository
+import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import com.gasodoapp.gasodo.feature.navigation.ADD_EVENT_TYPE_ARG
 import com.gasodoapp.gasodo.feature.navigation.EDIT_EVENT_ID_ARG
@@ -34,6 +36,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -62,6 +65,7 @@ class AddEventScreenViewModelTest {
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var locationRepository: SavedLocationRepository
     private lateinit var maintenanceServiceTypeRepository: MaintenanceServiceTypeRepository
+    private lateinit var settingsRepository: SettingsRepository
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
@@ -75,7 +79,9 @@ class AddEventScreenViewModelTest {
         savedStateHandle = mockk()
         locationRepository = mockk()
         maintenanceServiceTypeRepository = mockk()
+        settingsRepository = mockk()
 
+        every { settingsRepository.units } returns MutableStateFlow(Units())
         every { savedStateHandle.get<EventType>(ADD_EVENT_TYPE_ARG) } returns EventType.REFUEL
         every { savedStateHandle.get<String?>(EDIT_EVENT_ID_ARG) } returns null
         every { locationRepository.getAll() } returns emptyFlow()
@@ -91,6 +97,7 @@ class AddEventScreenViewModelTest {
             eventRepository,
             locationRepository,
             maintenanceServiceTypeRepository,
+            settingsRepository,
             savedStateHandle
         )
 
@@ -139,6 +146,7 @@ class AddEventScreenViewModelTest {
             eventRepository,
             locationRepository,
             maintenanceServiceTypeRepository,
+            settingsRepository,
             savedStateHandle
         )
 
@@ -695,6 +703,7 @@ class AddEventScreenViewModelTest {
             eventRepository,
             locationRepository,
             maintenanceServiceTypeRepository,
+            settingsRepository,
             savedStateHandle
         )
 
@@ -778,6 +787,7 @@ class AddEventScreenViewModelTest {
             eventRepository,
             locationRepository,
             maintenanceServiceTypeRepository,
+            settingsRepository,
             savedStateHandle
         )
 
@@ -885,6 +895,7 @@ class AddEventScreenViewModelTest {
             eventRepository,
             locationRepository,
             maintenanceServiceTypeRepository,
+            settingsRepository,
             savedStateHandle
         )
 
@@ -975,6 +986,7 @@ class AddEventScreenViewModelTest {
             eventRepository,
             locationRepository,
             maintenanceServiceTypeRepository,
+            settingsRepository,
             savedStateHandle
         )
 
@@ -1049,6 +1061,7 @@ class AddEventScreenViewModelTest {
             eventRepository,
             locationRepository,
             maintenanceServiceTypeRepository,
+            settingsRepository,
             savedStateHandle
         )
 
@@ -1101,6 +1114,7 @@ class AddEventScreenViewModelTest {
             eventRepository,
             locationRepository,
             maintenanceServiceTypeRepository,
+            settingsRepository,
             savedStateHandle
         )
 

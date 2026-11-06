@@ -41,12 +41,14 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
+import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
 import com.gasodoapp.gasodo.feature.navigation.Destinations
@@ -72,6 +74,7 @@ fun MaintenanceScreen(
     onNavigateToEdit: (id: UUID) -> Unit
 ) {
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
+    val units by viewModel.units.collectAsStateWithLifecycle()
 
     TopBarScaffold(
         title = "Recent Maintenance Entries",
@@ -86,7 +89,8 @@ fun MaintenanceScreen(
             pagedItems,
             viewModel::onDeleteMaintenanceEvent,
             onNavigateToEdit,
-            viewModel::getSavedLocation
+            viewModel::getSavedLocation,
+            units = units
         )
     }
 }
@@ -97,7 +101,8 @@ fun MainContent(
     pagedItems: LazyPagingItems<MaintenanceEventWithServices>,
     onDeleteMaintenanceEvent: (MaintenanceEventWithServices) -> Unit,
     onNavigateToEdit: (id: UUID) -> Unit,
-    getSavedLocation: suspend (id: UUID) -> SavedLocation?
+    getSavedLocation: suspend (id: UUID) -> SavedLocation?,
+    units: Units = Units()
 ) {
     LazyColumn(
         modifier = modifier
@@ -116,7 +121,8 @@ fun MainContent(
                     eventWithServices = event,
                     onDeleteMaintenanceEvent = onDeleteMaintenanceEvent,
                     onNavigateToEdit,
-                    getSavedLocation
+                    getSavedLocation,
+                    units
                 )
             }
         }
@@ -133,7 +139,8 @@ fun MaintenanceEventRow(
     eventWithServices: MaintenanceEventWithServices,
     onDeleteMaintenanceEvent: (MaintenanceEventWithServices) -> Unit,
     onNavigateToEdit: (id: UUID) -> Unit,
-    getSavedLocation: suspend (id: UUID) -> SavedLocation?
+    getSavedLocation: suspend (id: UUID) -> SavedLocation?,
+    units: Units = Units()
 ) {
     val isExpanded = remember { mutableStateOf(false) }
 
@@ -173,7 +180,7 @@ fun MaintenanceEventRow(
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = "km",
+                                text = units.distanceLabel,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -197,7 +204,7 @@ fun MaintenanceEventRow(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "€",
+                            text = units.currencyLabel,
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.Bold
                             ),

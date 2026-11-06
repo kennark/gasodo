@@ -14,12 +14,15 @@ import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
+import com.gasodoapp.gasodo.core.settings.SettingsRepository
+import com.gasodoapp.gasodo.core.settings.Units
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -44,6 +47,7 @@ class OverviewScreenViewModelTest {
     private lateinit var refuelRepository: RefuelRepository
     private lateinit var maintenanceRepository: MaintenanceRepository
     private lateinit var inspectionRepository: InspectionRepository
+    private lateinit var settingsRepository: SettingsRepository
 
     private companion object {
         /** Arbitrary, non-null bounds used to drive the explicit loading functions. */
@@ -61,6 +65,9 @@ class OverviewScreenViewModelTest {
         refuelRepository = mockk()
         maintenanceRepository = mockk()
         inspectionRepository = mockk()
+        settingsRepository = mockk()
+
+        every { settingsRepository.units } returns MutableStateFlow(Units())
 
         // Default to empty flows so the ViewModel's init block can run without stubbing.
         every { refuelRepository.getAllWithinTime(any(), any()) } returns flowOf(emptyList())
@@ -68,7 +75,12 @@ class OverviewScreenViewModelTest {
         every { inspectionRepository.getAllWithinTime(any(), any()) } returns flowOf(emptyList())
 
         viewModel =
-            OverviewScreenViewModel(refuelRepository, maintenanceRepository, inspectionRepository)
+            OverviewScreenViewModel(
+                refuelRepository,
+                maintenanceRepository,
+                inspectionRepository,
+                settingsRepository
+            )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

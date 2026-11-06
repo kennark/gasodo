@@ -40,12 +40,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
+import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
 import com.gasodoapp.gasodo.feature.navigation.Destinations
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
@@ -69,6 +71,7 @@ fun InspectionScreen(
 ) {
 
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
+    val units by viewModel.units.collectAsStateWithLifecycle()
 
     TopBarScaffold(
         title = "Recent Inspections",
@@ -83,7 +86,8 @@ fun InspectionScreen(
             pagedItems,
             onDeleteEvent = viewModel::onDeleteInspectionEvent,
             onNavigateToEdit,
-            viewModel::getSavedLocation
+            viewModel::getSavedLocation,
+            units = units
         )
     }
 }
@@ -94,7 +98,8 @@ fun MainContent(
     pagedItems: LazyPagingItems<InspectionEventWithParts>,
     onDeleteEvent: (InspectionEventWithParts) -> Unit,
     onNavigateToEdit: (id: UUID) -> Unit,
-    getSavedLocation: suspend (id: UUID) -> SavedLocation?
+    getSavedLocation: suspend (id: UUID) -> SavedLocation?,
+    units: Units = Units()
 ) {
     LazyColumn(
         modifier = modifier
@@ -113,7 +118,8 @@ fun MainContent(
                     event,
                     onDeleteEvent,
                     onNavigateToEdit,
-                    getSavedLocation
+                    getSavedLocation,
+                    units
                 )
             }
         }
@@ -129,7 +135,8 @@ fun InspectionEventCard(
     eventWithParts: InspectionEventWithParts,
     onDeleteEvent: (InspectionEventWithParts) -> Unit,
     onNavigateToEdit: (id: UUID) -> Unit,
-    getSavedLocation: suspend (id: UUID) -> SavedLocation?
+    getSavedLocation: suspend (id: UUID) -> SavedLocation?,
+    units: Units = Units()
 ) {
     val isExpanded = remember { mutableStateOf(false) }
 
@@ -169,7 +176,7 @@ fun InspectionEventCard(
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = "km",
+                                text = units.distanceLabel,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }

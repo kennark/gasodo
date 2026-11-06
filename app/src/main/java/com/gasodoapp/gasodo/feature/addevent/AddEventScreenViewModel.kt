@@ -29,6 +29,8 @@ import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
 import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
+import com.gasodoapp.gasodo.core.settings.SettingsRepository
+import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import com.gasodoapp.gasodo.feature.navigation.ADD_EVENT_TYPE_ARG
 import com.gasodoapp.gasodo.feature.navigation.EDIT_EVENT_ID_ARG
@@ -57,6 +59,7 @@ class AddEventScreenViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     private val locationRepository: SavedLocationRepository,
     private val maintenanceServiceTypeRepository: MaintenanceServiceTypeRepository,
+    settingsRepository: SettingsRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -90,6 +93,17 @@ class AddEventScreenViewModel @Inject constructor(
     val refuelUiState: StateFlow<RefuelEventFormState> = _refuelUiState.asStateFlow()
     val maintenanceUiState: StateFlow<MaintenanceEventFormState> = _maintenanceUiState.asStateFlow()
     val inspectionUiState: StateFlow<InspectionEventFormState> = _inspectionUiState.asStateFlow()
+
+    /**
+     * Unit preferences, used for the suffixes rendered next to mileage, volumes and amounts.
+     */
+    val units: StateFlow<Units> =
+        settingsRepository.units
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = Units(),
+            )
 
     val locations = locationRepository.getAll()
     private val _draftServiceTypes = MutableStateFlow<List<MaintenanceServiceType>>(emptyList())

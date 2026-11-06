@@ -14,12 +14,16 @@ import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
+import com.gasodoapp.gasodo.core.settings.SettingsRepository
+import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -29,8 +33,20 @@ import javax.inject.Inject
 class OverviewScreenViewModel @Inject constructor(
     private val refuelRepository: RefuelRepository,
     private val maintenanceRepository: MaintenanceRepository,
-    private val inspectionRepository: InspectionRepository
+    private val inspectionRepository: InspectionRepository,
+    settingsRepository: SettingsRepository
 ) : ViewModel() {
+
+    /**
+     * Unit preferences, used for the suffixes rendered next to every statistic.
+     */
+    val units: StateFlow<Units> =
+        settingsRepository.units
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = Units(),
+            )
 
     // Refuel data for the selected period
     private val _refuelData = MutableStateFlow<List<RefuelEvent>>(emptyList())

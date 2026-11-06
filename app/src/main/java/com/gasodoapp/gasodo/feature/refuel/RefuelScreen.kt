@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -40,6 +41,7 @@ import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
+import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
 import com.gasodoapp.gasodo.feature.navigation.Destinations
@@ -68,6 +70,7 @@ fun RefuelScreen(
     onNavigateToEdit: (id: UUID) -> Unit
 ) {
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
+    val units by viewModel.units.collectAsStateWithLifecycle()
 
     TopBarScaffold(
         title = "Recent Refuels",
@@ -82,7 +85,8 @@ fun RefuelScreen(
             pagedItems,
             viewModel::onDeleteEvent,
             onNavigateToEdit,
-            getSavedLocation = viewModel::getSavedLocation
+            getSavedLocation = viewModel::getSavedLocation,
+            units = units
         )
     }
 }
@@ -93,7 +97,8 @@ private fun MainContent(
     pagedItems: LazyPagingItems<RefuelEvent>,
     onDeleteEvent: (RefuelEvent) -> Unit,
     onNavigateToEdit: (id: UUID) -> Unit,
-    getSavedLocation: suspend (id: UUID) -> SavedLocation?
+    getSavedLocation: suspend (id: UUID) -> SavedLocation?,
+    units: Units = Units()
 ) {
     LazyColumn(
         modifier = modifier
@@ -112,7 +117,8 @@ private fun MainContent(
                     refuelEvent = refuel,
                     onDeleteEvent = onDeleteEvent,
                     onNavigateToEdit = onNavigateToEdit,
-                    getSavedLocation = getSavedLocation
+                    getSavedLocation = getSavedLocation,
+                    units = units
                 )
             } else {
                 // Show placeholder for empty slots while paging
@@ -134,7 +140,8 @@ fun RefuelEventRow(
     modifier: Modifier = Modifier,
     onDeleteEvent: (RefuelEvent) -> Unit,
     onNavigateToEdit: (id: UUID) -> Unit,
-    getSavedLocation: suspend (id: UUID) -> SavedLocation?
+    getSavedLocation: suspend (id: UUID) -> SavedLocation?,
+    units: Units = Units()
 ) {
     val isExpanded = remember { mutableStateOf(false) }
 
@@ -176,7 +183,7 @@ fun RefuelEventRow(
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = "km",
+                                text = units.distanceLabel,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -195,7 +202,7 @@ fun RefuelEventRow(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "L",
+                            text = units.liquidLabel,
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -218,7 +225,7 @@ fun RefuelEventRow(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "€",
+                            text = units.currencyLabel,
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.Bold
                             ),
@@ -237,7 +244,7 @@ fun RefuelEventRow(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "€/L",
+                            text = units.pricePerLiquidLabel,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant

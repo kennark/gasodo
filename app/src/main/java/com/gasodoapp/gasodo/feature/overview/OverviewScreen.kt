@@ -54,6 +54,10 @@ import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
+import com.gasodoapp.gasodo.core.enums.units.Currency
+import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.Liquid
+import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
 import com.gasodoapp.gasodo.feature.navigation.Destinations
@@ -96,6 +100,7 @@ fun OverviewScreen(
     val passPercentage by viewModel.passPercentage.collectAsState()
     val failPercentage by viewModel.failPercentage.collectAsState()
     val conditionalPassPercentage by viewModel.conditionalPassPercentage.collectAsState()
+    val units by viewModel.units.collectAsState()
 
     TopBarScaffold(
         title = "Overview",
@@ -128,7 +133,8 @@ fun OverviewScreen(
             conditionalPassCount,
             passPercentage,
             failPercentage,
-            conditionalPassPercentage
+            conditionalPassPercentage,
+            units
         )
     }
 }
@@ -157,7 +163,8 @@ private fun MainContent(
     conditionalPassCount: Int,
     passPercentage: BigDecimal,
     failPercentage: BigDecimal,
-    conditionalPassPercentage: BigDecimal
+    conditionalPassPercentage: BigDecimal,
+    units: Units = Units()
 ) {
     Column(
         modifier = modifier
@@ -188,7 +195,8 @@ private fun MainContent(
                         totalLiters = totalLiters,
                         totalMileage = totalMileage,
                         fuelConsumption = fuelConsumption,
-                        fuelCost = fuelCost
+                        fuelCost = fuelCost,
+                        units = units
                     )
                 else
                     NoStatsCard(local_gas_station, "refuel")
@@ -197,7 +205,8 @@ private fun MainContent(
                     MaintenanceStatsCard(
                         totalCost = totalMaintenanceCost,
                         maintenanceActions = maintenanceActions,
-                        topMaintenanceActions = topMaintenanceActions
+                        topMaintenanceActions = topMaintenanceActions,
+                        units = units
                     )
                 else
                     NoStatsCard(build, "maintenance")
@@ -351,7 +360,8 @@ fun RefuelStatsCard(
     totalLiters: BigDecimal,
     totalMileage: Long?,
     fuelConsumption: BigDecimal?,
-    fuelCost: BigDecimal?
+    fuelCost: BigDecimal?,
+    units: Units = Units()
 ) {
     StatisticsCardFrame(
         "Refuel Statistics",
@@ -371,7 +381,7 @@ fun RefuelStatsCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         ValueText(totalCost.toDisplayString(2))
-                        ValueText("€")
+                        ValueText(units.currencyLabel)
                     }
                 }
                 LabelAndValueSpacing {
@@ -380,7 +390,7 @@ fun RefuelStatsCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         ValueText(totalLiters.toDisplayString(2))
-                        ValueText("L")
+                        ValueText(units.liquidLabel)
                     }
                 }
                 LabelAndValueSpacing {
@@ -390,7 +400,7 @@ fun RefuelStatsCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             ValueText(averageCost.toDisplayString(2))
-                            ValueText("€/L")
+                            ValueText(units.pricePerLiquidLabel)
                         }
                     } else {
                         NoDataText()
@@ -409,7 +419,7 @@ fun RefuelStatsCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             ValueText(totalMileage.toString())
-                            ValueText("km")
+                            ValueText(units.distanceLabel)
                         }
                     } else {
                         NoDataText()
@@ -423,7 +433,7 @@ fun RefuelStatsCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             ValueText(fuelConsumption.toDisplayString(2))
-                            ValueText("L/100 km")
+                            ValueText(units.consumptionLabel)
                         }
                     } else {
                         NoDataText()
@@ -434,7 +444,7 @@ fun RefuelStatsCard(
                     if (fuelCost != null) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             ValueText(fuelCost.toDisplayString(2))
-                            ValueText("€/100 km")
+                            ValueText(units.costPerDistanceLabel)
                         }
                     } else {
                         NoDataText()
@@ -450,7 +460,8 @@ fun RefuelStatsCard(
 fun MaintenanceStatsCard(
     totalCost: BigDecimal,
     maintenanceActions: List<MaintenanceServiceType>,
-    topMaintenanceActions: List<TopMaintenanceAction>
+    topMaintenanceActions: List<TopMaintenanceAction>,
+    units: Units = Units()
 ) {
 
     StatisticsCardFrame(
@@ -467,7 +478,7 @@ fun MaintenanceStatsCard(
             ) {
                 LabelAndValueSpacing {
                     LabelText("Total Maintenance Cost")
-                    ValueText("${totalCost.toDisplayString(2)} €")
+                    ValueText("${totalCost.toDisplayString(2)} ${units.currencyLabel}")
                 }
 
                 LabelAndValueSpacing {
@@ -736,6 +747,20 @@ fun RefuelStatsCardEmptyPreview() {
         totalMileage = null,
         fuelConsumption = null,
         fuelCost = null
+    )
+}
+
+@Preview
+@Composable
+fun RefuelStatsCardImperialPreview() {
+    RefuelStatsCard(
+        totalCost = BigDecimal("10.00"),
+        averageCost = BigDecimal("1.23"),
+        totalLiters = BigDecimal("123.45"),
+        totalMileage = 934085L,
+        fuelConsumption = BigDecimal("5.46"),
+        fuelCost = BigDecimal("9.99"),
+        units = Units(distance = Distance.MILE, liquid = Liquid.GALLON, currency = Currency.USD)
     )
 }
 

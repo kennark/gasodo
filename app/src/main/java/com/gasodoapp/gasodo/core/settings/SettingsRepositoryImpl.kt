@@ -5,8 +5,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
 import com.gasodoapp.gasodo.core.enums.units.Liquid
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.CURRENCY_SYMBOL_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DISTANCE_UNIT_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.LIQUID_UNIT_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.THEME_MODE_KEY
@@ -35,6 +37,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 Units(
                     distance = Distance.fromName(preferences[DISTANCE_UNIT_KEY]),
                     liquid = Liquid.fromName(preferences[LIQUID_UNIT_KEY]),
+                    currency = Currency.fromName(preferences[CURRENCY_SYMBOL_KEY]),
                 )
             }
 
@@ -53,6 +56,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setLiquidUnit(unit: Liquid) {
         dataStore.edit { preferences ->
             preferences[LIQUID_UNIT_KEY] = unit.name
+        }
+    }
+
+    override suspend fun setCurrencySymbol(symbol: Currency) {
+        dataStore.edit { preferences ->
+            preferences[CURRENCY_SYMBOL_KEY] = symbol.name
         }
     }
 

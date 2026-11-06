@@ -1,5 +1,6 @@
 package com.gasodoapp.gasodo.core.settings
 
+import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 
@@ -23,4 +24,11 @@ data class Units(
      * Defaults to [Liquid.DEFAULT].
      */
     val liquid: Liquid = Liquid.DEFAULT,
+
+    /**
+     * Currency prices and totals are shown in.
+     *
+     * Defaults to [Currency.DEFAULT].
+     */
+    val currency: Currency = Currency.DEFAULT,
 )

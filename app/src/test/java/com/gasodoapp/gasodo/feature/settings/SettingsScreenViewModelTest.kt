@@ -1,6 +1,7 @@
 package com.gasodoapp.gasodo.feature.settings
 
 import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.AppSettings
@@ -50,6 +51,7 @@ class SettingsScreenViewModelTest {
         coEvery { repository.setThemeMode(any()) } just runs
         coEvery { repository.setDistanceUnit(any()) } just runs
         coEvery { repository.setLiquidUnit(any()) } just runs
+        coEvery { repository.setCurrencySymbol(any()) } just runs
         viewModel = SettingsScreenViewModel(repository)
     }
 
@@ -176,5 +178,59 @@ class SettingsScreenViewModelTest {
 
         // Assert
         coVerify(exactly = 1) { repository.setLiquidUnit(Liquid.GALLON) }
+    }
+
+    @Test
+    fun `units default to EUR`() = runTest {
+        // Arrange
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.units.collect {}
+        }
+
+        // Act
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.units.value.currency).isEqualTo(Currency.EUR)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `stored currency is exposed by the units state`() = runTest {
+        // Arrange
+        storedUnits.value = Units(currency = Currency.EUR)
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.units.collect {}
+        }
+
+        // Act
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.units.value.currency).isEqualTo(Currency.EUR)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `onCurrencySymbolChange EUR stores the value in the repository`() = runTest {
+        // Act
+        viewModel.onCurrencySymbolChange(Currency.EUR)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 1) { repository.setCurrencySymbol(Currency.EUR) }
+    }
+
+    @Test
+    fun `onCurrencySymbolChange does not touch the other units`() = runTest {
+        // Act
+        viewModel.onCurrencySymbolChange(Currency.GBP)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 0) { repository.setDistanceUnit(any()) }
+        coVerify(exactly = 0) { repository.setLiquidUnit(any()) }
     }
 }

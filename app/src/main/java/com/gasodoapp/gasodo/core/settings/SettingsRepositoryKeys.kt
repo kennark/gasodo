@@ -9,4 +9,6 @@ object SettingsRepositoryKeys {
     val DISTANCE_UNIT_KEY = stringPreferencesKey("distance_unit")
 
     val LIQUID_UNIT_KEY = stringPreferencesKey("liquid_unit")
+
+    val CURRENCY_SYMBOL_KEY = stringPreferencesKey("currency_symbol")
 }

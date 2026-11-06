@@ -3,6 +3,7 @@ package com.gasodoapp.gasodo.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.AppSettings
@@ -63,6 +64,15 @@ class SettingsScreenViewModel @Inject constructor(
     fun onLiquidUnitChange(unit: Liquid) {
         viewModelScope.launch {
             repository.setLiquidUnit(unit)
+        }
+    }
+
+    /**
+     * Stores the currency prices and totals are shown in.
+     */
+    fun onCurrencySymbolChange(symbol: Currency) {
+        viewModelScope.launch {
+            repository.setCurrencySymbol(symbol)
         }
     }
 }

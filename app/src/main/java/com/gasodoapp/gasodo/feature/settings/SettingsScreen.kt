@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.AppSettings
@@ -68,6 +69,7 @@ fun SettingsScreen(
             onThemeModeChange = viewModel::onThemeModeChange,
             onDistanceUnitChange = viewModel::onDistanceUnitChange,
             onLiquidUnitChange = viewModel::onLiquidUnitChange,
+            onCurrencyUnitChange = viewModel::onCurrencySymbolChange,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -80,6 +82,7 @@ private fun SettingsContent(
     onThemeModeChange: (ThemeMode) -> Unit,
     onDistanceUnitChange: (Distance) -> Unit,
     onLiquidUnitChange: (Liquid) -> Unit,
+    onCurrencyUnitChange: (Currency) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -110,6 +113,13 @@ private fun SettingsContent(
                 selected = units.liquid,
                 optionLabel = Liquid::displayName,
                 onSelect = onLiquidUnitChange,
+            )
+            SettingsDropdown(
+                label = "Currency symbol",
+                options = Currency.entries,
+                selected = units.currency,
+                optionLabel = Currency::displayName,
+                onSelect = onCurrencyUnitChange,
             )
         }
     }
@@ -250,6 +260,7 @@ private fun SettingsContentSystemPreview() {
             onThemeModeChange = {},
             onDistanceUnitChange = {},
             onLiquidUnitChange = {},
+            onCurrencyUnitChange = {},
         )
     }
 }
@@ -264,6 +275,7 @@ private fun SettingsContentLightPreview() {
             onThemeModeChange = {},
             onDistanceUnitChange = {},
             onLiquidUnitChange = {},
+            onCurrencyUnitChange = {},
         )
     }
 }
@@ -278,6 +290,7 @@ private fun SettingsContentDarkPreview() {
             onThemeModeChange = {},
             onDistanceUnitChange = {},
             onLiquidUnitChange = {},
+            onCurrencyUnitChange = {},
         )
     }
 }
@@ -292,6 +305,7 @@ private fun SettingsContentImperialUnitsPreview() {
             onThemeModeChange = {},
             onDistanceUnitChange = {},
             onLiquidUnitChange = {},
+            onCurrencyUnitChange = {},
         )
     }
 }

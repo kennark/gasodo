@@ -5,8 +5,10 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.gasodoapp.gasodo.core.enums.ThemeMode
+import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
 import com.gasodoapp.gasodo.core.enums.units.Liquid
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.CURRENCY_SYMBOL_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DISTANCE_UNIT_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.LIQUID_UNIT_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.THEME_MODE_KEY
@@ -198,5 +200,89 @@ class SettingsRepositoryImplTest {
 
         // Assert
         assertThat(units.liquid).isEqualTo(Liquid.LITER)
+    }
+
+    @Test
+    fun `currency defaults to EUR`() = runTest {
+        // Act
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.currency).isEqualTo(Currency.EUR)
+    }
+
+    @Test
+    fun `setCurrencySymbol EUR is emitted by the units flow`() = runTest {
+        // Act
+        repository.setCurrencySymbol(Currency.EUR)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.currency).isEqualTo(Currency.EUR)
+    }
+
+    @Test
+    fun `setCurrencySymbol overwrites the previously stored value`() = runTest {
+        // Act
+        repository.setCurrencySymbol(Currency.EUR)
+        repository.setCurrencySymbol(Currency.GBP)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.currency).isEqualTo(Currency.GBP)
+    }
+
+    @Test
+    fun `storing a currency does not change the distance or liquid unit`() = runTest {
+        // Act
+        repository.setCurrencySymbol(Currency.JPY)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.currency).isEqualTo(Currency.JPY)
+        assertThat(units.distance).isEqualTo(Distance.KILOMETER)
+        assertThat(units.liquid).isEqualTo(Liquid.LITER)
+    }
+
+    @Test
+    fun `storing a distance or liquid unit does not change the currency`() = runTest {
+        // Act
+        repository.setCurrencySymbol(Currency.CHF)
+        repository.setDistanceUnit(Distance.MILE)
+        repository.setLiquidUnit(Liquid.GALLON)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.currency).isEqualTo(Currency.CHF)
+        assertThat(units.distance).isEqualTo(Distance.MILE)
+        assertThat(units.liquid).isEqualTo(Liquid.GALLON)
+    }
+
+    @Test
+    fun `an unknown stored currency falls back to EUR`() = runTest {
+        // Arrange
+        dataStore.edit { preferences ->
+            preferences[CURRENCY_SYMBOL_KEY] = "XYZ"
+        }
+
+        // Act
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.currency).isEqualTo(Currency.EUR)
+    }
+
+    @Test
+    fun `a currency stored as its display name falls back to EUR`() = runTest {
+        // Arrange
+        dataStore.edit { preferences ->
+            preferences[CURRENCY_SYMBOL_KEY] = "US Dollar"
+        }
+
+        // Act
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.currency).isEqualTo(Currency.EUR)
     }
 }

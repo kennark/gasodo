@@ -1,5 +1,7 @@
 package com.gasodoapp.gasodo.feature.addevent
 
+import com.gasodoapp.gasodo.core.enums.units.Liquid
+
 /**
  * Problems that can be attached to a single field of the add/edit event form.
  *
@@ -21,7 +23,7 @@ enum class FieldError {
     /** Amount is not a parsable decimal, e.g. `1,2,3`. */
     AMOUNT_INVALID,
 
-    /** Amount must be greater than 0 because the price per liter is derived from it. */
+    /** Amount must be greater than 0 because the price per volume unit is derived from it. */
     AMOUNT_NOT_POSITIVE,
 
     /** Total cost is not a parsable decimal. */
@@ -30,10 +32,10 @@ enum class FieldError {
     /** Total cost is below 0. */
     COST_NEGATIVE,
 
-    /** Price per liter is not a parsable decimal. */
+    /** Price per volume unit is not a parsable decimal. */
     PRICE_PER_LITER_INVALID,
 
-    /** Price per liter must be greater than 0. */
+    /** Price per volume unit must be greater than 0. */
     PRICE_PER_LITER_NOT_POSITIVE,
 }
 
@@ -64,8 +66,12 @@ data class AddEventFormErrors(
 
 /**
  * User facing message for a [FieldError].
+ *
+ * [liquid] only affects the price per volume errors, which spell out the unit the user picked so
+ * that the message matches the label of the field it is attached to (`Price per Gallon` for an
+ * imperial setup rather than a hardcoded `liter`).
  */
-fun FieldError.message(): String = when (this) {
+fun FieldError.message(liquid: Liquid = Liquid.DEFAULT): String = when (this) {
     FieldError.MILEAGE_INVALID -> "Mileage is too large"
     FieldError.DATE_MILEAGE_CONFLICT -> "Mileage or date are not in order with existing events"
 
@@ -75,6 +81,6 @@ fun FieldError.message(): String = when (this) {
     FieldError.COST_INVALID -> "Total cost is not a valid number"
     FieldError.COST_NEGATIVE -> "Total cost cannot be negative"
 
-    FieldError.PRICE_PER_LITER_INVALID -> "Price per liter is not a valid number"
-    FieldError.PRICE_PER_LITER_NOT_POSITIVE -> "Price per liter must be greater than 0"
+    FieldError.PRICE_PER_LITER_INVALID -> "Price per ${liquid.singularName} is not a valid number"
+    FieldError.PRICE_PER_LITER_NOT_POSITIVE -> "Price per ${liquid.singularName} must be greater than 0"
 }

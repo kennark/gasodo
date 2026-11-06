@@ -468,7 +468,7 @@ fun RefuelForm(
 
         // Cost Calculation Mode Toggle
         RowOfTextAndSwitch(
-            text = "Calculate from Price/Liter",
+            text = "Calculate from Price/${units.liquidSingularLabel}",
             checked = state.calculateCost,
             onCheckedChange = onCalculateCostChange
         )
@@ -478,16 +478,16 @@ fun RefuelForm(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Price per Liter Field
+                // Price per volume unit Field
                 OutlinedTextField(
                     state = pricePerLiterState,
-                    label = { Text("Price per Liter") },
+                    label = { Text("Price per ${units.liquidSingularLabel}") },
                     lineLimits = TextFieldLineLimits.SingleLine,
                     modifier = Modifier.weight(2f),
                     trailingIcon = { Text(units.pricePerLiquidLabel) },
                     isError = errors.pricePerLiter != null,
                     supportingText = errors.pricePerLiter?.let { error ->
-                        { Text(error.message()) }
+                        { Text(error.message(units.liquid)) }
                     },
                     inputTransformation = InputTransformation.byValue { current, proposed ->
                         if ("""[^0-9,.]""".toRegex() in proposed) current else proposed
@@ -527,7 +527,7 @@ fun RefuelForm(
                     }
                 )
 
-                // Display calculated price per liter (read-only)
+                // Display calculated price per volume unit (read-only)
                 OutlinedTextField(
                     value = costState.text.toString().toBigDecimalOrNull()?.divide(
                         amountState.text.toString().toBigDecimalOrNull() ?: BigDecimal.ONE,
@@ -535,7 +535,7 @@ fun RefuelForm(
                     )?.toDisplayString(3)
                         ?: "0.000",
                     onValueChange = {},
-                    label = { Text("Price per Liter") },
+                    label = { Text("Price per ${units.liquidSingularLabel}") },
                     readOnly = true,
                     singleLine = true,
                     modifier = Modifier.weight(1f),

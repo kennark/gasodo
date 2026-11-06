@@ -17,6 +17,7 @@ class UnitsTest {
 
         assertThat(units.distanceLabel).isEqualTo("km")
         assertThat(units.liquidLabel).isEqualTo("L")
+        assertThat(units.liquidSingularLabel).isEqualTo("Liter")
         assertThat(units.currencyLabel).isEqualTo("€")
         assertThat(units.pricePerLiquidLabel).isEqualTo("€/L")
         assertThat(units.consumptionLabel).isEqualTo("L/100 km")
@@ -33,10 +34,21 @@ class UnitsTest {
 
         assertThat(units.distanceLabel).isEqualTo("mi")
         assertThat(units.liquidLabel).isEqualTo("gal")
+        assertThat(units.liquidSingularLabel).isEqualTo("Gallon")
         assertThat(units.currencyLabel).isEqualTo("$")
         assertThat(units.pricePerLiquidLabel).isEqualTo("$/gal")
         assertThat(units.consumptionLabel).isEqualTo("gal/100 mi")
         assertThat(units.costPerDistanceLabel).isEqualTo("$/100 mi")
+    }
+
+    /**
+     * The singular label is substituted into sentences such as `Price per Liter`, so it must
+     * follow the volume unit while staying independent of the other units.
+     */
+    @Test
+    fun `singular liquid label follows the volume unit`() {
+        assertThat(Units(liquid = Liquid.LITER).liquidSingularLabel).isEqualTo("Liter")
+        assertThat(Units(liquid = Liquid.GALLON).liquidSingularLabel).isEqualTo("Gallon")
     }
 
     @Test

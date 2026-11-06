@@ -2,10 +2,17 @@ package com.gasodoapp.gasodo.core.enums.units
 
 /**
  * Unit used to display and enter liquid volumes.
+ *
+ * [displayName] is the plural form the unit selectors list, [singularName] is the form used by
+ * labels that read as a quantity of one (for example `Price per Liter`) and [shorthand] is the
+ * suffix rendered next to a value (for example `L`).
+ *
+ * A full name is always spelled out rather than abbreviated so that it stays readable in a
+ * sentence, while [shorthand] keeps the numeric fields compact.
  */
-enum class Liquid(val displayName: String, val shorthand: String) {
-    GALLON("Gallons", "gal"),
-    LITER("Liters", "L");
+enum class Liquid(val displayName: String, val singularName: String, val shorthand: String) {
+    GALLON("Gallons", "Gallon", "gal"),
+    LITER("Liters", "Liter", "L");
 
     override fun toString(): String = displayName
 

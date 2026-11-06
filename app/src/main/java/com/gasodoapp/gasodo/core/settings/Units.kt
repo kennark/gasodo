@@ -57,6 +57,13 @@ data class Units(
         get() = currency.symbol
 
     /**
+     * Name of a single fuel volume, for labels that read as a sentence, for example
+     * `Price per Gallon` rather than `Price per gal`.
+     */
+    val liquidSingularLabel: String
+        get() = liquid.singularName
+
+    /**
      * Label for a price charged per unit of fuel, for example `€/L`.
      */
     val pricePerLiquidLabel: String

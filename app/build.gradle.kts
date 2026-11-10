@@ -23,7 +23,7 @@ android {
         val timestampVersionCode = (nowMillis / (60000)).toInt()
         versionCode = timestampVersionCode
 
-        versionName = "0.4.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -15,8 +15,8 @@ android {
 
     defaultConfig {
         applicationId = "com.gasodoapp.gasodo"
-        minSdk = 33
-        targetSdk = 36
+        minSdk = 29
+        targetSdk = 37
 
         // versionCode derived from current time
         val nowMillis = System.currentTimeMillis()

@@ -1,5 +1,6 @@
 package com.gasodoapp.gasodo.core.database
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -37,7 +38,10 @@ import com.gasodoapp.gasodo.core.utils.DbConverterUtils
     views = [
         AllEventsBaseColumnsView::class
     ],
-    version = 7,
+    version = 8,
+    autoMigrations = [
+        AutoMigration(from = 7, to = 8)
+    ],
     exportSchema = true
 )
 @TypeConverters(DbConverterUtils::class)

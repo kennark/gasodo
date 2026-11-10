@@ -243,7 +243,7 @@ private fun FormContent(
                     onCalculateCostChange = viewModel::onCalculateCostChange,
                     costState = viewModel.costTextField,
                     pricePerLiterState = viewModel.pricePerLiterTextField,
-                    onPaymentMethodChange = viewModel::onPaymentMethodChange,
+                    onPaymentMethodChange = viewModel::onRefuelPaymentMethodChange,
                     onFullFillUpChange = viewModel::onFullFillUpChange,
                     errors = formErrors,
                     units = units
@@ -257,6 +257,7 @@ private fun FormContent(
                     serviceTypes = serviceTypes,
                     onServiceTypeChange = viewModel::onServiceTypeChange,
                     onCreateNewServiceType = viewModel::onCreateNewServiceType,
+                    onPaymentMethodChange = viewModel::onMaintenancePaymentMethodChange,
                     errors = formErrors,
                     units = units
                 )
@@ -543,37 +544,10 @@ fun RefuelForm(
             }
         }
 
-        // Payment Method Selector
-        var paymentExpanded by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(
-            expanded = paymentExpanded,
-            onExpandedChange = { paymentExpanded = !paymentExpanded }) {
-            OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                value = state.paymentMethod?.displayName ?: "",
-                onValueChange = {},
-                label = { Text("Payment Method") },
-                readOnly = true,
-                singleLine = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentExpanded) }
-            )
-            ExposedDropdownMenu(
-                expanded = paymentExpanded,
-                onDismissRequest = { paymentExpanded = false }
-            ) {
-                PaymentMethod.entries.forEach { method ->
-                    DropdownMenuItem(
-                        text = { Text(method.toString()) },
-                        onClick = {
-                            onPaymentMethodChange(method)
-                            paymentExpanded = false
-                        }
-                    )
-                }
-            }
-        }
+        PaymentMethodDropdown(
+            selectedValue = state.paymentMethod,
+            onPaymentMethodChange = onPaymentMethodChange
+        )
     }
 }
 
@@ -675,6 +649,7 @@ fun MaintenanceForm(
     serviceTypes: List<MaintenanceServiceType>,
     onServiceTypeChange: (MaintenanceServiceType) -> Unit,
     onCreateNewServiceType: (MaintenanceServiceType) -> Unit,
+    onPaymentMethodChange: (PaymentMethod) -> Unit,
     errors: AddEventFormErrors = AddEventFormErrors(),
     units: Units = Units(),
 ) {
@@ -696,6 +671,13 @@ fun MaintenanceForm(
                 if ("""[^0-9,.]""".toRegex() in proposed) current else proposed
             }
         )
+        Spacer(Modifier.height(12.dp))
+
+        PaymentMethodDropdown(
+            selectedValue = state.paymentMethod,
+            onPaymentMethodChange = onPaymentMethodChange
+        )
+
         Spacer(Modifier.height(12.dp))
 
         Text(
@@ -879,6 +861,44 @@ fun LocationSelectDialog(
                         Text("Select")
                     }
                 }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun PaymentMethodDropdown(
+    selectedValue: PaymentMethod?,
+    onPaymentMethodChange: (PaymentMethod) -> Unit
+) {
+    var paymentExpanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = paymentExpanded,
+        onExpandedChange = { paymentExpanded = !paymentExpanded }) {
+        OutlinedTextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            value = selectedValue?.displayName ?: "",
+            onValueChange = {},
+            label = { Text("Payment Method") },
+            readOnly = true,
+            singleLine = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentExpanded) }
+        )
+        ExposedDropdownMenu(
+            expanded = paymentExpanded,
+            onDismissRequest = { paymentExpanded = false }
+        ) {
+            PaymentMethod.entries.forEach { method ->
+                DropdownMenuItem(
+                    text = { Text(method.toString()) },
+                    onClick = {
+                        onPaymentMethodChange(method)
+                        paymentExpanded = false
+                    }
+                )
             }
         }
     }

@@ -7,6 +7,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.gasodoapp.gasodo.core.database.BaseColumns
+import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import java.math.BigDecimal
 import java.util.UUID
 
@@ -29,5 +30,6 @@ data class MaintenanceEvent(
     @PrimaryKey @ColumnInfo("event_id") var id: UUID = UUID.randomUUID(),
     @Embedded val base: BaseColumns,
 
-    @ColumnInfo("total_cost") val totalCost: BigDecimal?
+    @ColumnInfo("total_cost") val totalCost: BigDecimal?,
+    @ColumnInfo("payment_method") val paymentMethod: PaymentMethod?
 )

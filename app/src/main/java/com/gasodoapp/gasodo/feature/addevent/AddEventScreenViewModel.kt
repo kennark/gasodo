@@ -217,8 +217,12 @@ class AddEventScreenViewModel @Inject constructor(
         _refuelUiState.update { it.copy(calculateCost = value) }
     }
 
-    fun onPaymentMethodChange(value: PaymentMethod) {
+    fun onRefuelPaymentMethodChange(value: PaymentMethod) {
         _refuelUiState.update { it.copy(paymentMethod = value) }
+    }
+
+    fun onMaintenancePaymentMethodChange(value: PaymentMethod) {
+        _maintenanceUiState.update { it.copy(paymentMethod = value) }
     }
 
     fun onFullFillUpChange(value: Boolean) {
@@ -334,7 +338,8 @@ class AddEventScreenViewModel @Inject constructor(
 
             _maintenanceUiState.value = MaintenanceEventFormState(
                 doneWork = eventWithServices.services.toSet(),
-                cost = eventWithServices.event.totalCost
+                cost = eventWithServices.event.totalCost,
+                paymentMethod = eventWithServices.event.paymentMethod
             )
 
             mileageField.setTextAndPlaceCursorAtEnd(
@@ -691,12 +696,12 @@ class AddEventScreenViewModel @Inject constructor(
             mileage = baseState.mileage,
             savedLocationId = baseState.location?.id,
             notes = baseState.notes
-
         )
 
         val event = MaintenanceEvent(
             base = baseColumns,
-            totalCost = maintenanceState.cost
+            totalCost = maintenanceState.cost,
+            paymentMethod = maintenanceState.paymentMethod
         )
 
         if (id != null) {
@@ -757,7 +762,8 @@ data class RefuelEventFormState(
 
 data class MaintenanceEventFormState(
     val doneWork: Set<MaintenanceServiceType> = emptySet(),
-    val cost: BigDecimal? = null
+    val cost: BigDecimal? = null,
+    val paymentMethod: PaymentMethod? = null
 )
 
 data class InspectionEventFormState(

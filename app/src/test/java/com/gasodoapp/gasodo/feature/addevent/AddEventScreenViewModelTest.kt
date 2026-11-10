@@ -172,7 +172,7 @@ class AddEventScreenViewModelTest {
         viewModel.amountTextField.setTextAndPlaceCursorAtEnd(amount)
         viewModel.pricePerLiterTextField.setTextAndPlaceCursorAtEnd(pricePerLiter)
         viewModel.onCalculateCostChange(true)
-        viewModel.onPaymentMethodChange(PaymentMethod.CARD)
+        viewModel.onRefuelPaymentMethodChange(PaymentMethod.CARD)
         viewModel.notesField.setTextAndPlaceCursorAtEnd(notes)
 
         coEvery { eventRepository.getDateWithHigherMileage(mileage) } returns higherEvent
@@ -314,7 +314,7 @@ class AddEventScreenViewModelTest {
     fun `calculateRefuelEventData preserves all other fields in RefuelFormState`() {
         // Given
         viewModel.onCalculateCostChange(true)
-        viewModel.onPaymentMethodChange(PaymentMethod.MOBILE_PAYMENT)
+        viewModel.onRefuelPaymentMethodChange(PaymentMethod.MOBILE_PAYMENT)
         viewModel.onFullFillUpChange(true)
 
         // Set some initial values (will be reset by calculateRefuelEventData)

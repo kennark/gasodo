@@ -291,7 +291,10 @@ fun MaintenanceEventRow(
                     ) {
                         MediumLabelText("Payment")
 
-                        NoDataText("Placeholder")
+                        if (eventWithServices.event.paymentMethod != null)
+                            ExtraDataText(eventWithServices.event.paymentMethod.toString())
+                        else
+                            NoDataText("None selected")
                     }
 
                     Column(

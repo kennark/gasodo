@@ -858,7 +858,8 @@ class AddEventScreenViewModelTest {
         val serviceType = MaintenanceServiceType(serviceName = "Oil Change")
         val maintenanceState = MaintenanceEventFormState(
             doneWork = setOf(serviceType),
-            cost = BigDecimal("49.99")
+            cost = BigDecimal("49.99"),
+            paymentMethod = PaymentMethod.CARD
         )
 
         coEvery { maintenanceRepository.insertWithUsedServices(any(), any()) } returns Unit
@@ -869,6 +870,7 @@ class AddEventScreenViewModelTest {
             maintenanceRepository.insertWithUsedServices(
                 event = match {
                     it.totalCost == BigDecimal("49.99") &&
+                            it.paymentMethod == PaymentMethod.CARD &&
                             it.base.mileage == 1500L &&
                             it.base.notes == "oil change"
                 },
@@ -908,7 +910,8 @@ class AddEventScreenViewModelTest {
         val serviceType = MaintenanceServiceType(serviceName = "Brake Pads")
         val maintenanceState = MaintenanceEventFormState(
             doneWork = setOf(serviceType),
-            cost = BigDecimal("120.00")
+            cost = BigDecimal("120.00"),
+            paymentMethod = PaymentMethod.CASH
         )
 
         coEvery { maintenanceRepository.update(any(), any()) } returns Unit
@@ -918,7 +921,9 @@ class AddEventScreenViewModelTest {
         coVerify(exactly = 1) {
             maintenanceRepository.update(
                 event = match {
-                    it.id == existingId && it.totalCost == BigDecimal("120.00")
+                    it.id == existingId &&
+                            it.totalCost == BigDecimal("120.00") &&
+                            it.paymentMethod == PaymentMethod.CASH
                 },
                 services = setOf(serviceType)
             )
@@ -1097,7 +1102,8 @@ class AddEventScreenViewModelTest {
                 savedLocationId = null,
                 notes = "maintenance notes"
             ),
-            totalCost = BigDecimal("95.50")
+            totalCost = BigDecimal("95.50"),
+            paymentMethod = PaymentMethod.CASH
         )
         coEvery { maintenanceRepository.getByIdWithServiceTypes(existingId) } returns
                 MaintenanceEventWithServices(
@@ -1127,7 +1133,22 @@ class AddEventScreenViewModelTest {
 
         // And - maintenance state is populated
         assertThat(editViewModel.maintenanceUiState.value.cost).isEqualTo(BigDecimal("95.50"))
+        assertThat(editViewModel.maintenanceUiState.value.paymentMethod)
+            .isEqualTo(PaymentMethod.CASH)
         assertThat(editViewModel.maintenanceUiState.value.doneWork).contains(serviceType)
+    }
+
+    @Test
+    fun `onMaintenancePaymentMethodChange updates maintenance state`() {
+        // When
+        viewModel.onMaintenancePaymentMethodChange(PaymentMethod.MOBILE_PAYMENT)
+
+        // Then
+        assertThat(viewModel.maintenanceUiState.value.paymentMethod)
+            .isEqualTo(PaymentMethod.MOBILE_PAYMENT)
+
+        // And - refuel state is untouched
+        assertThat(viewModel.refuelUiState.value.paymentMethod).isNull()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

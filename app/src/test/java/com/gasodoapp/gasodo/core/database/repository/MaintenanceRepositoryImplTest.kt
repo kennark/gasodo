@@ -7,6 +7,7 @@ import com.gasodoapp.gasodo.core.database.dao.MaintenanceEventDao
 import com.gasodoapp.gasodo.core.database.dao.UsedMaintenanceServiceDao
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
+import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -65,7 +66,10 @@ class MaintenanceRepositoryImplTest {
     fun `getById delegates to DAO and returns result`() = runTest {
         // Arrange
         val expectedId = UUID.randomUUID()
-        val expected = makeMaintenanceEvent(id = expectedId)
+        val expected = makeMaintenanceEvent(
+            id = expectedId,
+            paymentMethod = PaymentMethod.MOBILE_PAYMENT
+        )
         coEvery { eventDao.getById(expectedId) } returns expected
 
         // Act
@@ -74,6 +78,7 @@ class MaintenanceRepositoryImplTest {
         // Assert
         assertThat(result).isEqualTo(expected)
         assertThat(result?.id).isEqualTo(expectedId)
+        assertThat(result?.paymentMethod).isEqualTo(PaymentMethod.MOBILE_PAYMENT)
 
         coVerify { eventDao.getById(expectedId) }
     }
@@ -151,7 +156,8 @@ class MaintenanceRepositoryImplTest {
         id: UUID = UUID.randomUUID(),
         date: LocalDate? = LocalDate.of(2025, 6, 15),
         mileage: Long = 50000,
-        totalCost: BigDecimal? = BigDecimal("89.99")
+        totalCost: BigDecimal? = BigDecimal("89.99"),
+        paymentMethod: PaymentMethod? = PaymentMethod.CARD
     ): MaintenanceEvent {
         return MaintenanceEvent(
             id = id,
@@ -162,7 +168,8 @@ class MaintenanceRepositoryImplTest {
                 photoUris = emptyList(),
                 notes = ""
             ),
-            totalCost = totalCost
+            totalCost = totalCost,
+            paymentMethod = paymentMethod
         )
     }
 }

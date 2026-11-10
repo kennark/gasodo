@@ -108,9 +108,14 @@ class OverviewScreenViewModelTest {
 
     private fun maintenanceEvent(
         totalCost: BigDecimal?,
-        vararg services: MaintenanceServiceType
+        vararg services: MaintenanceServiceType,
+        paymentMethod: PaymentMethod? = PaymentMethod.CARD
     ): MaintenanceEventWithServices = MaintenanceEventWithServices(
-        event = MaintenanceEvent(base = BaseColumns(), totalCost = totalCost),
+        event = MaintenanceEvent(
+            base = BaseColumns(),
+            totalCost = totalCost,
+            paymentMethod = paymentMethod
+        ),
         services = services.toList()
     )
 

@@ -1,17 +1,26 @@
 package com.gasodoapp.gasodo.core.enums
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.gasodoapp.gasodo.R
 
 /**
  * Colour scheme the app should use.
  *
  * [SYSTEM] defers to the device setting, the others override it explicitly.
+ *
+ * [labelRes] is the user facing name and [descriptionRes] the one line explanation shown under
+ * the selector. Both are resolved at the UI layer so the wording follows the app language.
  */
-enum class ThemeMode(val displayName: String) {
-    SYSTEM("System"),
-    LIGHT("Light"),
-    DARK("Dark");
+enum class ThemeMode(
+    @param:StringRes val labelRes: Int,
+    @param:StringRes val descriptionRes: Int,
+) {
+    SYSTEM(R.string.theme_mode_system, R.string.settings_theme_system_description),
+    LIGHT(R.string.theme_mode_light, R.string.settings_theme_light_description),
+    DARK(R.string.theme_mode_dark, R.string.settings_theme_dark_description);
 
     /**
      * Whether the app should render with the dark colour scheme.
@@ -25,7 +34,17 @@ enum class ThemeMode(val displayName: String) {
         DARK -> true
     }
 
-    override fun toString(): String = displayName
+    /**
+     * Localised name of this mode, for rendering inside a composable.
+     */
+    @Composable
+    fun label(): String = stringResource(labelRes)
+
+    /**
+     * Localised explanation of what this mode means, for rendering inside a composable.
+     */
+    @Composable
+    fun description(): String = stringResource(descriptionRes)
 
     companion object {
 

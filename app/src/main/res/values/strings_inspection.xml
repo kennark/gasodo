@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Strings for the inspection event list screen. -->
+<resources>
+
+    <string name="inspection_title">Recent Inspections</string>
+
+    <!-- Empty state shown at the end of the list -->
+    <string name="inspection_list_end_title">Inspection ends here</string>
+    <string name="inspection_list_end_subtitle">Register new inspection events to show up here</string>
+
+    <!-- Event card -->
+    <string name="inspection_result">Result</string>
+    <string name="inspection_inspected_areas">Inspected Areas</string>
+    <plurals name="inspection_inspected_area_count">
+        <item quantity="one">%1$d inspected area</item>
+        <item quantity="other">%1$d inspected areas</item>
+    </plurals>
+    <plurals name="inspection_show_all_areas">
+        <item quantity="one">Show All (%1$d area)</item>
+        <item quantity="other">Show All (%1$d areas)</item>
+    </plurals>
+
+    <!-- Bottom sheet listing every part of an event -->
+    <plurals name="inspection_parts_title">
+        <item quantity="one">Inspected areas/parts (%1$d)</item>
+        <item quantity="other">Inspected areas/parts (%1$d)</item>
+    </plurals>
+
+</resources>

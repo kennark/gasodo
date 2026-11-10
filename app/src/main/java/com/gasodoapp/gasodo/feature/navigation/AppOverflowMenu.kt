@@ -2,6 +2,7 @@ package com.gasodoapp.gasodo.feature.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import com.gasodoapp.gasodo.ui.components.OverflowMenu
 import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
 
@@ -35,7 +36,7 @@ fun AppOverflowMenu(
     val items = overflowDestinations.map { listOfDestinations ->
         listOfDestinations.map { destination ->
             OverflowMenuItem(
-                label = destination.label,
+                label = stringResource(destination.labelRes),
                 onClick = { onNavigateToManageDestination(destination) }
             )
         }

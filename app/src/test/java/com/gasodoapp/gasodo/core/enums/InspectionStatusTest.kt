@@ -3,20 +3,26 @@ package com.gasodoapp.gasodo.core.enums
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
+/**
+ * Unit tests for [InspectionStatus].
+ *
+ * The user facing wording lives in string resources, which cannot be read from a plain JVM test,
+ * so these tests guard the resource mapping rather than the English text.
+ */
 class InspectionStatusTest {
 
     @Test
-    fun `all inspection statuses have correct display names`() {
-        assertThat(InspectionStatus.PASS.displayName).isEqualTo("Pass")
-        assertThat(InspectionStatus.FAIL.displayName).isEqualTo("Fail")
-        assertThat(InspectionStatus.CONDITIONAL_PASS.displayName).isEqualTo("Conditional Pass")
+    fun `every status maps to a string resource`() {
+        InspectionStatus.entries.forEach { status ->
+            assertThat(status.labelRes).isNotEqualTo(0)
+        }
     }
 
     @Test
-    fun `toString returns displayName for each inspection status`() {
-        assertThat(InspectionStatus.PASS.toString()).isEqualTo("Pass")
-        assertThat(InspectionStatus.FAIL.toString()).isEqualTo("Fail")
-        assertThat(InspectionStatus.CONDITIONAL_PASS.toString()).isEqualTo("Conditional Pass")
+    fun `label resources are unique`() {
+        val labelRes = InspectionStatus.entries.map { it.labelRes }
+
+        assertThat(labelRes).containsNoDuplicates()
     }
 
     @Test

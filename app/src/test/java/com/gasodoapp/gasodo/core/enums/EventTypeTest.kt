@@ -3,20 +3,27 @@ package com.gasodoapp.gasodo.core.enums
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
+/**
+ * Unit tests for [EventType].
+ *
+ * The user facing wording lives in string resources, which cannot be read from a plain JVM test.
+ * These tests instead guard the mapping itself: every entry must point at a real resource and no
+ * two entries may share one, which is what a copy-paste slip in the enum would produce.
+ */
 class EventTypeTest {
 
     @Test
-    fun `all event types have correct display names`() {
-        assertThat(EventType.REFUEL.displayName).isEqualTo("Refueling")
-        assertThat(EventType.MAINTENANCE.displayName).isEqualTo("Maintenance")
-        assertThat(EventType.INSPECTION.displayName).isEqualTo("Inspection")
+    fun `every event type maps to a string resource`() {
+        EventType.entries.forEach { type ->
+            assertThat(type.labelRes).isNotEqualTo(0)
+        }
     }
 
     @Test
-    fun `toString returns displayName for each event type`() {
-        assertThat(EventType.REFUEL.toString()).isEqualTo("Refueling")
-        assertThat(EventType.MAINTENANCE.toString()).isEqualTo("Maintenance")
-        assertThat(EventType.INSPECTION.toString()).isEqualTo("Inspection")
+    fun `label resources are unique`() {
+        val labelRes = EventType.entries.map { it.labelRes }
+
+        assertThat(labelRes).containsNoDuplicates()
     }
 
     @Test

@@ -6,20 +6,14 @@ import org.junit.Test
 class DistanceTest {
 
     @Test
-    fun `all distances have correct display names, singular names and shorthands`() {
-        assertThat(Distance.KILOMETER.displayName).isEqualTo("Kilometers")
-        assertThat(Distance.KILOMETER.singularName).isEqualTo("Kilometer")
+    fun `all distances have shorthands and resource backed names`() {
         assertThat(Distance.KILOMETER.shorthand).isEqualTo("km")
-        assertThat(Distance.MILE.displayName).isEqualTo("Miles")
-        assertThat(Distance.MILE.singularName).isEqualTo("Mile")
-        assertThat(Distance.MILE.shorthand).isEqualTo("mi")
-    }
+        assertThat(Distance.KILOMETER.nameRes).isNotEqualTo(0)
+        assertThat(Distance.KILOMETER.singularNameRes).isNotEqualTo(0)
 
-    @Test
-    fun `toString returns displayName for each distance`() {
-        Distance.entries.forEach { distance ->
-            assertThat(distance.toString()).isEqualTo(distance.displayName)
-        }
+        assertThat(Distance.MILE.shorthand).isEqualTo("mi")
+        assertThat(Distance.MILE.nameRes).isNotEqualTo(0)
+        assertThat(Distance.MILE.singularNameRes).isNotEqualTo(0)
     }
 
     /**
@@ -27,10 +21,10 @@ class DistanceTest {
      * only by their plural form would be indistinguishable.
      */
     @Test
-    fun `display names are unique`() {
-        val displayNames = Distance.entries.map { it.displayName }
+    fun `display name resources are unique`() {
+        val nameRes = Distance.entries.map { it.nameRes }
 
-        assertThat(displayNames).containsNoDuplicates()
+        assertThat(nameRes).containsNoDuplicates()
     }
 
     /**
@@ -38,10 +32,14 @@ class DistanceTest {
      * distinguishable for the same reason as the plural form.
      */
     @Test
-    fun `singular names are unique`() {
-        val singularNames = Distance.entries.map { it.singularName }
+    fun `singular name resources are unique and differ from the plural form`() {
+        val singularNameRes = Distance.entries.map { it.singularNameRes }
 
-        assertThat(singularNames).containsNoDuplicates()
+        assertThat(singularNameRes).containsNoDuplicates()
+
+        Distance.entries.forEach { distance ->
+            assertThat(distance.singularNameRes).isNotEqualTo(distance.nameRes)
+        }
     }
 
     @Test
@@ -49,20 +47,6 @@ class DistanceTest {
         val shorthands = Distance.entries.map { it.shorthand }
 
         assertThat(shorthands).containsNoDuplicates()
-    }
-
-    /**
-     * A singular form that is not just the plural form without the trailing `s` would be a typo,
-     * and the UI shows either one depending on the label, so both must be non blank.
-     */
-    @Test
-    fun `singular and plural names are non blank and differ`() {
-        Distance.entries.forEach { distance ->
-            assertThat(distance.displayName).isNotEmpty()
-            assertThat(distance.singularName).isNotEmpty()
-            assertThat(distance.singularName).isNotEqualTo(distance.displayName)
-            assertThat(distance.shorthand).isNotEmpty()
-        }
     }
 
     @Test

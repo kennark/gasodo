@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Strings shared by more than one screen or component.
+    Feature specific wording lives in strings_<feature>.xml.
+-->
+<resources>
+
+    <!-- Generic dialog and form actions -->
+    <string name="common_cancel">Cancel</string>
+    <string name="common_ok">OK</string>
+    <string name="common_save">Save</string>
+    <string name="common_select">Select</string>
+    <string name="common_leave">Leave</string>
+    <string name="common_confirm">Confirm</string>
+    <string name="common_dismiss">Dismiss</string>
+    <string name="common_create_new">Create new</string>
+    <string name="common_create_new_item">Create new item</string>
+    <string name="common_search_or_enter_new_name">Search or enter new name</string>
+
+    <!-- Entity field labels reused by the editor dialogs and the event cards -->
+    <string name="common_name">Name</string>
+    <string name="common_notes">Notes</string>
+    <string name="common_notes_optional">Notes (optional)</string>
+    <string name="common_date">Date</string>
+    <string name="common_mileage">Mileage</string>
+    <string name="common_amount">Amount</string>
+    <string name="common_cost">Cost</string>
+    <string name="common_payment">Payment</string>
+    <string name="common_location">Location</string>
+    <string name="common_full_fill_up">Full Fill-Up</string>
+    <string name="common_extra_details">Extra Details</string>
+
+    <!-- Placeholders shown when an optional value is not set -->
+    <string name="common_no_value">-</string>
+    <string name="common_none_selected">None selected</string>
+    <string name="common_no_location_set">No location set</string>
+    <string name="common_no_notes">No notes</string>
+
+    <!-- Delete confirmation dialog -->
+    <string name="delete_dialog_title">Delete this event?</string>
+    <string name="delete_dialog_message">Deleted items can not be recovered.</string>
+
+    <!-- Accessibility content descriptions -->
+    <string name="cd_more_options">More options</string>
+    <string name="cd_back">Back</string>
+    <!-- %1$s is the name of the entry being edited or deleted -->
+    <string name="cd_edit_item">Edit %1$s</string>
+    <string name="cd_delete_item">Delete %1$s</string>
+    <string name="cd_edit_event">Edit event</string>
+    <string name="cd_delete_event">Delete event</string>
+    <string name="cd_expand_details">Expand details</string>
+    <string name="cd_collapse_details">Collapse details</string>
+    <string name="cd_save_event">Save event</string>
+    <string name="cd_form_has_errors">This form has errors</string>
+    <string name="cd_full_fill_up_yes">Full fill-up: yes</string>
+    <string name="cd_full_fill_up_no">Full fill-up: no</string>
+
+</resources>

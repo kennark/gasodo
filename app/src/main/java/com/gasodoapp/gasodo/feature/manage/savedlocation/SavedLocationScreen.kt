@@ -9,9 +9,12 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
@@ -35,11 +38,14 @@ fun SavedLocationScreen(
     val pendingDelete by viewModel.pendingDelete.collectAsStateWithLifecycle()
 
     TopBarScaffold(
-        title = "Saved Locations",
+        title = stringResource(R.string.manage_locations_title),
         applyBottomPadding = true,
         navigationIcon = {
             IconButton(onClick = onBack) {
-                Icon(imageVector = arrow_back, contentDescription = arrow_back.name)
+                Icon(
+                    imageVector = arrow_back,
+                    contentDescription = stringResource(R.string.cd_back)
+                )
             }
         },
         actions = {
@@ -53,16 +59,19 @@ fun SavedLocationScreen(
                     ),
                 onClick = viewModel::onCreateClick
             ) {
-                Icon(imageVector = add, contentDescription = "Add saved location")
+                Icon(
+                    imageVector = add,
+                    contentDescription = stringResource(R.string.manage_locations_add_cd)
+                )
             }
         }
     ) { innerPadding ->
         CatalogueList(
             items = locations,
             searchQuery = searchQuery,
-            searchLabel = "Search locations",
-            emptyTitle = "No locations found",
-            emptySubtitle = "Add a location to use it in events",
+            searchLabel = stringResource(R.string.manage_locations_search_hint),
+            emptyTitle = stringResource(R.string.manage_locations_empty_title),
+            emptySubtitle = stringResource(R.string.manage_locations_empty_subtitle),
             key = { it.id },
             title = { it.name },
             notes = { it.address },
@@ -86,7 +95,7 @@ fun SavedLocationScreen(
         DeleteDialog(
             onDismissRequest = viewModel::onDeleteDismiss,
             onConfirmRequest = { viewModel.onDeleteConfirm(pending.target) },
-            title = "Delete \"${pending.target.name}\"?",
+            title = stringResource(R.string.manage_delete_title, pending.target.name),
             message = deleteMessage(pending)
         )
     }
@@ -96,16 +105,14 @@ fun SavedLocationScreen(
  * Explains the consequences of removing a location. The relation uses `SET_NULL`, so past events keep their data but
  * lose the location.
  */
+@Composable
 private fun deleteMessage(pending: PendingCatalogueDelete<SavedLocation>): String {
     val usageCount = pending.usageCount
-        ?: return "Deleted items can not be recovered."
+        ?: return stringResource(R.string.delete_dialog_message)
 
-    return when (usageCount) {
-        0 -> "This location is not used by any event. Deleted items can not be recovered."
-        1 -> "This location is used by 1 event, which will no longer show a location. " +
-                "Deleted items can not be recovered."
-
-        else -> "This location is used by $usageCount events, which will no longer show a " +
-                "location. Deleted items can not be recovered."
+    return if (usageCount == 0) {
+        stringResource(R.string.manage_locations_delete_unused)
+    } else {
+        pluralStringResource(R.plurals.manage_locations_delete_used, usageCount, usageCount)
     }
 }

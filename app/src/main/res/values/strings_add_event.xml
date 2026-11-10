@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Strings for the add / edit event dialog. -->
+<resources>
+
+    <string name="add_event_new_title">New Event</string>
+    <string name="add_event_edit_title">Edit Event</string>
+
+    <!-- Discard changes confirmation -->
+    <string name="add_event_leave_title">Leave?</string>
+    <string name="add_event_leave_message">Changes will not be saved.</string>
+
+    <!-- Refuel form -->
+    <string name="add_event_section_refuel_details">Refuel Details</string>
+    <string name="add_event_calculate_from_price_per_liquid">Calculate from Price/%1$s</string>
+    <!-- %1$s is the singular form of the selected volume unit, e.g. "Liter" -->
+    <string name="add_event_price_per_liquid">Price per %1$s</string>
+    <string name="add_event_total_cost">Total Cost</string>
+    <string name="add_event_payment_method">Payment Method</string>
+
+    <!-- Maintenance form -->
+    <string name="add_event_section_done_work">Select Done Work</string>
+
+    <!-- Inspection form -->
+    <string name="add_event_section_inspection_result">Inspection Result</string>
+    <string name="add_event_section_inspected_areas">Select Inspected Areas</string>
+
+    <!-- Location selector dialog -->
+    <string name="add_event_select_location_title">Select Location</string>
+
+    <!-- Validation summary shown under the form -->
+    <plurals name="add_event_fields_need_attention">
+        <item quantity="one">%1$d field needs attention</item>
+        <item quantity="other">%1$d fields need attention</item>
+    </plurals>
+
+</resources>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    User facing validation messages.
+
+    These are resolved at the UI layer so the ViewModel stays free of Context and
+    resource lookups, keeping validation a pure, unit testable function.
+-->
+<resources>
+
+    <!-- Add / edit event form, see FieldError -->
+    <string name="field_error_mileage_invalid">Mileage is too large</string>
+    <string name="field_error_date_mileage_conflict">Mileage or date are not in order with existing events</string>
+    <string name="field_error_amount_invalid">Amount is not a valid number</string>
+    <string name="field_error_amount_not_positive">Amount must be greater than 0</string>
+    <string name="field_error_cost_invalid">Total cost is not a valid number</string>
+    <string name="field_error_cost_negative">Total cost cannot be negative</string>
+    <!-- %1$s is the singular form of the selected volume unit, e.g. "Liter" or "Gallon" -->
+    <string name="field_error_price_per_liquid_invalid">Price per %1$s is not a valid number</string>
+    <string name="field_error_price_per_liquid_not_positive">Price per %1$s must be greater than 0</string>
+
+    <!-- Catalogue editor dialogs, see NameError -->
+    <string name="error_name_empty">Enter a name</string>
+    <!-- %1$s is the noun of the edited thing, e.g. "service", "part" or "location" -->
+    <string name="error_name_duplicate">A %1$s with this name already exists</string>
+
+    <!-- Nouns interpolated into error_name_duplicate -->
+    <string name="noun_service">service</string>
+    <string name="noun_part">part</string>
+    <string name="noun_location">location</string>
+
+</resources>

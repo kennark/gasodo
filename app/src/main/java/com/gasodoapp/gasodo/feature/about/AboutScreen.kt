@@ -43,12 +43,6 @@ import com.gasodoapp.gasodo.ui.components.MediumLabelText
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.arrow_back
 
-private const val DEVELOPER_NAME = "kennark"
-
-private const val REPOSITORY_URL = "https://github.com/kennark/gasodo"
-
-private const val LICENSE_NAME = "GPL-3.0"
-
 private val LOGO_CANVAS_SIZE = 131.dp
 
 private val LOGO_CIRCLE_SIZE = 88.dp
@@ -58,11 +52,14 @@ fun AboutScreen(onBack: () -> Unit) {
     val context = LocalContext.current
 
     TopBarScaffold(
-        title = "About",
+        title = stringResource(R.string.about_title),
         applyBottomPadding = true,
         navigationIcon = {
             IconButton(onClick = onBack) {
-                Icon(imageVector = arrow_back, contentDescription = "Back")
+                Icon(
+                    imageVector = arrow_back,
+                    contentDescription = stringResource(R.string.cd_back)
+                )
             }
         }
     ) { innerPadding ->
@@ -90,25 +87,38 @@ private fun AboutContent(
     ) {
         AppHeader(appName = appName)
 
-        AboutCard(title = "App info") {
-            InfoRow(label = "Developer", value = DEVELOPER_NAME)
+        AboutCard(title = stringResource(R.string.about_app_info)) {
+            InfoRow(
+                label = stringResource(R.string.about_developer),
+                value = stringResource(R.string.about_developer_name)
+            )
             HorizontalDivider()
-            InfoRow(label = "Version", value = BuildConfig.VERSION_NAME)
+            InfoRow(
+                label = stringResource(R.string.about_version),
+                value = BuildConfig.VERSION_NAME
+            )
             HorizontalDivider()
-            InfoRow(label = "Package", value = BuildConfig.APPLICATION_ID)
+            InfoRow(
+                label = stringResource(R.string.about_package),
+                value = BuildConfig.APPLICATION_ID
+            )
             HorizontalDivider()
-            InfoRow(label = "License", value = LICENSE_NAME)
+            InfoRow(
+                label = stringResource(R.string.about_license),
+                value = stringResource(R.string.about_license_name)
+            )
         }
 
-        AboutCard(title = "Links") {
+        AboutCard(title = stringResource(R.string.about_links)) {
+            val repositoryUrl = stringResource(R.string.about_repository_url)
             FilledTonalButton(
-                onClick = { onOpenLink(REPOSITORY_URL) },
+                onClick = { onOpenLink(repositoryUrl) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Source code on GitHub")
+                Text(stringResource(R.string.about_source_code))
             }
             Text(
-                text = REPOSITORY_URL,
+                text = repositoryUrl,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -149,7 +159,7 @@ private fun AppHeader(appName: String) {
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = "Version ${BuildConfig.VERSION_NAME}",
+            text = stringResource(R.string.about_version_value, BuildConfig.VERSION_NAME),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -201,10 +211,9 @@ private fun InfoRow(label: String, value: String) {
 
 @Composable
 private fun PrivacyCard() {
-    AboutCard(title = "Privacy") {
+    AboutCard(title = stringResource(R.string.about_privacy)) {
         Text(
-            text = "This app is offline first, everything is stored on this device. " +
-                    "Deleting the app will remove all data you created.",
+            text = stringResource(R.string.about_privacy_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )

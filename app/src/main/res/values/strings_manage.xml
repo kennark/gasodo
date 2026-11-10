@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Strings for the catalogue management screens: maintenance service types,
+    inspectable parts and saved locations.
+-->
+<resources>
+
+    <!-- Delete confirmation titles, %1$s is the name of the entry -->
+    <string name="manage_delete_title">Delete \"%1$s\"?</string>
+
+    <!-- Maintenance service types -->
+    <string name="manage_services_title">Maintenance Services</string>
+    <string name="manage_services_add_cd">Add service type</string>
+    <string name="manage_services_search_hint">Search services</string>
+    <string name="manage_services_empty_title">No services found</string>
+    <string name="manage_services_empty_subtitle">Add a service type to use it in maintenance events</string>
+    <string name="manage_services_new_title">New service type</string>
+    <string name="manage_services_edit_title">Edit service type</string>
+    <string name="manage_services_delete_unused">This service is not used by any event. Deleted items can not be recovered.</string>
+    <plurals name="manage_services_delete_used">
+        <item quantity="one">This service is used by %1$d event and will be removed from it. Deleted items can not be recovered.</item>
+        <item quantity="other">This service is used by %1$d events and will be removed from all of them. Deleted items can not be recovered.</item>
+    </plurals>
+
+    <!-- Inspectable parts -->
+    <string name="manage_parts_title">Inspectable Parts</string>
+    <string name="manage_parts_add_cd">Add inspectable part</string>
+    <string name="manage_parts_search_hint">Search parts</string>
+    <string name="manage_parts_empty_title">No parts found</string>
+    <string name="manage_parts_empty_subtitle">Add a part to use it in inspection events</string>
+    <string name="manage_parts_new_title">New inspectable part</string>
+    <string name="manage_parts_edit_title">Edit inspectable part</string>
+    <string name="manage_parts_delete_unused">This part is not used by any inspection. Deleted items can not be recovered.</string>
+    <plurals name="manage_parts_delete_used">
+        <item quantity="one">This part is used by %1$d inspection and will be removed from it. Deleted items can not be recovered.</item>
+        <item quantity="other">This part is used by %1$d inspections and will be removed from all of them. Deleted items can not be recovered.</item>
+    </plurals>
+
+    <!-- Saved locations -->
+    <string name="manage_locations_title">Saved Locations</string>
+    <string name="manage_locations_add_cd">Add saved location</string>
+    <string name="manage_locations_search_hint">Search locations</string>
+    <string name="manage_locations_empty_title">No locations found</string>
+    <string name="manage_locations_empty_subtitle">Add a location to use it in events</string>
+    <string name="manage_locations_new_title">New saved location</string>
+    <string name="manage_locations_edit_title">Edit saved location</string>
+    <string name="manage_locations_delete_unused">This location is not used by any event. Deleted items can not be recovered.</string>
+    <plurals name="manage_locations_delete_used">
+        <item quantity="one">This location is used by %1$d event, which will no longer show a location. Deleted items can not be recovered.</item>
+        <item quantity="other">This location is used by %1$d events, which will no longer show a location. Deleted items can not be recovered.</item>
+    </plurals>
+
+    <!-- Saved location editor -->
+    <string name="manage_locations_no_address">No address set yet</string>
+    <string name="manage_locations_set_on_map">Set location on map</string>
+
+</resources>

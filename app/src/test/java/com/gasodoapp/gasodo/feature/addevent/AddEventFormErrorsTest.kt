@@ -1,52 +1,51 @@
 package com.gasodoapp.gasodo.feature.addevent
 
-import com.gasodoapp.gasodo.core.enums.units.Liquid
+import androidx.annotation.StringRes
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 /**
- * Unit tests for the user facing wording of [FieldError].
+ * Unit tests for [FieldError] and [AddEventFormErrors].
+ *
+ * The user facing message of a [FieldError] is a string resource resolved by the composable
+ * `FieldError.message()`, which cannot be read from a plain JVM test. These tests therefore assert
+ * the resource mapping and the pure state helpers instead of the English wording.
  */
 class AddEventFormErrorsTest {
 
-    @Test
-    fun `every error has a non blank message`() {
-        FieldError.entries.forEach { error ->
-            assertThat(error.message()).isNotEmpty()
-        }
-    }
-
-    @Test
-    fun `messages read the singular volume unit of the selected liquid`() {
-        assertThat(FieldError.PRICE_PER_LITER_INVALID.message(Liquid.LITER))
-            .isEqualTo("Price per Liter is not a valid number")
-        assertThat(FieldError.PRICE_PER_LITER_INVALID.message(Liquid.GALLON))
-            .isEqualTo("Price per Gallon is not a valid number")
-
-        assertThat(FieldError.PRICE_PER_LITER_NOT_POSITIVE.message(Liquid.LITER))
-            .isEqualTo("Price per Liter must be greater than 0")
-        assertThat(FieldError.PRICE_PER_LITER_NOT_POSITIVE.message(Liquid.GALLON))
-            .isEqualTo("Price per Gallon must be greater than 0")
-    }
-
     /**
-     * The volume unit only changes the price per volume wording, every other message is about a
-     * value that has no unit attached.
+     * Reads the resource id a [FieldError] maps to.
+     *
+     * Mirrors the `when` in `FieldError.message()`; keeping it here means a new entry added to the
+     * enum without a resource makes this test fail to compile.
      */
-    @Test
-    fun `other messages do not depend on the volume unit`() {
-        val unaffected = FieldError.entries -
-                setOf(FieldError.PRICE_PER_LITER_INVALID, FieldError.PRICE_PER_LITER_NOT_POSITIVE)
+    @StringRes
+    private fun FieldError.resourceId(): Int = when (this) {
+        FieldError.MILEAGE_INVALID -> com.gasodoapp.gasodo.R.string.field_error_mileage_invalid
+        FieldError.DATE_MILEAGE_CONFLICT -> com.gasodoapp.gasodo.R.string.field_error_date_mileage_conflict
+        FieldError.AMOUNT_INVALID -> com.gasodoapp.gasodo.R.string.field_error_amount_invalid
+        FieldError.AMOUNT_NOT_POSITIVE -> com.gasodoapp.gasodo.R.string.field_error_amount_not_positive
+        FieldError.COST_INVALID -> com.gasodoapp.gasodo.R.string.field_error_cost_invalid
+        FieldError.COST_NEGATIVE -> com.gasodoapp.gasodo.R.string.field_error_cost_negative
+        FieldError.PRICE_PER_LITER_INVALID ->
+            com.gasodoapp.gasodo.R.string.field_error_price_per_liquid_invalid
 
-        unaffected.forEach { error ->
-            assertThat(error.message(Liquid.GALLON)).isEqualTo(error.message(Liquid.LITER))
+        FieldError.PRICE_PER_LITER_NOT_POSITIVE ->
+            com.gasodoapp.gasodo.R.string.field_error_price_per_liquid_not_positive
+    }
+
+    @Test
+    fun `every error maps to a string resource`() {
+        FieldError.entries.forEach { error ->
+            assertThat(error.resourceId()).isNotEqualTo(0)
         }
     }
 
     @Test
-    fun `the default message uses the default liquid`() {
-        assertThat(FieldError.PRICE_PER_LITER_INVALID.message())
-            .isEqualTo(FieldError.PRICE_PER_LITER_INVALID.message(Liquid.DEFAULT))
+    fun `each error maps to its own string resource`() {
+        val resourceIds = FieldError.entries.map { it.resourceId() }
+
+        assertThat(resourceIds).containsNoDuplicates()
     }
 
     @Test

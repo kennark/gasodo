@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Strings for the refuel event list screen. -->
+<resources>
+
+    <string name="refuel_title">Recent Refuels</string>
+
+    <!-- Empty state shown at the end of the list -->
+    <string name="refuel_list_end_title">Refuels end here</string>
+    <string name="refuel_list_end_subtitle">Register new refuels to show up here</string>
+
+</resources>

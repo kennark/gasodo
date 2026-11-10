@@ -11,9 +11,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
 import com.gasodoapp.gasodo.ui.components.catalogue.message
 
@@ -32,17 +34,24 @@ fun SavedLocationEditorDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (state.isNew) "New saved location" else "Edit saved location") },
+        title = {
+            Text(
+                stringResource(
+                    if (state.isNew) R.string.manage_locations_new_title
+                    else R.string.manage_locations_edit_title
+                )
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = state.name,
                     onValueChange = onNameChange,
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.common_name)) },
                     singleLine = true,
                     isError = state.nameError != null,
                     supportingText = state.nameError?.let { error ->
-                        { Text(error.message("location")) }
+                        { Text(error.message(R.string.noun_location)) }
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                     modifier = Modifier.fillMaxWidth(),
@@ -56,12 +65,12 @@ fun SavedLocationEditorDialog(
                 onClick = onConfirm,
                 enabled = state.name.isNotBlank(),
             ) {
-                Text("Save")
+                Text(stringResource(R.string.common_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )
@@ -72,7 +81,7 @@ private fun LocationOnMapSection(state: SavedLocationEditorState) {
     val address = state.address?.takeIf { it.isNotBlank() }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        MediumLabelText(address ?: "No address set yet")
+        MediumLabelText(address ?: stringResource(R.string.manage_locations_no_address))
 
         // todo The map picker is not implemented yet
         OutlinedButton(
@@ -80,7 +89,7 @@ private fun LocationOnMapSection(state: SavedLocationEditorState) {
             enabled = false,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Set location on map")
+            Text(stringResource(R.string.manage_locations_set_on_map))
         }
     }
 }

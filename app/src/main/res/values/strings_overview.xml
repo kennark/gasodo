@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Strings for the overview / statistics screen. -->
+<resources>
+
+    <string name="overview_title">Overview</string>
+
+    <!-- Time period selector -->
+    <string name="overview_time_period">Time Period</string>
+    <!-- Joins the start and end date in the selector field -->
+    <string name="overview_date_range">%1$s - %2$s</string>
+
+    <!-- Shown while no end date has been picked -->
+    <string name="overview_no_period_title">Time period not set</string>
+    <string name="overview_no_period_subtitle">Select an end date to see statistics</string>
+
+    <!-- Refuel statistics card -->
+    <string name="overview_refuel_stats_title">Refuel Statistics</string>
+    <string name="overview_total_refuel_cost">Total Refuel Cost</string>
+    <string name="overview_total_refuelled">Total Refuelled</string>
+    <string name="overview_average_fuel_price">Average Fuel Price</string>
+    <string name="overview_total_distance_travelled">Total Distance Travelled</string>
+    <string name="overview_average_fuel_consumption">Average Fuel Consumption</string>
+    <string name="overview_average_fuel_cost">Average Fuel Cost</string>
+
+    <!-- Maintenance statistics card -->
+    <string name="overview_maintenance_stats_title">Maintenance Statistics</string>
+    <string name="overview_total_maintenance_cost">Total Maintenance Cost</string>
+    <string name="overview_maintenance_action_count">Maintenance Action Count</string>
+    <string name="overview_top_maintenance_actions">Top Maintenance Actions</string>
+    <plurals name="overview_maintenance_action_count_value">
+        <item quantity="one">%1$d action</item>
+        <item quantity="other">%1$d actions</item>
+    </plurals>
+    <!-- %1$d is the count, %2$s the service name -->
+    <string name="overview_top_maintenance_action_value">%1$dx • %2$s</string>
+
+    <!-- Inspection statistics card -->
+    <string name="overview_inspection_stats_title">Inspection Statistics</string>
+    <string name="overview_total_inspections">Total Inspections</string>
+    <plurals name="overview_total_inspections_value">
+        <item quantity="one">%1$d inspection</item>
+        <item quantity="other">%1$d inspections</item>
+    </plurals>
+    <!-- %1$s is the status label, %2$s the percentage and %3$d the count -->
+    <string name="overview_inspection_legend_value">%1$s %2$s%% • %3$d</string>
+
+    <!-- Card shown when a category has no data for the selected period -->
+    <string name="overview_no_stats_title">No %1$s found</string>
+    <string name="overview_no_stats_subtitle">Select a different period to see your %1$s history</string>
+
+    <!-- Nouns used in overview_no_stats_title / overview_no_stats_subtitle -->
+    <string name="overview_noun_refuels">refuels</string>
+    <string name="overview_noun_maintenances">maintenances</string>
+    <string name="overview_noun_inspections">inspections</string>
+
+</resources>

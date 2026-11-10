@@ -64,6 +64,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -72,6 +74,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
@@ -79,6 +82,7 @@ import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.gasodoapp.gasodo.core.settings.Units
+import com.gasodoapp.gasodo.core.settings.liquidSingularLabel
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
@@ -141,14 +145,14 @@ fun AddEventScreen(
     if (showDiscardDialog) {
         AlertDialog(
             { showDiscardDialog = false },
-            { TextButton(onClick = { onDismiss() }) { Text("Leave") } },
+            { TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.common_leave)) } },
             dismissButton = {
                 TextButton(onClick = {
                     showDiscardDialog = false
-                }) { Text("Cancel") }
+                }) { Text(stringResource(R.string.common_cancel)) }
             },
-            title = { Text("Leave?") },
-            text = { Text("Changes will not be saved.") }
+            title = { Text(stringResource(R.string.add_event_leave_title)) },
+            text = { Text(stringResource(R.string.add_event_leave_message)) }
         )
     }
 
@@ -161,11 +165,17 @@ fun AddEventScreen(
     }
 
     TopBarScaffold(
-        if (viewModel.id == null) "New Event" else "Edit Event",
-        subtitle = formType.toString(),
+        stringResource(
+            if (viewModel.id == null) R.string.add_event_new_title
+            else R.string.add_event_edit_title
+        ),
+        subtitle = formType.label(),
         navigationIcon = {
             IconButton(onClick = { checkConfirmOrDismiss() }) {
-                Icon(imageVector = arrow_back, contentDescription = arrow_back.name)
+                Icon(
+                    imageVector = arrow_back,
+                    contentDescription = stringResource(R.string.cd_back)
+                )
             }
         },
         actions = {
@@ -180,7 +190,10 @@ fun AddEventScreen(
                     ),
                     onClick = viewModel::onSubmit
                 ) {
-                    Icon(imageVector = check, contentDescription = check.name)
+                    Icon(
+                        imageVector = check,
+                        contentDescription = stringResource(R.string.cd_save_event)
+                    )
                 }
             }
         }
@@ -282,12 +295,15 @@ private fun FormContent(
             if (formErrors.hasAnyError) {
                 Icon(
                     imageVector = error,
-                    contentDescription = error.name,
+                    contentDescription = stringResource(R.string.cd_form_has_errors),
                     tint = MaterialTheme.colorScheme.error
                 )
                 Text(
-                    text = if (formErrors.errorCount == 1) "1 field needs attention"
-                    else "${formErrors.errorCount} fields need attention",
+                    text = pluralStringResource(
+                        R.plurals.add_event_fields_need_attention,
+                        formErrors.errorCount,
+                        formErrors.errorCount
+                    ),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(end = 2.dp)
@@ -316,7 +332,7 @@ fun BaseForm(
         // Mileage Field
         OutlinedTextField(
             state = mileageState,
-            label = { Text("Mileage") },
+            label = { Text(stringResource(R.string.common_mileage)) },
             lineLimits = TextFieldLineLimits.SingleLine,
             modifier = Modifier.fillMaxWidth(),
             trailingIcon = { Text(units.distanceLabel) },
@@ -338,7 +354,7 @@ fun BaseForm(
                 )
             ) ?: "",
             onValueChange = {},
-            label = { Text("Date") },
+            label = { Text(stringResource(R.string.common_date)) },
             readOnly = true,
             singleLine = true,
             isError = errors.date != null,
@@ -365,12 +381,12 @@ fun BaseForm(
                     TextButton(onClick = {
                         showDateModal = false
                     }) {
-                        Text("OK")
+                        Text(stringResource(R.string.common_ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDateModal = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.common_cancel))
                     }
                 }
             ) {
@@ -383,7 +399,7 @@ fun BaseForm(
         OutlinedTextField(
             value = state.location?.name ?: "",
             onValueChange = {},
-            label = { Text("Location") },
+            label = { Text(stringResource(R.string.common_location)) },
             readOnly = true,
             singleLine = true,
             modifier = Modifier
@@ -417,7 +433,7 @@ fun BaseForm(
         // Notes Field
         OutlinedTextField(
             state = notesState,
-            label = { Text("Notes") },
+            label = { Text(stringResource(R.string.common_notes)) },
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -441,7 +457,7 @@ fun RefuelForm(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            "Refuel Details",
+            stringResource(R.string.add_event_section_refuel_details),
             style = MaterialTheme.typography.titleMedium
         )
 
@@ -449,7 +465,7 @@ fun RefuelForm(
         OutlinedTextField(
             state = amountState,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            label = { Text("Amount") },
+            label = { Text(stringResource(R.string.common_amount)) },
             lineLimits = TextFieldLineLimits.SingleLine,
             modifier = Modifier.fillMaxWidth(),
             trailingIcon = { Text(units.liquidLabel) },
@@ -462,14 +478,17 @@ fun RefuelForm(
 
         // Full Fill-Up Toggle
         RowOfTextAndSwitch(
-            text = "Full Fill-Up",
+            text = stringResource(R.string.common_full_fill_up),
             checked = state.fullFillUp,
             onCheckedChange = onFullFillUpChange
         )
 
         // Cost Calculation Mode Toggle
         RowOfTextAndSwitch(
-            text = "Calculate from Price/${units.liquidSingularLabel}",
+            text = stringResource(
+                R.string.add_event_calculate_from_price_per_liquid,
+                units.liquidSingularLabel()
+            ),
             checked = state.calculateCost,
             onCheckedChange = onCalculateCostChange
         )
@@ -482,7 +501,14 @@ fun RefuelForm(
                 // Price per volume unit Field
                 OutlinedTextField(
                     state = pricePerLiterState,
-                    label = { Text("Price per ${units.liquidSingularLabel}") },
+                    label = {
+                        Text(
+                            stringResource(
+                                R.string.add_event_price_per_liquid,
+                                units.liquidSingularLabel()
+                            )
+                        )
+                    },
                     lineLimits = TextFieldLineLimits.SingleLine,
                     modifier = Modifier.weight(2f),
                     trailingIcon = { Text(units.pricePerLiquidLabel) },
@@ -502,7 +528,7 @@ fun RefuelForm(
                     )?.toDisplayString(2)
                         ?: "0.00",
                     onValueChange = {},
-                    label = { Text("Total Cost") },
+                    label = { Text(stringResource(R.string.add_event_total_cost)) },
                     readOnly = true,
                     singleLine = true,
                     modifier = Modifier.weight(1f),
@@ -516,7 +542,7 @@ fun RefuelForm(
                 // Total Cost Field (manual entry)
                 OutlinedTextField(
                     state = costState,
-                    label = { Text("Total Cost") },
+                    label = { Text(stringResource(R.string.add_event_total_cost)) },
                     lineLimits = TextFieldLineLimits.SingleLine,
                     modifier = Modifier.weight(2f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -536,7 +562,14 @@ fun RefuelForm(
                     )?.toDisplayString(3)
                         ?: "0.000",
                     onValueChange = {},
-                    label = { Text("Price per ${units.liquidSingularLabel}") },
+                    label = {
+                        Text(
+                            stringResource(
+                                R.string.add_event_price_per_liquid,
+                                units.liquidSingularLabel()
+                            )
+                        )
+                    },
                     readOnly = true,
                     singleLine = true,
                     modifier = Modifier.weight(1f),
@@ -565,7 +598,7 @@ fun InspectionForm(
             .fillMaxWidth()
     ) {
         Text(
-            "Inspection Result",
+            stringResource(R.string.add_event_section_inspection_result),
             style = MaterialTheme.typography.titleMedium
         )
         Spacer(Modifier.height(12.dp))
@@ -589,7 +622,7 @@ fun InspectionForm(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = status.toString(),
+                        text = status.label(),
                         softWrap = false,
                         maxLines = 1,
                         overflow = TextOverflow.Visible,
@@ -600,7 +633,7 @@ fun InspectionForm(
         Spacer(Modifier.height(12.dp))
 
         Text(
-            "Select Inspected Areas",
+            stringResource(R.string.add_event_section_inspected_areas),
             style = MaterialTheme.typography.titleMedium
         )
 
@@ -608,14 +641,14 @@ fun InspectionForm(
 
         OutlinedTextField(
             state = searchTextFieldState,
-            label = { Text("Search or enter new name") },
+            label = { Text(stringResource(R.string.common_search_or_enter_new_name)) },
             modifier = Modifier.fillMaxWidth()
         )
 
         if (searchTextFieldState.text.isNotEmpty())
             ListItem(
-                leadingContent = { Icon(imageVector = add, contentDescription = add.name) },
-                content = { Text("Create new item") },
+                leadingContent = { Icon(imageVector = add, contentDescription = null) },
+                content = { Text(stringResource(R.string.common_create_new_item)) },
                 onClick = {
                     onCreateNewInspectablePart(InspectablePart(partName = searchTextFieldState.text.toString()))
                     searchTextFieldState.clearText()
@@ -660,7 +693,7 @@ fun MaintenanceForm(
     ) {
         OutlinedTextField(
             state = costState,
-            label = { Text("Total Cost") },
+            label = { Text(stringResource(R.string.add_event_total_cost)) },
             lineLimits = TextFieldLineLimits.SingleLine,
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -681,21 +714,21 @@ fun MaintenanceForm(
         Spacer(Modifier.height(12.dp))
 
         Text(
-            "Select Done Work",
+            stringResource(R.string.add_event_section_done_work),
             style = MaterialTheme.typography.titleMedium
         )
         Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
             state = searchTextFieldState,
-            label = { Text("Search or enter new name") },
+            label = { Text(stringResource(R.string.common_search_or_enter_new_name)) },
             modifier = Modifier.fillMaxWidth()
         )
 
         if (searchTextFieldState.text.isNotEmpty())
             ListItem(
-                leadingContent = { Icon(imageVector = add, contentDescription = add.name) },
-                content = { Text("Create new item") },
+                leadingContent = { Icon(imageVector = add, contentDescription = null) },
+                content = { Text(stringResource(R.string.common_create_new_item)) },
                 onClick = {
                     onCreateNewServiceType(MaintenanceServiceType(serviceName = searchTextFieldState.text.toString()))
                     searchTextFieldState.clearText()
@@ -787,7 +820,7 @@ fun LocationSelectDialog(
             Column {
                 Text(
                     modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp),
-                    text = "Select Location",
+                    text = stringResource(R.string.add_event_select_location_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -803,7 +836,7 @@ fun LocationSelectDialog(
                 ) {
 
                     OutlinedTextField(
-                        label = { Text("Search or enter new name") },
+                        label = { Text(stringResource(R.string.common_search_or_enter_new_name)) },
                         state = searchTextFieldState,
                     )
 
@@ -815,7 +848,7 @@ fun LocationSelectDialog(
                             selected = selectedLocation.value == null,
                             onClick = { selectedLocation.value = null }
                         )
-                        Text("Create new")
+                        Text(stringResource(R.string.common_create_new))
                     }
                     locations.filter { location ->
                         location.name.contains(
@@ -846,7 +879,7 @@ fun LocationSelectDialog(
                     TextButton(
                         onClick = { onDismissDialog() }
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.common_cancel))
                     }
                     TextButton(
                         onClick = {
@@ -858,7 +891,7 @@ fun LocationSelectDialog(
                         },
                         enabled = selectedLocation.value != null || searchTextFieldState.text.isNotEmpty()
                     ) {
-                        Text("Select")
+                        Text(stringResource(R.string.common_select))
                     }
                 }
             }
@@ -880,9 +913,9 @@ private fun PaymentMethodDropdown(
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-            value = selectedValue?.displayName ?: "",
+            value = selectedValue?.label() ?: "",
             onValueChange = {},
-            label = { Text("Payment Method") },
+            label = { Text(stringResource(R.string.add_event_payment_method)) },
             readOnly = true,
             singleLine = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentExpanded) }
@@ -893,7 +926,7 @@ private fun PaymentMethodDropdown(
         ) {
             PaymentMethod.entries.forEach { method ->
                 DropdownMenuItem(
-                    text = { Text(method.toString()) },
+                    text = { Text(method.label()) },
                     onClick = {
                         onPaymentMethodChange(method)
                         paymentExpanded = false

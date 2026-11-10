@@ -1,5 +1,6 @@
 package com.gasodoapp.gasodo.feature.overview
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -47,13 +48,17 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
+import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
 import com.gasodoapp.gasodo.core.enums.units.Liquid
@@ -103,7 +108,7 @@ fun OverviewScreen(
     val units by viewModel.units.collectAsState()
 
     TopBarScaffold(
-        title = "Overview",
+        title = stringResource(R.string.overview_title),
         actions = {
             AppOverflowMenu(
                 onNavigateToManageDestination = onNavigateToManageDestination
@@ -199,7 +204,7 @@ private fun MainContent(
                         units = units
                     )
                 else
-                    NoStatsCard(local_gas_station, "refuel")
+                    NoStatsCard(local_gas_station, R.string.overview_noun_refuels)
 
                 if (maintenanceData.isNotEmpty())
                     MaintenanceStatsCard(
@@ -209,7 +214,7 @@ private fun MainContent(
                         units = units
                     )
                 else
-                    NoStatsCard(build, "maintenance")
+                    NoStatsCard(build, R.string.overview_noun_maintenances)
 
                 if (inspectionData.isNotEmpty())
                     InspectionStatsCard(
@@ -222,12 +227,12 @@ private fun MainContent(
                         conditionalPassPercentage = conditionalPassPercentage
                     )
                 else
-                    NoStatsCard(content_paste_search, "inspection")
+                    NoStatsCard(content_paste_search, R.string.overview_noun_inspections)
             }
         } else {
             NoDataCard(
-                "Time period not set",
-                "Select an end date to see statistics"
+                title = stringResource(R.string.overview_no_period_title),
+                subtitle = stringResource(R.string.overview_no_period_subtitle)
             )
         }
     }
@@ -240,12 +245,15 @@ fun YearMonthSelectorCard(
 ) {
     var showModal by remember { mutableStateOf(false) }
     TextField(
-        value = dateRangePickerState.getSelectedStartDate()
-            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
-                + " - " + (dateRangePickerState.getSelectedEndDate()
-            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) ?: "?"),
+        value = stringResource(
+            R.string.overview_date_range,
+            dateRangePickerState.getSelectedStartDate()
+                ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)).orEmpty(),
+            dateRangePickerState.getSelectedEndDate()
+                ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) ?: "?"
+        ),
         onValueChange = {},
-        label = { Text("Time Period") },
+        label = { Text(stringResource(R.string.overview_time_period)) },
         readOnly = true,
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
@@ -272,11 +280,11 @@ fun YearMonthSelectorCard(
                     onDateSelected()
                     showModal = false
                 }) {
-                    Text("OK")
+                    Text(stringResource(R.string.common_ok))
                 }
             }, dismissButton = {
                 TextButton(onClick = { showModal = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }) {
             DateRangePicker(
@@ -289,7 +297,7 @@ fun YearMonthSelectorCard(
 
 
 @Composable
-fun NoStatsCard(icon: ImageVector, type: String) {
+fun NoStatsCard(icon: ImageVector, @StringRes typeRes: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
     ) {
@@ -307,12 +315,15 @@ fun NoStatsCard(icon: ImageVector, type: String) {
                 modifier = Modifier.size(48.dp)
             )
             Text(
-                text = "No ${type}s found",
+                text = stringResource(R.string.overview_no_stats_title, stringResource(typeRes)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Select a different period to see your $type history",
+                text = stringResource(
+                    R.string.overview_no_stats_subtitle,
+                    stringResource(typeRes)
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )
@@ -340,12 +351,12 @@ fun MissingEndDateCard() {
                 modifier = Modifier.size(48.dp)
             )
             Text(
-                text = "Time period not set",
+                text = stringResource(R.string.overview_no_period_title),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Select an end date to see statistics",
+                text = stringResource(R.string.overview_no_period_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )
@@ -364,7 +375,7 @@ fun RefuelStatsCard(
     units: Units = Units()
 ) {
     StatisticsCardFrame(
-        "Refuel Statistics",
+        stringResource(R.string.overview_refuel_stats_title),
         local_gas_station
     ) {
         Row(
@@ -376,7 +387,7 @@ fun RefuelStatsCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 LabelAndValueSpacing {
-                    LabelText("Total Refuel Cost")
+                    LabelText(stringResource(R.string.overview_total_refuel_cost))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -385,7 +396,7 @@ fun RefuelStatsCard(
                     }
                 }
                 LabelAndValueSpacing {
-                    LabelText("Total Refuelled")
+                    LabelText(stringResource(R.string.overview_total_refuelled))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -394,7 +405,7 @@ fun RefuelStatsCard(
                     }
                 }
                 LabelAndValueSpacing {
-                    LabelText("Average Fuel Price")
+                    LabelText(stringResource(R.string.overview_average_fuel_price))
                     if (averageCost != null) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -413,7 +424,7 @@ fun RefuelStatsCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 LabelAndValueSpacing {
-                    LabelText("Total Distance Travelled")
+                    LabelText(stringResource(R.string.overview_total_distance_travelled))
                     if (totalMileage != null) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -427,7 +438,7 @@ fun RefuelStatsCard(
                 }
 
                 LabelAndValueSpacing {
-                    LabelText("Average Fuel Consumption")
+                    LabelText(stringResource(R.string.overview_average_fuel_consumption))
                     if (fuelConsumption != null) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -440,7 +451,7 @@ fun RefuelStatsCard(
                     }
                 }
                 LabelAndValueSpacing {
-                    LabelText("Average Fuel Cost")
+                    LabelText(stringResource(R.string.overview_average_fuel_cost))
                     if (fuelCost != null) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             ValueText(fuelCost.toDisplayString(2))
@@ -465,7 +476,7 @@ fun MaintenanceStatsCard(
 ) {
 
     StatisticsCardFrame(
-        "Maintenance Statistics",
+        stringResource(R.string.overview_maintenance_stats_title),
         build
     ) {
         Row(
@@ -477,14 +488,20 @@ fun MaintenanceStatsCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 LabelAndValueSpacing {
-                    LabelText("Total Maintenance Cost")
+                    LabelText(stringResource(R.string.overview_total_maintenance_cost))
                     ValueText("${totalCost.toDisplayString(2)} ${units.currencyLabel}")
                 }
 
                 LabelAndValueSpacing {
-                    LabelText("Maintenance Action Count")
+                    LabelText(stringResource(R.string.overview_maintenance_action_count))
                     if (maintenanceActions.isNotEmpty())
-                        ValueText("${maintenanceActions.size} actions")
+                        ValueText(
+                            pluralStringResource(
+                                R.plurals.overview_maintenance_action_count_value,
+                                maintenanceActions.size,
+                                maintenanceActions.size
+                            )
+                        )
                     else
                         NoDataText()
                 }
@@ -495,9 +512,15 @@ fun MaintenanceStatsCard(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    LabelText("Top Maintenance Actions")
+                    LabelText(stringResource(R.string.overview_top_maintenance_actions))
                     for (action in topMaintenanceActions) {
-                        ValueText("${action.count}x • ${action.serviceType.serviceName}")
+                        ValueText(
+                            stringResource(
+                                R.string.overview_top_maintenance_action_value,
+                                action.count,
+                                action.serviceType.serviceName
+                            )
+                        )
                     }
                 }
             }
@@ -515,7 +538,10 @@ fun InspectionStatsCard(
     failPercentage: BigDecimal,
     conditionalPassPercentage: BigDecimal
 ) {
-    StatisticsCardFrame("Inspection Statistics", content_paste_search) {
+    StatisticsCardFrame(
+        stringResource(R.string.overview_inspection_stats_title),
+        content_paste_search
+    ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -531,26 +557,32 @@ fun InspectionStatsCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 LabelAndValueSpacing {
-                    LabelText("Total Inspections")
-                    ValueText("$inspectionCount inspections")
+                    LabelText(stringResource(R.string.overview_total_inspections))
+                    ValueText(
+                        pluralStringResource(
+                            R.plurals.overview_total_inspections_value,
+                            inspectionCount,
+                            inspectionCount
+                        )
+                    )
                 }
                 if (passCount > 0)
                     InspectionLegendRow(
-                        label = "Pass",
+                        label = stringResource(InspectionStatus.PASS.labelRes),
                         count = passCount,
                         percentage = passPercentage,
                         color = MaterialTheme.colorScheme.primary
                     )
                 if (failCount > 0)
                     InspectionLegendRow(
-                        label = "Fail",
+                        label = stringResource(InspectionStatus.FAIL.labelRes),
                         count = failCount,
                         percentage = failPercentage,
                         color = MaterialTheme.colorScheme.error
                     )
                 if (conditionalPassCount > 0)
                     InspectionLegendRow(
-                        label = "Conditional Pass",
+                        label = stringResource(InspectionStatus.CONDITIONAL_PASS.labelRes),
                         count = conditionalPassCount,
                         percentage = conditionalPassPercentage,
                         color = MaterialTheme.colorScheme.tertiary
@@ -645,7 +677,12 @@ private fun InspectionLegendRow(
                 .background(color = color, shape = CircleShape)
         )
         Text(
-            text = "$label ${percentage.toDisplayString(0)}% • $count",
+            text = stringResource(
+                R.string.overview_inspection_legend_value,
+                label,
+                percentage.toDisplayString(0),
+                count
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -675,7 +712,8 @@ fun StatisticsCardFrame(
                 Box(modifier = Modifier.padding(2.dp)) {
                     Icon(
                         imageVector = icon,
-                        contentDescription = icon.name
+                        // Decorative: the card title next to it already names the section.
+                        contentDescription = null
                     )
                 }
                 Text(
@@ -692,7 +730,7 @@ fun StatisticsCardFrame(
 
 @Composable
 fun NoDataText() {
-    ValueText("-")
+    ValueText(stringResource(R.string.common_no_value))
 }
 
 @Composable

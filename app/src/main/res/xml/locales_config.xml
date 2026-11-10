@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Locales the app ships translations for.
+
+    Add a <locale android:name="…"/> entry here for every values-<locale> folder
+    so the language shows up in the Android 13+ per-app language picker
+    (System settings > Apps > Gasodo > Language).
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+</locale-config>

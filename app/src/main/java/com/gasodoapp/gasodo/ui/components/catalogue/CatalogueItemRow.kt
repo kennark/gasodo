@@ -16,8 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
 import com.gasodoapp.gasodo.ui.icons.delete
 import com.gasodoapp.gasodo.ui.icons.edit
@@ -64,7 +66,10 @@ fun CatalogueItemRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 FilledTonalIconButton(onClick = onEditClick) {
-                    Icon(imageVector = edit, contentDescription = "Edit $title")
+                    Icon(
+                        imageVector = edit,
+                        contentDescription = stringResource(R.string.cd_edit_item, title)
+                    )
                 }
                 FilledTonalIconButton(
                     onClick = onDeleteClick,
@@ -73,7 +78,10 @@ fun CatalogueItemRow(
                         contentColor = MaterialTheme.colorScheme.onErrorContainer
                     )
                 ) {
-                    Icon(imageVector = delete, contentDescription = "Delete $title")
+                    Icon(
+                        imageVector = delete,
+                        contentDescription = stringResource(R.string.cd_delete_item, title)
+                    )
                 }
             }
         }

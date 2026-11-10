@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -37,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
@@ -73,7 +75,7 @@ fun RefuelScreen(
     val units by viewModel.units.collectAsStateWithLifecycle()
 
     TopBarScaffold(
-        title = "Recent Refuels",
+        title = stringResource(R.string.refuel_title),
         actions = {
             AppOverflowMenu(
                 onNavigateToManageDestination = onNavigateToManageDestination
@@ -126,7 +128,10 @@ private fun MainContent(
             }
         }
         item {
-            NoDataCard("Refuels end here", "Register new refuels to show up here")
+            NoDataCard(
+                title = stringResource(R.string.refuel_list_end_title),
+                subtitle = stringResource(R.string.refuel_list_end_subtitle)
+            )
         }
     }
 }
@@ -163,7 +168,7 @@ fun RefuelEventRow(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(Modifier.weight(1f)) {
-                    MediumLabelText("Date")
+                    MediumLabelText(stringResource(R.string.common_date))
                     val dateString =
                         refuelEvent.base.date
                             ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
@@ -190,7 +195,7 @@ fun RefuelEventRow(
                     }
                 }
                 Column(Modifier.weight(0.7f)) {
-                    MediumLabelText("Amount")
+                    MediumLabelText(stringResource(R.string.common_amount))
                     val amount = refuelEvent.amountLiters ?: BigDecimal.ZERO
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -211,7 +216,7 @@ fun RefuelEventRow(
                 }
 
                 Column(Modifier.weight(0.5f)) {
-                    MediumLabelText("Cost")
+                    MediumLabelText(stringResource(R.string.common_cost))
 
                     val total = refuelEvent.totalCost ?: BigDecimal.ZERO
                     Row(
@@ -264,16 +269,19 @@ fun RefuelEventRow(
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = "Full Fill-Up",
+                        text = stringResource(R.string.common_full_fill_up),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (refuelEvent.fullFillUp) {
-                        Icon(imageVector = check_box, contentDescription = check_box.name)
+                        Icon(
+                            imageVector = check_box,
+                            contentDescription = stringResource(R.string.cd_full_fill_up_yes)
+                        )
                     } else {
                         Icon(
                             imageVector = check_box_outline_blank,
-                            contentDescription = check_box_outline_blank.name
+                            contentDescription = stringResource(R.string.cd_full_fill_up_no)
                         )
                     }
                 }
@@ -288,7 +296,10 @@ fun RefuelEventRow(
                 ) {
                     Icon(
                         imageVector = expand_circle_down,
-                        contentDescription = if (isExpanded.value) "Collapse details" else "Expand details"
+                        contentDescription = stringResource(
+                            if (isExpanded.value) R.string.cd_collapse_details
+                            else R.string.cd_expand_details
+                        )
                     )
                 }
             }
@@ -299,7 +310,7 @@ fun RefuelEventRow(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Extra Details",
+                        text = stringResource(R.string.common_extra_details),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -307,12 +318,12 @@ fun RefuelEventRow(
                     Column(
                         Modifier.fillMaxWidth()
                     ) {
-                        MediumLabelText("Payment")
+                        MediumLabelText(stringResource(R.string.common_payment))
 
                         if (refuelEvent.paymentMethod != null)
-                            ExtraDataText(refuelEvent.paymentMethod.toString())
+                            ExtraDataText(refuelEvent.paymentMethod.label())
                         else
-                            NoDataText("None selected")
+                            NoDataText(stringResource(R.string.common_none_selected))
                     }
 
                     Column(
@@ -324,10 +335,10 @@ fun RefuelEventRow(
                                 getSavedLocation(it)
                             }
                         }
-                        MediumLabelText("Location")
+                        MediumLabelText(stringResource(R.string.common_location))
 
                         if (location == null)
-                            NoDataText("No location set")
+                            NoDataText(stringResource(R.string.common_no_location_set))
                         else {
                             ExtraDataText(location!!.name)
                         }
@@ -337,12 +348,12 @@ fun RefuelEventRow(
                     Column(
                         Modifier.fillMaxWidth()
                     ) {
-                        MediumLabelText("Notes")
+                        MediumLabelText(stringResource(R.string.common_notes))
                         refuelEvent.base.notes.let { notes ->
                             if (notes.isNotEmpty()) {
                                 ExtraDataText(notes)
                             } else {
-                                NoDataText("No notes")
+                                NoDataText(stringResource(R.string.common_no_notes))
                             }
                         }
                     }
@@ -360,12 +371,18 @@ fun RefuelEventRow(
                             },
                             colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Icon(imageVector = delete, contentDescription = delete.name)
+                            Icon(
+                                imageVector = delete,
+                                contentDescription = stringResource(R.string.cd_delete_event)
+                            )
                         }
                         FilledIconButton(onClick = {
                             onNavigateToEdit(refuelEvent.id)
                         }) {
-                            Icon(imageVector = edit, contentDescription = edit.name)
+                            Icon(
+                                imageVector = edit,
+                                contentDescription = stringResource(R.string.cd_edit_event)
+                            )
                         }
                     }
 

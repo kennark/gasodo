@@ -1,5 +1,10 @@
 package com.gasodoapp.gasodo.ui.components.catalogue
 
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.gasodoapp.gasodo.R
+
 /**
  * Reason why the name typed into a catalogue editor cannot be saved.
  */
@@ -14,9 +19,11 @@ enum class NameError {
 /**
  * User facing message for a [NameError].
  *
- * @param type name of the thing being edited
+ * @param typeRes noun of the thing being edited, e.g. [R.string.noun_service]. Passed as a resource
+ * rather than a resolved string so the surrounding sentence can be translated as a whole.
  */
-fun NameError.message(type: String): String = when (this) {
-    NameError.EMPTY -> "Enter a name"
-    NameError.DUPLICATE -> "A $type with this name already exists"
+@Composable
+fun NameError.message(@StringRes typeRes: Int): String = when (this) {
+    NameError.EMPTY -> stringResource(R.string.error_name_empty)
+    NameError.DUPLICATE -> stringResource(R.string.error_name_duplicate, stringResource(typeRes))
 }

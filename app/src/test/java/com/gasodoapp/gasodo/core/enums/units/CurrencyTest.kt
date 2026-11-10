@@ -6,24 +6,17 @@ import org.junit.Test
 class CurrencyTest {
 
     @Test
-    fun `all currencies have correct display names and symbols`() {
-        assertThat(Currency.USD.displayName).isEqualTo("US Dollar")
+    fun `symbols are stable and names are resource backed`() {
         assertThat(Currency.USD.symbol).isEqualTo("$")
-        assertThat(Currency.EUR.displayName).isEqualTo("Euro")
+        assertThat(Currency.USD.nameRes).isNotEqualTo(0)
         assertThat(Currency.EUR.symbol).isEqualTo("€")
-        assertThat(Currency.GBP.displayName).isEqualTo("British Pound")
+        assertThat(Currency.EUR.nameRes).isNotEqualTo(0)
         assertThat(Currency.GBP.symbol).isEqualTo("£")
-        assertThat(Currency.JPY.displayName).isEqualTo("Japanese Yen")
+        assertThat(Currency.GBP.nameRes).isNotEqualTo(0)
         assertThat(Currency.JPY.symbol).isEqualTo("¥")
-        assertThat(Currency.INR.displayName).isEqualTo("Indian Rupee")
+        assertThat(Currency.JPY.nameRes).isNotEqualTo(0)
         assertThat(Currency.INR.symbol).isEqualTo("₹")
-    }
-
-    @Test
-    fun `toString returns displayName for each currency`() {
-        Currency.entries.forEach { currency ->
-            assertThat(currency.toString()).isEqualTo(currency.displayName)
-        }
+        assertThat(Currency.INR.nameRes).isNotEqualTo(0)
     }
 
     /**
@@ -37,10 +30,17 @@ class CurrencyTest {
     }
 
     @Test
-    fun `display names are unique`() {
-        val displayNames = Currency.entries.map { it.displayName }
+    fun `display name resources are unique`() {
+        val nameRes = Currency.entries.map { it.nameRes }
 
-        assertThat(displayNames).containsNoDuplicates()
+        assertThat(nameRes).containsNoDuplicates()
+    }
+
+    @Test
+    fun `every currency maps to a string resource`() {
+        Currency.entries.forEach { currency ->
+            assertThat(currency.nameRes).isNotEqualTo(0)
+        }
     }
 
     @Test

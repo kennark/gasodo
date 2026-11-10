@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Display names for the enums that are rendered in the UI.
+
+    Unit shorthands (km, mi, L, gal) and currency symbols (EUR, $, £) are not
+    translated and stay as literals in code, because they are international
+    symbols rather than words.
+-->
+<resources>
+
+    <!-- EventType -->
+    <string name="event_type_refuel">Refueling</string>
+    <string name="event_type_maintenance">Maintenance</string>
+    <string name="event_type_inspection">Inspection</string>
+
+    <!-- FuelType -->
+    <string name="fuel_type_petrol">Petrol</string>
+    <string name="fuel_type_diesel">Diesel</string>
+    <string name="fuel_type_premium">Premium</string>
+    <string name="fuel_type_electric">Electric</string>
+    <string name="fuel_type_hybrid">Hybrid</string>
+    <string name="fuel_type_lpg">LPG</string>
+    <string name="fuel_type_other">Other</string>
+
+    <!-- PaymentMethod -->
+    <string name="payment_method_cash">Cash</string>
+    <string name="payment_method_card">Card</string>
+    <string name="payment_method_mobile_payment">Mobile Payment</string>
+    <string name="payment_method_other">Other</string>
+
+    <!-- InspectionStatus -->
+    <string name="inspection_status_pass">Pass</string>
+    <string name="inspection_status_fail">Fail</string>
+    <string name="inspection_status_conditional_pass">Conditional Pass</string>
+
+    <!-- ThemeMode -->
+    <string name="theme_mode_system">System</string>
+    <string name="theme_mode_light">Light</string>
+    <string name="theme_mode_dark">Dark</string>
+
+    <!-- Distance: plural form is listed in the unit selectors, singular is used in
+         sentences such as "Price per Kilometer" -->
+    <string name="unit_distance_kilometers">Kilometers</string>
+    <string name="unit_distance_kilometer">Kilometer</string>
+    <string name="unit_distance_miles">Miles</string>
+    <string name="unit_distance_mile">Mile</string>
+
+    <!-- Liquid: same plural / singular split -->
+    <string name="unit_liquid_liters">Liters</string>
+    <string name="unit_liquid_liter">Liter</string>
+    <string name="unit_liquid_gallons">Gallons</string>
+    <string name="unit_liquid_gallon">Gallon</string>
+
+    <!-- Currency display names -->
+    <string name="currency_usd">US Dollar</string>
+    <string name="currency_eur">Euro</string>
+    <string name="currency_gbp">British Pound</string>
+    <string name="currency_jpy">Japanese Yen</string>
+    <string name="currency_cny">Chinese Yuan</string>
+    <string name="currency_inr">Indian Rupee</string>
+    <string name="currency_cad">Canadian Dollar</string>
+    <string name="currency_aud">Australian Dollar</string>
+    <string name="currency_chf">Swiss Franc</string>
+    <string name="currency_brl">Brazilian Real</string>
+    <string name="currency_mxn">Mexican Peso</string>
+    <string name="currency_krw">South Korean Won</string>
+    <string name="currency_sek">Swedish Krona</string>
+    <string name="currency_pln">Polish Zloty</string>
+    <string name="currency_zar">South African Rand</string>
+    <string name="currency_try">Turkish Lira</string>
+
+</resources>

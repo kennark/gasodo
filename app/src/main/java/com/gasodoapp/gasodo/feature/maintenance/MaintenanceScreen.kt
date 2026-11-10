@@ -38,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -45,6 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
@@ -77,7 +80,7 @@ fun MaintenanceScreen(
     val units by viewModel.units.collectAsStateWithLifecycle()
 
     TopBarScaffold(
-        title = "Recent Maintenance Entries",
+        title = stringResource(R.string.maintenance_title),
         actions = {
             AppOverflowMenu(
                 onNavigateToManageDestination = onNavigateToManageDestination
@@ -128,7 +131,10 @@ fun MainContent(
         }
 
         item {
-            NoDataCard("Maintenance ends here", "Register new maintenance events to show up here")
+            NoDataCard(
+                title = stringResource(R.string.maintenance_list_end_title),
+                subtitle = stringResource(R.string.maintenance_list_end_subtitle)
+            )
         }
     }
 }
@@ -160,7 +166,7 @@ fun MaintenanceEventRow(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(Modifier.weight(1f)) {
-                    MediumLabelText("Date")
+                    MediumLabelText(stringResource(R.string.common_date))
                     val dateString =
                         eventWithServices.event.base.date
                             ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
@@ -190,7 +196,7 @@ fun MaintenanceEventRow(
                     }
                 }
                 Column(Modifier.weight(0.5f)) {
-                    MediumLabelText("Cost")
+                    MediumLabelText(stringResource(R.string.common_cost))
 
                     val total = eventWithServices.event.totalCost ?: BigDecimal.ZERO
                     Row(
@@ -221,10 +227,11 @@ fun MaintenanceEventRow(
 
                 if (eventWithServices.services.isNotEmpty())
                     Text(
-                        text = eventWithServices.services.size.let {
-                            "$it service action" +
-                                    if (it > 1) "s" else ""
-                        },
+                        text = pluralStringResource(
+                            R.plurals.maintenance_service_action_count,
+                            eventWithServices.services.size,
+                            eventWithServices.services.size
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -242,7 +249,10 @@ fun MaintenanceEventRow(
                 ) {
                     Icon(
                         imageVector = expand_circle_down,
-                        contentDescription = if (isExpanded.value) "Collapse details" else "Expand details"
+                        contentDescription = stringResource(
+                            if (isExpanded.value) R.string.cd_collapse_details
+                            else R.string.cd_expand_details
+                        )
                     )
                 }
             }
@@ -252,7 +262,7 @@ fun MaintenanceEventRow(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Extra Details",
+                        text = stringResource(R.string.common_extra_details),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -261,7 +271,7 @@ fun MaintenanceEventRow(
                         Column(
                             Modifier.fillMaxWidth()
                         ) {
-                            MediumLabelText("Done Work")
+                            MediumLabelText(stringResource(R.string.maintenance_done_work))
 
                             if (eventWithServices.services.size > 3) {
                                 for (serviceType in eventWithServices.services.subList(0, 3)) {
@@ -271,7 +281,13 @@ fun MaintenanceEventRow(
                                 var showDoneWorkDialog by remember { mutableStateOf(false) }
 
                                 TextButton(onClick = { showDoneWorkDialog = true }) {
-                                    Text("Show All (${eventWithServices.services.size} actions)")
+                                    Text(
+                                        pluralStringResource(
+                                            R.plurals.maintenance_show_all_actions,
+                                            eventWithServices.services.size,
+                                            eventWithServices.services.size
+                                        )
+                                    )
                                 }
                                 if (showDoneWorkDialog)
                                     DoneTasksBottomSheet(
@@ -289,12 +305,12 @@ fun MaintenanceEventRow(
                     Column(
                         Modifier.fillMaxWidth()
                     ) {
-                        MediumLabelText("Payment")
+                        MediumLabelText(stringResource(R.string.common_payment))
 
                         if (eventWithServices.event.paymentMethod != null)
-                            ExtraDataText(eventWithServices.event.paymentMethod.toString())
+                            ExtraDataText(eventWithServices.event.paymentMethod.label())
                         else
-                            NoDataText("None selected")
+                            NoDataText(stringResource(R.string.common_none_selected))
                     }
 
                     Column(
@@ -307,10 +323,10 @@ fun MaintenanceEventRow(
                                 getSavedLocation(it)
                             }
                         }
-                        MediumLabelText("Location")
+                        MediumLabelText(stringResource(R.string.common_location))
 
                         if (location == null)
-                            NoDataText("No location set")
+                            NoDataText(stringResource(R.string.common_no_location_set))
                         else {
                             ExtraDataText(location!!.name)
                         }
@@ -320,12 +336,12 @@ fun MaintenanceEventRow(
                     Column(
                         Modifier.fillMaxWidth()
                     ) {
-                        MediumLabelText("Notes")
+                        MediumLabelText(stringResource(R.string.common_notes))
                         eventWithServices.event.base.notes.let { notes ->
                             if (notes.isNotEmpty()) {
                                 ExtraDataText(notes)
                             } else {
-                                NoDataText("No notes")
+                                NoDataText(stringResource(R.string.common_no_notes))
                             }
                         }
                     }
@@ -343,12 +359,18 @@ fun MaintenanceEventRow(
                             },
                             colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Icon(imageVector = delete, contentDescription = delete.name)
+                            Icon(
+                                imageVector = delete,
+                                contentDescription = stringResource(R.string.cd_delete_event)
+                            )
                         }
                         FilledIconButton(onClick = {
                             onNavigateToEdit(eventWithServices.event.id)
                         }) {
-                            Icon(imageVector = edit, contentDescription = edit.name)
+                            Icon(
+                                imageVector = edit,
+                                contentDescription = stringResource(R.string.cd_edit_event)
+                            )
                         }
                     }
 
@@ -381,7 +403,11 @@ fun DoneTasksBottomSheet(
         sheetState = sheetState
     ) {
         Text(
-            text = "Done services (${doneWork.size})",
+            text = pluralStringResource(
+                R.plurals.maintenance_done_services_title,
+                doneWork.size,
+                doneWork.size
+            ),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
         )

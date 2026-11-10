@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Strings for the maintenance event list screen. -->
+<resources>
+
+    <string name="maintenance_title">Recent Maintenance Entries</string>
+
+    <!-- Empty state shown at the end of the list -->
+    <string name="maintenance_list_end_title">Maintenance ends here</string>
+    <string name="maintenance_list_end_subtitle">Register new maintenance events to show up here</string>
+
+    <!-- Event card -->
+    <string name="maintenance_done_work">Done Work</string>
+    <plurals name="maintenance_service_action_count">
+        <item quantity="one">%1$d service action</item>
+        <item quantity="other">%1$d service actions</item>
+    </plurals>
+    <plurals name="maintenance_show_all_actions">
+        <item quantity="one">Show All (%1$d action)</item>
+        <item quantity="other">Show All (%1$d actions)</item>
+    </plurals>
+
+    <!-- Bottom sheet listing every service of an event -->
+    <plurals name="maintenance_done_services_title">
+        <item quantity="one">Done services (%1$d)</item>
+        <item quantity="other">Done services (%1$d)</item>
+    </plurals>
+
+</resources>

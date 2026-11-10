@@ -1,5 +1,8 @@
 package com.gasodoapp.gasodo.feature.addevent
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 
 /**
@@ -11,7 +14,7 @@ import com.gasodoapp.gasodo.core.enums.units.Liquid
  *
  * The enum deliberately carries no user facing text: it keeps the ViewModel free of
  * `Context`/resource lookups (so validation stays a pure, unit testable function) while the
- * wording lives in the UI layer via [message].
+ * wording lives in the UI layer via [message], which reads it from string resources.
  */
 enum class FieldError {
     /** Mileage does not fit in a `Long`, e.g. a pasted 20 digit number. */
@@ -71,16 +74,20 @@ data class AddEventFormErrors(
  * that the message matches the label of the field it is attached to (`Price per Gallon` for an
  * imperial setup rather than a hardcoded `liter`).
  */
+@Composable
 fun FieldError.message(liquid: Liquid = Liquid.DEFAULT): String = when (this) {
-    FieldError.MILEAGE_INVALID -> "Mileage is too large"
-    FieldError.DATE_MILEAGE_CONFLICT -> "Mileage or date are not in order with existing events"
+    FieldError.MILEAGE_INVALID -> stringResource(R.string.field_error_mileage_invalid)
+    FieldError.DATE_MILEAGE_CONFLICT -> stringResource(R.string.field_error_date_mileage_conflict)
 
-    FieldError.AMOUNT_INVALID -> "Amount is not a valid number"
-    FieldError.AMOUNT_NOT_POSITIVE -> "Amount must be greater than 0"
+    FieldError.AMOUNT_INVALID -> stringResource(R.string.field_error_amount_invalid)
+    FieldError.AMOUNT_NOT_POSITIVE -> stringResource(R.string.field_error_amount_not_positive)
 
-    FieldError.COST_INVALID -> "Total cost is not a valid number"
-    FieldError.COST_NEGATIVE -> "Total cost cannot be negative"
+    FieldError.COST_INVALID -> stringResource(R.string.field_error_cost_invalid)
+    FieldError.COST_NEGATIVE -> stringResource(R.string.field_error_cost_negative)
 
-    FieldError.PRICE_PER_LITER_INVALID -> "Price per ${liquid.singularName} is not a valid number"
-    FieldError.PRICE_PER_LITER_NOT_POSITIVE -> "Price per ${liquid.singularName} must be greater than 0"
+    FieldError.PRICE_PER_LITER_INVALID ->
+        stringResource(R.string.field_error_price_per_liquid_invalid, liquid.singularName())
+
+    FieldError.PRICE_PER_LITER_NOT_POSITIVE ->
+        stringResource(R.string.field_error_price_per_liquid_not_positive, liquid.singularName())
 }

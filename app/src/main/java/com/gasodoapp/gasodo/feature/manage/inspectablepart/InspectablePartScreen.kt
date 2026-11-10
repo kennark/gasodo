@@ -9,9 +9,12 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
@@ -36,11 +39,14 @@ fun InspectablePartScreen(
     val pendingDelete by viewModel.pendingDelete.collectAsStateWithLifecycle()
 
     TopBarScaffold(
-        title = "Inspectable Parts",
+        title = stringResource(R.string.manage_parts_title),
         applyBottomPadding = true,
         navigationIcon = {
             IconButton(onClick = onBack) {
-                Icon(imageVector = arrow_back, contentDescription = arrow_back.name)
+                Icon(
+                    imageVector = arrow_back,
+                    contentDescription = stringResource(R.string.cd_back)
+                )
             }
         },
         actions = {
@@ -54,16 +60,19 @@ fun InspectablePartScreen(
                     ),
                 onClick = viewModel::onCreateClick
             ) {
-                Icon(imageVector = add, contentDescription = "Add inspectable part")
+                Icon(
+                    imageVector = add,
+                    contentDescription = stringResource(R.string.manage_parts_add_cd)
+                )
             }
         }
     ) { innerPadding ->
         CatalogueList(
             items = parts,
             searchQuery = searchQuery,
-            searchLabel = "Search parts",
-            emptyTitle = "No parts found",
-            emptySubtitle = "Add a part to use it in inspection events",
+            searchLabel = stringResource(R.string.manage_parts_search_hint),
+            emptyTitle = stringResource(R.string.manage_parts_empty_title),
+            emptySubtitle = stringResource(R.string.manage_parts_empty_subtitle),
             key = { it.id },
             title = { it.partName },
             notes = { it.notes },
@@ -77,9 +86,9 @@ fun InspectablePartScreen(
     editor?.let { current ->
         CatalogueEditorDialog(
             state = current,
-            noun = "part",
-            newTitle = "New inspectable part",
-            editTitle = "Edit inspectable part",
+            nounRes = R.string.noun_part,
+            newTitleRes = R.string.manage_parts_new_title,
+            editTitleRes = R.string.manage_parts_edit_title,
             onNameChange = viewModel::onEditorNameChange,
             onNotesChange = viewModel::onEditorNotesChange,
             onDismiss = viewModel::onEditorDismiss,
@@ -91,7 +100,7 @@ fun InspectablePartScreen(
         DeleteDialog(
             onDismissRequest = viewModel::onDeleteDismiss,
             onConfirmRequest = { viewModel.onDeleteConfirm(pending.target) },
-            title = "Delete \"${pending.target.partName}\"?",
+            title = stringResource(R.string.manage_delete_title, pending.target.partName),
             message = deleteMessage(pending)
         )
     }
@@ -101,16 +110,14 @@ fun InspectablePartScreen(
  * Explains the consequences of removing a part, including the number of past inspections that reference it. The
  * relation cascades, so those inspections lose the part.
  */
+@Composable
 private fun deleteMessage(pending: PendingCatalogueDelete<InspectablePart>): String {
     val usageCount = pending.usageCount
-        ?: return "Deleted items can not be recovered."
+        ?: return stringResource(R.string.delete_dialog_message)
 
-    return when (usageCount) {
-        0 -> "This part is not used by any inspection. Deleted items can not be recovered."
-        1 -> "This part is used by 1 inspection and will be removed from it. " +
-                "Deleted items can not be recovered."
-
-        else -> "This part is used by $usageCount inspections and will be removed from all of " +
-                "them. Deleted items can not be recovered."
+    return if (usageCount == 0) {
+        stringResource(R.string.manage_parts_delete_unused)
+    } else {
+        pluralStringResource(R.plurals.manage_parts_delete_used, usageCount, usageCount)
     }
 }

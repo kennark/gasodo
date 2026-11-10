@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -120,7 +121,7 @@ private fun FAB(
                 navController.navigate(addEventRoute(EventType.REFUEL))
             },
             icon = { Icon(local_gas_station, null) },
-            text = { Text(EventType.REFUEL.toString()) }
+            text = { Text(EventType.REFUEL.label()) }
         )
         FloatingActionButtonMenuItem(
             onClick = {
@@ -128,7 +129,7 @@ private fun FAB(
                 navController.navigate(addEventRoute(EventType.MAINTENANCE))
             },
             icon = { Icon(build, null) },
-            text = { Text(EventType.MAINTENANCE.toString()) }
+            text = { Text(EventType.MAINTENANCE.label()) }
         )
         FloatingActionButtonMenuItem(
             onClick = {
@@ -136,7 +137,7 @@ private fun FAB(
                 navController.navigate(addEventRoute(EventType.INSPECTION))
             },
             icon = { Icon(content_paste_search, null) },
-            text = { Text(EventType.INSPECTION.toString()) }
+            text = { Text(EventType.INSPECTION.label()) }
         )
     }
 }
@@ -161,11 +162,12 @@ private fun BottomNavigationBar(
                     destination.icon?.let {
                         Icon(
                             imageVector = it,
-                            contentDescription = destination.label
+                            // The label next to the icon already names the destination.
+                            contentDescription = null
                         )
                     }
                 },
-                label = { Text(destination.label) }
+                label = { Text(stringResource(destination.labelRes)) }
             )
         }
     }

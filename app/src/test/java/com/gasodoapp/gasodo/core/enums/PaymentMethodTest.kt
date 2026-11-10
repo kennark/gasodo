@@ -3,22 +3,26 @@ package com.gasodoapp.gasodo.core.enums
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
+/**
+ * Unit tests for [PaymentMethod].
+ *
+ * The user facing wording lives in string resources, which cannot be read from a plain JVM test,
+ * so these tests guard the resource mapping rather than the English text.
+ */
 class PaymentMethodTest {
 
     @Test
-    fun `all payment methods have correct display names`() {
-        assertThat(PaymentMethod.CASH.displayName).isEqualTo("Cash")
-        assertThat(PaymentMethod.CARD.displayName).isEqualTo("Card")
-        assertThat(PaymentMethod.MOBILE_PAYMENT.displayName).isEqualTo("Mobile Payment")
-        assertThat(PaymentMethod.OTHER.displayName).isEqualTo("Other")
+    fun `every payment method maps to a string resource`() {
+        PaymentMethod.entries.forEach { method ->
+            assertThat(method.labelRes).isNotEqualTo(0)
+        }
     }
 
     @Test
-    fun `toString returns displayName for each payment method`() {
-        assertThat(PaymentMethod.CASH.toString()).isEqualTo("Cash")
-        assertThat(PaymentMethod.CARD.toString()).isEqualTo("Card")
-        assertThat(PaymentMethod.MOBILE_PAYMENT.toString()).isEqualTo("Mobile Payment")
-        assertThat(PaymentMethod.OTHER.toString()).isEqualTo("Other")
+    fun `label resources are unique`() {
+        val labelRes = PaymentMethod.entries.map { it.labelRes }
+
+        assertThat(labelRes).containsNoDuplicates()
     }
 
     @Test

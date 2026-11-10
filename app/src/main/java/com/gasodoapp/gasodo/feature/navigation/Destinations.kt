@@ -1,6 +1,8 @@
 package com.gasodoapp.gasodo.feature.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.ui.icons.build
 import com.gasodoapp.gasodo.ui.icons.content_paste_search
@@ -8,67 +10,58 @@ import com.gasodoapp.gasodo.ui.icons.local_gas_station
 import com.gasodoapp.gasodo.ui.icons.overview
 import java.util.UUID
 
-enum class DialogDestinations(
-    val route: String,
-    val label: String,
-) {
-    ADD(
-        "add",
-        "Add Event"
-    ),
-    EDIT(
-        "edit",
-        "Edit Event"
-    )
+enum class DialogDestinations(val route: String) {
+    ADD("add"),
+    EDIT("edit")
 }
 
 enum class Destinations(
     val route: String,
-    val label: String,
+    @param:StringRes val labelRes: Int,
     val showBottomBar: Boolean = false,
     val icon: ImageVector? = null
 ) {
     MANAGE_MAINTENANCE_SERVICE_TYPES(
         "manage/maintenance-service-types",
-        "Maintenance Services"
+        R.string.nav_manage_service_types
     ),
     MANAGE_INSPECTABLE_PARTS(
         "manage/inspectable-parts",
-        "Inspectable Parts"
+        R.string.nav_manage_inspectable_parts
     ),
     MANAGE_SAVED_LOCATIONS(
         "manage/saved-locations",
-        "Saved Locations"
+        R.string.nav_manage_saved_locations
     ),
     SETTINGS(
         "settings",
-        "Settings"
+        R.string.nav_settings
     ),
     ABOUT(
         "about",
-        "About"
+        R.string.nav_about
     ),
     OVERVIEW(
         "overview",
-        "Overview",
+        R.string.nav_overview,
         true,
         overview
     ),
     REFUELS(
         "refuels",
-        "Refuels",
+        R.string.nav_refuels,
         true,
         local_gas_station
     ),
     MAINTENANCE(
         "maintenance",
-        "Maintenance",
+        R.string.nav_maintenance,
         true,
         build
     ),
     INSPECTION(
         "inspection",
-        "Inspection",
+        R.string.nav_inspection,
         true,
         content_paste_search
     );

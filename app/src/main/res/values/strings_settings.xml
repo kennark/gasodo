@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Strings for the settings screen. -->
+<resources>
+
+    <string name="settings_title">Settings</string>
+
+    <!-- Section cards -->
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_units">Units</string>
+
+    <!-- Appearance section -->
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system_description">Follow the device setting</string>
+    <string name="settings_theme_light_description">Always use light colours</string>
+    <string name="settings_theme_dark_description">Always use dark colours</string>
+
+    <!-- Units section -->
+    <string name="settings_distance">Distance</string>
+    <string name="settings_fuel_volume">Fuel volume</string>
+    <string name="settings_currency_symbol">Currency symbol</string>
+
+</resources>

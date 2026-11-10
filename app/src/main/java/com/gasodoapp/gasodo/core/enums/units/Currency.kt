@@ -1,33 +1,46 @@
 package com.gasodoapp.gasodo.core.enums.units
 
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.gasodoapp.gasodo.R
+
 /**
  * Currency used to display and enter prices and totals.
  *
- * [symbol] is what gets rendered next to an amount, [displayName] is what the unit selectors show.
+ * [symbol] is what gets rendered next to an amount, [nameRes] is what the unit selectors show.
  *
  * Several currencies share a symbol in the wild (`$` alone is used by the US, Canadian,
  * Australian and Mexican dollar), so the symbols here are prefixed where needed to stay
  * distinguishable in a list.
+ *
+ * [symbol] is deliberately a plain `String` rather than a resource: currency symbols are not
+ * translated, which also keeps [com.gasodoapp.gasodo.core.settings.Units] usable from plain unit
+ * tests.
  */
-enum class Currency(val symbol: String, val displayName: String) {
-    USD("$", "US Dollar"),
-    EUR("€", "Euro"),
-    GBP("£", "British Pound"),
-    JPY("¥", "Japanese Yen"),
-    CNY("CN¥", "Chinese Yuan"),
-    INR("₹", "Indian Rupee"),
-    CAD("CA$", "Canadian Dollar"),
-    AUD("A$", "Australian Dollar"),
-    CHF("CHF", "Swiss Franc"),
-    BRL("R$", "Brazilian Real"),
-    MXN("MX$", "Mexican Peso"),
-    KRW("₩", "South Korean Won"),
-    SEK("kr", "Swedish Krona"),
-    PLN("zł", "Polish Zloty"),
-    ZAR("R", "South African Rand"),
-    TRY("₺", "Turkish Lira");
+enum class Currency(val symbol: String, @param:StringRes val nameRes: Int) {
+    USD("$", R.string.currency_usd),
+    EUR("€", R.string.currency_eur),
+    GBP("£", R.string.currency_gbp),
+    JPY("¥", R.string.currency_jpy),
+    CNY("CN¥", R.string.currency_cny),
+    INR("₹", R.string.currency_inr),
+    CAD("CA$", R.string.currency_cad),
+    AUD("A$", R.string.currency_aud),
+    CHF("CHF", R.string.currency_chf),
+    BRL("R$", R.string.currency_brl),
+    MXN("MX$", R.string.currency_mxn),
+    KRW("₩", R.string.currency_krw),
+    SEK("kr", R.string.currency_sek),
+    PLN("zł", R.string.currency_pln),
+    ZAR("R", R.string.currency_zar),
+    TRY("₺", R.string.currency_try);
 
-    override fun toString(): String = displayName
+    /**
+     * Localised name of this currency, for the unit selectors.
+     */
+    @Composable
+    fun name(): String = stringResource(nameRes)
 
     companion object {
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Navigation labels. The navigation routes themselves see Destinations.route.
+-->
+<resources>
+
+    <!-- Bottom navigation bar -->
+    <string name="nav_overview">Overview</string>
+    <string name="nav_refuels">Refuels</string>
+    <string name="nav_maintenance">Maintenance</string>
+    <string name="nav_inspection">Inspection</string>
+
+    <!-- Overflow menu -->
+    <string name="nav_manage_service_types">Maintenance Services</string>
+    <string name="nav_manage_inspectable_parts">Inspectable Parts</string>
+    <string name="nav_manage_saved_locations">Saved Locations</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_about">About</string>
+
+    <!-- Snackbar messages -->
+    <string name="snackbar_event_saved">Event saved</string>
+    <string name="snackbar_event_updated">Event updated</string>
+
+</resources>

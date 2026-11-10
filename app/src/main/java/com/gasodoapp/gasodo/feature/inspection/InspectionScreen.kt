@@ -38,12 +38,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
@@ -74,7 +77,7 @@ fun InspectionScreen(
     val units by viewModel.units.collectAsStateWithLifecycle()
 
     TopBarScaffold(
-        title = "Recent Inspections",
+        title = stringResource(R.string.inspection_title),
         actions = {
             AppOverflowMenu(
                 onNavigateToManageDestination = onNavigateToManageDestination
@@ -125,7 +128,10 @@ fun MainContent(
         }
 
         item {
-            NoDataCard("Inspection ends here", "Register new inspection events to show up here")
+            NoDataCard(
+                title = stringResource(R.string.inspection_list_end_title),
+                subtitle = stringResource(R.string.inspection_list_end_subtitle)
+            )
         }
     }
 }
@@ -156,7 +162,7 @@ fun InspectionEventCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(Modifier.weight(1f)) {
-                    MediumLabelText("Date")
+                    MediumLabelText(stringResource(R.string.common_date))
                     val dateString =
                         eventWithParts.event.base.date
                             ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
@@ -188,10 +194,11 @@ fun InspectionEventCard(
 
                 Column(Modifier.weight(0.8f)) {
 
-                    MediumLabelText("Result")
+                    MediumLabelText(stringResource(R.string.inspection_result))
 
                     Text(
-                        text = eventWithParts.event.status?.toString() ?: "-",
+                        text = eventWithParts.event.status?.label()
+                            ?: stringResource(R.string.common_no_value),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -206,10 +213,11 @@ fun InspectionEventCard(
 
                 if (eventWithParts.parts.isNotEmpty())
                     Text(
-                        text = eventWithParts.parts.size.let {
-                            "$it inspected area" +
-                                    if (it > 1) "s" else ""
-                        },
+                        text = pluralStringResource(
+                            R.plurals.inspection_inspected_area_count,
+                            eventWithParts.parts.size,
+                            eventWithParts.parts.size
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -227,7 +235,10 @@ fun InspectionEventCard(
                 ) {
                     Icon(
                         imageVector = expand_circle_down,
-                        contentDescription = if (isExpanded.value) "Collapse details" else "Expand details"
+                        contentDescription = stringResource(
+                            if (isExpanded.value) R.string.cd_collapse_details
+                            else R.string.cd_expand_details
+                        )
                     )
                 }
             }
@@ -237,7 +248,7 @@ fun InspectionEventCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Extra Details",
+                        text = stringResource(R.string.common_extra_details),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -246,7 +257,7 @@ fun InspectionEventCard(
                         Column(
                             Modifier.fillMaxWidth()
                         ) {
-                            MediumLabelText("Inspected Areas")
+                            MediumLabelText(stringResource(R.string.inspection_inspected_areas))
 
                             if (eventWithParts.parts.size > 3) {
                                 for (part in eventWithParts.parts.subList(0, 3)) {
@@ -256,7 +267,13 @@ fun InspectionEventCard(
                                 var showAllPartsDialog by remember { mutableStateOf(false) }
 
                                 TextButton(onClick = { showAllPartsDialog = true }) {
-                                    Text("Show All (${eventWithParts.parts.size} actions)")
+                                    Text(
+                                        pluralStringResource(
+                                            R.plurals.inspection_show_all_areas,
+                                            eventWithParts.parts.size,
+                                            eventWithParts.parts.size
+                                        )
+                                    )
                                 }
                                 if (showAllPartsDialog)
                                     InspectedPartsBottomSheet(
@@ -280,10 +297,10 @@ fun InspectionEventCard(
                                 getSavedLocation(it)
                             }
                         }
-                        MediumLabelText("Location")
+                        MediumLabelText(stringResource(R.string.common_location))
 
                         if (location == null)
-                            NoDataText("No location set")
+                            NoDataText(stringResource(R.string.common_no_location_set))
                         else {
                             ExtraDataText(location!!.name)
                         }
@@ -293,12 +310,12 @@ fun InspectionEventCard(
                     Column(
                         Modifier.fillMaxWidth()
                     ) {
-                        MediumLabelText("Notes")
+                        MediumLabelText(stringResource(R.string.common_notes))
                         eventWithParts.event.base.notes.let { notes ->
                             if (notes.isNotEmpty()) {
                                 ExtraDataText(notes)
                             } else {
-                                NoDataText("No notes")
+                                NoDataText(stringResource(R.string.common_no_notes))
                             }
                         }
                     }
@@ -316,12 +333,18 @@ fun InspectionEventCard(
                             },
                             colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Icon(imageVector = delete, contentDescription = delete.name)
+                            Icon(
+                                imageVector = delete,
+                                contentDescription = stringResource(R.string.cd_delete_event)
+                            )
                         }
                         FilledIconButton(onClick = {
                             onNavigateToEdit(eventWithParts.event.id)
                         }) {
-                            Icon(imageVector = edit, contentDescription = edit.name)
+                            Icon(
+                                imageVector = edit,
+                                contentDescription = stringResource(R.string.cd_edit_event)
+                            )
                         }
                     }
 
@@ -352,7 +375,11 @@ fun InspectedPartsBottomSheet(
         sheetState = sheetState
     ) {
         Text(
-            text = "Inspected areas/parts (${parts.size})",
+            text = pluralStringResource(
+                R.plurals.inspection_parts_title,
+                parts.size,
+                parts.size
+            ),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
         )

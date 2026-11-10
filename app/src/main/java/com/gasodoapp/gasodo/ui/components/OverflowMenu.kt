@@ -26,6 +26,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.ui.icons.more_vert
 
 /**
@@ -48,7 +50,7 @@ data class OverflowMenuItem(
 fun OverflowMenu(
     items: List<List<OverflowMenuItem>>,
     modifier: Modifier = Modifier,
-    contentDescription: String = "More options",
+    contentDescription: String = stringResource(R.string.cd_more_options),
 ) {
     var expanded by remember { mutableStateOf(value = false) }
     val groupInteractionSource = remember { MutableInteractionSource() }

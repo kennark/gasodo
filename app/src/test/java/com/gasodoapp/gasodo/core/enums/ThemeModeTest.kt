@@ -11,6 +11,20 @@ class ThemeModeTest {
     }
 
     @Test
+    fun `every mode maps to a label and a description resource`() {
+        ThemeMode.entries.forEach { mode ->
+            assertThat(mode.labelRes).isNotEqualTo(0)
+            assertThat(mode.descriptionRes).isNotEqualTo(0)
+        }
+    }
+
+    @Test
+    fun `label and description resources are unique`() {
+        assertThat(ThemeMode.entries.map { it.labelRes }).containsNoDuplicates()
+        assertThat(ThemeMode.entries.map { it.descriptionRes }).containsNoDuplicates()
+    }
+
+    @Test
     fun `stored enum names resolve to their entry`() {
         assertThat(ThemeMode.fromName("SYSTEM")).isEqualTo(ThemeMode.SYSTEM)
         assertThat(ThemeMode.fromName("LIGHT")).isEqualTo(ThemeMode.LIGHT)

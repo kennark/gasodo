@@ -2,6 +2,7 @@ package com.gasodoapp.gasodo.feature.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -9,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
+import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.enums.EventType
 import com.gasodoapp.gasodo.feature.about.AboutScreen
 import com.gasodoapp.gasodo.feature.addevent.AddEventScreen
@@ -28,6 +30,11 @@ fun AppNavHost(
     startDestination: Destinations,
     modifier: Modifier
 ) {
+    // Resolved here because the snackbar payload is a plain String in the SavedStateHandle,
+    // which outlives the composable that put it there.
+    val eventSavedMessage = stringResource(R.string.snackbar_event_saved)
+    val eventUpdatedMessage = stringResource(R.string.snackbar_event_updated)
+
     NavHost(
         navController,
         startDestination = startDestination.route,
@@ -104,7 +111,7 @@ fun AppNavHost(
                 onDismiss = { navController.popBackStack() },
                 onSnackbarMessage = {
                     navController.previousBackStackEntry
-                        ?.savedStateHandle["snackbar_text"] = "Event saved"
+                        ?.savedStateHandle["snackbar_text"] = eventSavedMessage
                 }
             )
         }
@@ -128,7 +135,7 @@ fun AppNavHost(
                 onDismiss = { navController.popBackStack() },
                 onSnackbarMessage = {
                     navController.previousBackStackEntry
-                        ?.savedStateHandle["snackbar_text"] = "Event updated"
+                        ?.savedStateHandle["snackbar_text"] = eventUpdatedMessage
                 }
             )
         }

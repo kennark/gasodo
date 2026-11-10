@@ -17,16 +17,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.gasodoapp.gasodo.R
 
 
 @Composable
 fun DeleteDialog(
     onDismissRequest: () -> Unit,
     onConfirmRequest: () -> Unit,
-    title: String = "Delete this event?",
-    message: String = "Deleted items can not be recovered."
+    title: String = stringResource(R.string.delete_dialog_title),
+    message: String = stringResource(R.string.delete_dialog_message)
 ) {
     BasicAlertDialog(
         { onDismissRequest() }
@@ -39,8 +41,8 @@ fun DeleteDialog(
 private fun DeleteDialogContent(
     onDismissRequest: () -> Unit,
     onConfirmRequest: () -> Unit,
-    title: String = "Delete this event?",
-    message: String = "Deleted items can not be recovered."
+    title: String = stringResource(R.string.delete_dialog_title),
+    message: String = stringResource(R.string.delete_dialog_message)
 ) {
     Card(
         modifier = Modifier
@@ -68,7 +70,7 @@ private fun DeleteDialogContent(
                         onDismissRequest()
                     },
                 ) {
-                    Text("Dismiss")
+                    Text(stringResource(R.string.common_dismiss))
                 }
                 TextButton(
                     onClick = {
@@ -76,7 +78,7 @@ private fun DeleteDialogContent(
                         onConfirmRequest()
                     },
                 ) {
-                    Text("Confirm")
+                    Text(stringResource(R.string.common_confirm))
                 }
             }
         }

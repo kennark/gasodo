@@ -10,6 +10,7 @@ import com.gasodoapp.gasodo.core.enums.units.Distance
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.CURRENCY_SYMBOL_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DISTANCE_UNIT_KEY
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DYNAMIC_THEME_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.LIQUID_UNIT_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.THEME_MODE_KEY
 import kotlinx.coroutines.flow.Flow
@@ -28,7 +29,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override val settings: Flow<AppSettings> =
         readablePreferences()
             .map { preferences ->
-                AppSettings(themeMode = ThemeMode.fromName(preferences[THEME_MODE_KEY]))
+                AppSettings(
+                    themeMode = ThemeMode.fromName(preferences[THEME_MODE_KEY]),
+                    useDynamicTheme = preferences[DYNAMIC_THEME_KEY] ?: true
+                )
             }
 
     override val units: Flow<Units> =
@@ -44,6 +48,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { preferences ->
             preferences[THEME_MODE_KEY] = mode.name
+        }
+    }
+
+    override suspend fun setDynamicTheme(dynamic: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[DYNAMIC_THEME_KEY] = dynamic
         }
     }
 

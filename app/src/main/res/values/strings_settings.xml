@@ -12,6 +12,7 @@
     <string name="settings_theme_system_description">Follow the device setting</string>
     <string name="settings_theme_light_description">Always use light colours</string>
     <string name="settings_theme_dark_description">Always use dark colours</string>
+    <string name="settings_dynamic_theme">Use Material You theming</string>
 
     <!-- Units section -->
     <string name="settings_distance">Distance</string>

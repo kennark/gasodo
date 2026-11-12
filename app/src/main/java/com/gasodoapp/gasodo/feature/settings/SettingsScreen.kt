@@ -1,5 +1,6 @@
 package com.gasodoapp.gasodo.feature.settings
 
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -41,6 +42,7 @@ import com.gasodoapp.gasodo.core.enums.units.Distance
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.AppSettings
 import com.gasodoapp.gasodo.core.settings.Units
+import com.gasodoapp.gasodo.ui.components.RowOfTextAndSwitch
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.arrow_back
 import com.gasodoapp.gasodo.ui.theme.GasodoTheme
@@ -75,6 +77,7 @@ fun SettingsScreen(
             onDistanceUnitChange = viewModel::onDistanceUnitChange,
             onLiquidUnitChange = viewModel::onLiquidUnitChange,
             onCurrencyUnitChange = viewModel::onCurrencySymbolChange,
+            onDynamicThemeSwitch = viewModel::onDynamicThemeChange,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -88,6 +91,7 @@ private fun SettingsContent(
     onDistanceUnitChange: (Distance) -> Unit,
     onLiquidUnitChange: (Liquid) -> Unit,
     onCurrencyUnitChange: (Currency) -> Unit,
+    onDynamicThemeSwitch: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -102,6 +106,12 @@ private fun SettingsContent(
                 themeMode = settings.themeMode,
                 onThemeModeChange = onThemeModeChange,
             )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                DynamicThemeSwitch(
+                    useDynamicTheme = settings.useDynamicTheme,
+                    onDynamicThemeSwitch = onDynamicThemeSwitch
+                )
+            }
         }
 
         SettingsCard(title = stringResource(R.string.settings_units)) {
@@ -161,6 +171,23 @@ private fun ThemeModeSelector(
             }
         }
     }
+}
+
+/**
+ * Toggle between the Material You wallpaper palette and the app's own colour scheme.
+ *
+ * The switch should be hidden below Android 12
+ */
+@Composable
+private fun DynamicThemeSwitch(
+    useDynamicTheme: Boolean,
+    onDynamicThemeSwitch: (Boolean) -> Unit,
+) {
+    RowOfTextAndSwitch(
+        text = stringResource(R.string.settings_dynamic_theme),
+        checked = useDynamicTheme,
+        onCheckedChange = onDynamicThemeSwitch
+    )
 }
 
 /**
@@ -261,6 +288,7 @@ private fun SettingsContentSystemPreview() {
             onDistanceUnitChange = {},
             onLiquidUnitChange = {},
             onCurrencyUnitChange = {},
+            onDynamicThemeSwitch = {},
         )
     }
 }
@@ -276,6 +304,7 @@ private fun SettingsContentLightPreview() {
             onDistanceUnitChange = {},
             onLiquidUnitChange = {},
             onCurrencyUnitChange = {},
+            onDynamicThemeSwitch = {},
         )
     }
 }
@@ -291,6 +320,7 @@ private fun SettingsContentDarkPreview() {
             onDistanceUnitChange = {},
             onLiquidUnitChange = {},
             onCurrencyUnitChange = {},
+            onDynamicThemeSwitch = {},
         )
     }
 }
@@ -306,6 +336,7 @@ private fun SettingsContentImperialUnitsPreview() {
             onDistanceUnitChange = {},
             onLiquidUnitChange = {},
             onCurrencyUnitChange = {},
+            onDynamicThemeSwitch = {},
         )
     }
 }

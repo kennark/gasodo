@@ -10,6 +10,7 @@ import com.gasodoapp.gasodo.core.enums.units.Distance
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.CURRENCY_SYMBOL_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DISTANCE_UNIT_KEY
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DYNAMIC_THEME_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.LIQUID_UNIT_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.THEME_MODE_KEY
 import com.google.common.truth.Truth.assertThat
@@ -108,6 +109,103 @@ class SettingsRepositoryImplTest {
 
         // Assert
         assertThat(settings.themeMode).isEqualTo(ThemeMode.SYSTEM)
+    }
+
+    @Test
+    fun `dynamic theme defaults to enabled`() = runTest {
+        // Act
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.useDynamicTheme).isTrue()
+    }
+
+    @Test
+    fun `setDynamicTheme false is emitted by the settings flow`() = runTest {
+        // Act
+        repository.setDynamicTheme(false)
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.useDynamicTheme).isFalse()
+    }
+
+    @Test
+    fun `setDynamicTheme overwrites the previously stored value`() = runTest {
+        // Act
+        repository.setDynamicTheme(false)
+        repository.setDynamicTheme(true)
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.useDynamicTheme).isTrue()
+    }
+
+    /**
+     * The two appearance settings are stored under separate keys, so toggling one must leave the
+     * other alone.
+     */
+    @Test
+    fun `storing the dynamic theme does not change the theme mode`() = runTest {
+        // Act
+        repository.setThemeMode(ThemeMode.DARK)
+        repository.setDynamicTheme(false)
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.themeMode).isEqualTo(ThemeMode.DARK)
+        assertThat(settings.useDynamicTheme).isFalse()
+    }
+
+    @Test
+    fun `storing the theme mode does not change the dynamic theme`() = runTest {
+        // Act
+        repository.setDynamicTheme(false)
+        repository.setThemeMode(ThemeMode.LIGHT)
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.themeMode).isEqualTo(ThemeMode.LIGHT)
+        assertThat(settings.useDynamicTheme).isFalse()
+    }
+
+    /**
+     * Covers preferences written before the dynamic theme existed, where the key is simply absent.
+     */
+    @Test
+    fun `settings without a stored dynamic theme fall back to enabled`() = runTest {
+        // Arrange
+        dataStore.edit { preferences ->
+            preferences[THEME_MODE_KEY] = ThemeMode.DARK.name
+        }
+
+        // Act
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.useDynamicTheme).isTrue()
+        assertThat(settings.themeMode).isEqualTo(ThemeMode.DARK)
+    }
+
+    @Test
+    fun `storing the dynamic theme does not change the units`() = runTest {
+        // Act
+        repository.setCurrencySymbol(Currency.CHF)
+        repository.setDynamicTheme(false)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.currency).isEqualTo(Currency.CHF)
+        assertThat(units.distance).isEqualTo(Distance.KILOMETER)
+        assertThat(units.liquid).isEqualTo(Liquid.LITER)
+    }
+
+    /**
+     * Guards the persisted key name, so a rename does not silently reset every user's choice.
+     */
+    @Test
+    fun `the dynamic theme is stored under the use_dynamic_theme key`() {
+        assertThat(DYNAMIC_THEME_KEY.name).isEqualTo("use_dynamic_theme")
     }
 
     @Test

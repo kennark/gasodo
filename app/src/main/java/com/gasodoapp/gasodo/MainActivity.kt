@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val darkTheme = themeMode.isDarkTheme()
+            val useDynamicTheme by viewModel.useDynamicTheme.collectAsStateWithLifecycle()
 
             // enableEdgeToEdge only looks at the platform theme, so an in-app override would
             // otherwise leave the system bar icons with the wrong contrast.
@@ -34,7 +35,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            GasodoTheme(darkTheme = darkTheme) {
+            GasodoTheme(
+                darkTheme = darkTheme,
+                useDynamicTheme = useDynamicTheme
+            ) {
                 NavigationBarFrame()
             }
         }

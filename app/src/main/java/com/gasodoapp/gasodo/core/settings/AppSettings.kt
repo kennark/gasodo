@@ -15,4 +15,13 @@ data class AppSettings(
      * Defaults to [ThemeMode.SYSTEM].
      */
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+
+    /**
+     * Whether to derive the colour scheme from the wallpaper through Material You, instead of using
+     * the app's own palette.
+     *
+     * Defaults to `true`. Ignored below Android 12, where the platform cannot provide
+     * wallpaper colours.
+     */
+    val useDynamicTheme: Boolean = true,
 )

@@ -25,10 +25,11 @@ val LocalIsDarkTheme = staticCompositionLocalOf { false }
 @Composable
 fun GasodoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    useDynamicTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && useDynamicTheme -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }

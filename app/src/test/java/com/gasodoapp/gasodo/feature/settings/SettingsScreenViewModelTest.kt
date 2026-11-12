@@ -52,6 +52,7 @@ class SettingsScreenViewModelTest {
         coEvery { repository.setDistanceUnit(any()) } just runs
         coEvery { repository.setLiquidUnit(any()) } just runs
         coEvery { repository.setCurrencySymbol(any()) } just runs
+        coEvery { repository.setDynamicTheme(any()) } just runs
         viewModel = SettingsScreenViewModel(repository)
     }
 
@@ -122,6 +123,72 @@ class SettingsScreenViewModelTest {
 
         // Assert
         coVerify(exactly = 1) { repository.setThemeMode(ThemeMode.SYSTEM) }
+    }
+
+    @Test
+    fun `dynamic theme defaults to enabled`() = runTest {
+        // Arrange
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.settings.collect {}
+        }
+
+        // Act
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.settings.value.useDynamicTheme).isTrue()
+
+        job.cancel()
+    }
+
+    @Test
+    fun `stored dynamic theme is exposed by the settings state`() = runTest {
+        // Arrange
+        stored.value = AppSettings(useDynamicTheme = false)
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.settings.collect {}
+        }
+
+        // Act
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.settings.value.useDynamicTheme).isFalse()
+
+        job.cancel()
+    }
+
+    @Test
+    fun `onDynamicThemeChange false stores the value in the repository`() = runTest {
+        // Act
+        viewModel.onDynamicThemeChange(false)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 1) { repository.setDynamicTheme(false) }
+    }
+
+    @Test
+    fun `onDynamicThemeChange true stores the value in the repository`() = runTest {
+        // Act
+        viewModel.onDynamicThemeChange(true)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 1) { repository.setDynamicTheme(true) }
+    }
+
+    @Test
+    fun `onDynamicThemeChange does not touch the theme mode or the units`() = runTest {
+        // Act
+        viewModel.onDynamicThemeChange(false)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 0) { repository.setThemeMode(any()) }
+        coVerify(exactly = 0) { repository.setDistanceUnit(any()) }
+        coVerify(exactly = 0) { repository.setLiquidUnit(any()) }
+        coVerify(exactly = 0) { repository.setCurrencySymbol(any()) }
     }
 
     @Test

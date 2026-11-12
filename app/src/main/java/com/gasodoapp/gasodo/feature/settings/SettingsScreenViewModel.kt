@@ -75,4 +75,13 @@ class SettingsScreenViewModel @Inject constructor(
             repository.setCurrencySymbol(symbol)
         }
     }
+
+    /**
+     * Stores the setting for Material You dynamic theme.
+     */
+    fun onDynamicThemeChange(dynamic: Boolean) {
+        viewModelScope.launch {
+            repository.setDynamicTheme(dynamic)
+        }
+    }
 }

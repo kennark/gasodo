@@ -30,6 +30,13 @@ interface SettingsRepository {
     suspend fun setThemeMode(mode: ThemeMode)
 
     /**
+     * Stores whether the app uses the Material You wallpaper colours or its own colour scheme.
+     *
+     * Only has a visible effect on Android 12 and above.
+     */
+    suspend fun setDynamicTheme(dynamic: Boolean)
+
+    /**
      * Stores the unit used for distances and mileage.
      */
     suspend fun setDistanceUnit(unit: Distance)

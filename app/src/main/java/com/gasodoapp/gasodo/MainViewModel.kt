@@ -33,4 +33,20 @@ class MainViewModel @Inject constructor(
                 started = SharingStarted.Eagerly,
                 initialValue = ThemeMode.SYSTEM,
             )
+
+    /**
+     * Stored choice between the Material You wallpaper colours and the app's own colour scheme.
+     *
+     * Defaults to `true`, so installations that never touched the new setting keep the palette
+     * they had before it existed. Whether the platform can actually serve wallpaper colours is
+     * checked in [com.gasodoapp.gasodo.ui.theme.GasodoTheme], not here.
+     */
+    val useDynamicTheme: StateFlow<Boolean> =
+        settingsRepository.settings
+            .map { it.useDynamicTheme }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = true
+            )
 }

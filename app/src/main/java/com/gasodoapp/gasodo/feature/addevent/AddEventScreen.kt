@@ -46,7 +46,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ToggleButton
@@ -85,6 +84,7 @@ import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.settings.liquidSingularLabel
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import com.gasodoapp.gasodo.core.utils.toDisplayString
+import com.gasodoapp.gasodo.ui.components.RowOfTextAndSwitch
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.add
 import com.gasodoapp.gasodo.ui.icons.arrow_back
@@ -752,22 +752,6 @@ fun MaintenanceForm(
                 onClick = { onServiceTypeChange(type) }
             )
         }
-    }
-}
-
-@Composable
-fun RowOfTextAndSwitch(
-    text: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(text)
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 

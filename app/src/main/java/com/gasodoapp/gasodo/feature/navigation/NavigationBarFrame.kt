@@ -1,11 +1,18 @@
 package com.gasodoapp.gasodo.feature.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
@@ -51,6 +58,9 @@ fun NavigationBarFrame() {
     val showBottomBar = currentDestination?.showBottomBar ?: true
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var fabMenuExpanded by remember { mutableStateOf(false) }
+    val scrimAlpha by animateFloatAsState(if (fabMenuExpanded) 0.8f else 0f, label = "scrim")
+
     LaunchedEffect(currentBackStackEntry) {
         val handle = currentBackStackEntry?.savedStateHandle ?: return@LaunchedEffect
         handle.getStateFlow<String?>("snackbar_text", null).collect { message ->
@@ -64,7 +74,12 @@ fun NavigationBarFrame() {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
-            FAB(showBottomBar, navController)
+            FAB(
+                showBottomBar = showBottomBar,
+                navController = navController,
+                fabMenuExpanded = fabMenuExpanded,
+                onExpandedChange = { fabMenuExpanded = it }
+            )
         },
         bottomBar = {
             if (showBottomBar) {
@@ -73,19 +88,31 @@ fun NavigationBarFrame() {
         }
     ) { innerPadding ->
         AppNavHost(navController, startDestination, modifier = Modifier.padding(innerPadding))
+        // FAB background
+        if (scrimAlpha > 0f) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = scrimAlpha))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { fabMenuExpanded = false }
+            )
+        }
     }
 }
 
 @Composable
 private fun FAB(
     showBottomBar: Boolean,
-    navController: NavHostController
+    navController: NavHostController,
+    fabMenuExpanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
 ) {
-    var fabMenuExpanded by remember { mutableStateOf(false) }
-
     val focusRequester = remember { FocusRequester() }
 
-    BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
+    BackHandler(fabMenuExpanded) { onExpandedChange(false) }
 
     FloatingActionButtonMenu(
         expanded = fabMenuExpanded,
@@ -100,7 +127,7 @@ private fun FAB(
                         )
                         .focusRequester(focusRequester),
                 checked = fabMenuExpanded,
-                onCheckedChange = { fabMenuExpanded = !fabMenuExpanded },
+                onCheckedChange = onExpandedChange,
             ) {
                 val imageVector by remember {
                     derivedStateOf {
@@ -117,7 +144,7 @@ private fun FAB(
     ) {
         FloatingActionButtonMenuItem(
             onClick = {
-                fabMenuExpanded = false
+                onExpandedChange(false)
                 navController.navigate(addEventRoute(EventType.REFUEL))
             },
             icon = { Icon(local_gas_station, null) },
@@ -125,7 +152,7 @@ private fun FAB(
         )
         FloatingActionButtonMenuItem(
             onClick = {
-                fabMenuExpanded = false
+                onExpandedChange(false)
                 navController.navigate(addEventRoute(EventType.MAINTENANCE))
             },
             icon = { Icon(build, null) },
@@ -133,7 +160,7 @@ private fun FAB(
         )
         FloatingActionButtonMenuItem(
             onClick = {
-                fabMenuExpanded = false
+                onExpandedChange(false)
                 navController.navigate(addEventRoute(EventType.INSPECTION))
             },
             icon = { Icon(content_paste_search, null) },

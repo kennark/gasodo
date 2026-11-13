@@ -55,7 +55,7 @@ log and analyze everything relevant to their vehicle's operation:
 - **DI:** Hilt
 - **Database:** Room (with KSP, exported schema)
 - **Navigation:** Navigation Compose
-- **Min SDK / Target SDK:** 33 / 36
+- **Min SDK / Target SDK:** 29 / 37
 
 ## Future Enhancements
 

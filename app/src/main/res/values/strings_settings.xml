@@ -18,5 +18,6 @@
     <string name="settings_distance">Distance</string>
     <string name="settings_fuel_volume">Fuel volume</string>
     <string name="settings_currency_symbol">Currency symbol</string>
+    <string name="settings_fuel_consumption">Fuel consumption</string>
 
 </resources>

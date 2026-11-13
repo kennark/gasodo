@@ -14,6 +14,7 @@ import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
+import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
 import com.gasodoapp.gasodo.core.settings.SettingsRepository
 import com.gasodoapp.gasodo.core.settings.Units
 import com.google.common.truth.Truth.assertThat
@@ -49,6 +50,9 @@ class OverviewScreenViewModelTest {
     private lateinit var inspectionRepository: InspectionRepository
     private lateinit var settingsRepository: SettingsRepository
 
+    /** Unit preferences the ViewModel observes; tests update it to simulate a settings change. */
+    private lateinit var unitsFlow: MutableStateFlow<Units>
+
     private companion object {
         /** Arbitrary, non-null bounds used to drive the explicit loading functions. */
         val RANGE_START: LocalDate = LocalDate.of(2025, 1, 1)
@@ -67,7 +71,8 @@ class OverviewScreenViewModelTest {
         inspectionRepository = mockk()
         settingsRepository = mockk()
 
-        every { settingsRepository.units } returns MutableStateFlow(Units())
+        unitsFlow = MutableStateFlow(Units())
+        every { settingsRepository.units } returns unitsFlow
 
         // Default to empty flows so the ViewModel's init block can run without stubbing.
         every { refuelRepository.getAllWithinTime(any(), any()) } returns flowOf(emptyList())
@@ -429,6 +434,246 @@ class OverviewScreenViewModelTest {
         // Cost after the first full fill = 20 + 20 = 40, mileage = 200
         // 40 / 200 * 100 = 20.00
         assertThat(viewModel.fuelCost.value).isEqualTo(BigDecimal("20.00"))
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `calculateRefuelStatistics computes distance per liquid when configured`() = runTest {
+        unitsFlow.value = Units(fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID)
+        advanceUntilIdle()
+
+        val data = listOf(
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            ),
+            refuelEvent(
+                1050L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            ),
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            )
+        )
+
+        viewModel.calculateRefuelStatistics(data)
+
+        // 20 liquid over 100 distance units = 5.00 distance units per liquid unit
+        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("5.00"))
+        // Fuel cost keeps its per hundred distance units meaning, it does not follow the toggle
+        assertThat(viewModel.fuelCost.value).isEqualTo(BigDecimal("40.00"))
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `calculateRefuelStatistics leaves consumption null when an amount is missing`() = runTest {
+        unitsFlow.value = Units(fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID)
+        advanceUntilIdle()
+
+        val data = listOf(
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            ),
+            refuelEvent(1050L, null, BigDecimal("2"), BigDecimal("20")),
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            )
+        )
+
+        viewModel.calculateRefuelStatistics(data)
+
+        assertThat(viewModel.fuelConsumption.value).isNull()
+        assertThat(viewModel.fuelCost.value).isEqualTo(BigDecimal("40.00"))
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `changing the fuel consumption unit recalculates without reloading`() = runTest {
+        val data = listOf(
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            ),
+            refuelEvent(
+                1050L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            ),
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            )
+        )
+
+        every { refuelRepository.getAllWithinTime(any(), any()) } returns flowOf(data)
+
+        // init block + this explicit load
+        viewModel.loadRefuelData(RANGE_START, RANGE_END)
+        advanceUntilIdle()
+
+        // 20 / 100 * 100 = 20.00 liquid per hundred distance units
+        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("20.00"))
+
+        unitsFlow.value = Units(fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID)
+        advanceUntilIdle()
+
+        // The same stretch read the other way round: 100 / 20 = 5.00
+        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("5.00"))
+        // The stored events did not change, so the repository must not have been queried again.
+        coVerify(exactly = 2) { refuelRepository.getAllWithinTime(any(), any()) }
+    }
+
+    @Test
+    fun `calculateRefuelStatistics leaves cost null when a cost is missing`() {
+        val data = listOf(
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            ),
+            refuelEvent(1100L, BigDecimal("10"), BigDecimal("2"), null),
+            refuelEvent(
+                1200L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            )
+        )
+
+        viewModel.calculateRefuelStatistics(data)
+
+        // Every amount is present, so the consumption is still measurable
+        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("10.00"))
+        assertThat(viewModel.fuelCost.value).isNull()
+    }
+
+    /**
+     * Two full fill-ups recorded on the same mileage give a zero distance. Dividing by it would
+     * either throw or produce an infinite figure, so both values must stay unset instead.
+     */
+    @Test
+    fun `calculateRefuelStatistics skips consumption when full fill-ups share a mileage`() {
+        val data = listOf(
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            )
+        )
+
+        viewModel.calculateRefuelStatistics(data)
+
+        assertThat(viewModel.totalMileage.value).isEqualTo(0L)
+        assertThat(viewModel.fuelConsumption.value).isNull()
+        assertThat(viewModel.fuelCost.value).isNull()
+    }
+
+    /**
+     * Consumption is measured from the first to the last full fill-up, so refuels outside that
+     * window must not contribute to the figure even though they do count towards the totals.
+     */
+    @Test
+    fun `calculateRefuelStatistics ignores refuels outside the full fill-up window`() {
+        // Database query sorts the data by mileage descending
+        val data = listOf(
+            refuelEvent(1400L, BigDecimal("100"), BigDecimal("2"), BigDecimal("200")),
+            refuelEvent(
+                1200L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            ),
+            refuelEvent(1100L, BigDecimal("10"), BigDecimal("2"), BigDecimal("20")),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            ),
+            refuelEvent(900L, BigDecimal("50"), BigDecimal("2"), BigDecimal("100"))
+        )
+
+        viewModel.calculateRefuelStatistics(data)
+
+        // Only the 1000 -> 1200 window is measured: 20 liquid and 40 cost over 200 distance units
+        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("10.00"))
+        assertThat(viewModel.fuelCost.value).isEqualTo(BigDecimal("20.00"))
+        // The totals still cover every event of the period
+        assertThat(viewModel.totalLiters.value).isEqualTo(BigDecimal("180"))
+        assertThat(viewModel.totalMileage.value).isEqualTo(500L)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `changing the fuel consumption unit leaves the other statistics untouched`() = runTest {
+        val data = listOf(
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            ),
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true
+            )
+        )
+
+        every { refuelRepository.getAllWithinTime(any(), any()) } returns flowOf(data)
+        viewModel.loadRefuelData(RANGE_START, RANGE_END)
+        advanceUntilIdle()
+
+        unitsFlow.value = Units(fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID)
+        advanceUntilIdle()
+
+        assertThat(viewModel.totalRefuelCost.value).isEqualTo(BigDecimal("40"))
+        assertThat(viewModel.totalLiters.value).isEqualTo(BigDecimal("20"))
+        assertThat(viewModel.totalMileage.value).isEqualTo(100L)
+        assertThat(viewModel.averagePricePerLiter.value).isEqualTo(BigDecimal("2.00"))
     }
 
     @Test

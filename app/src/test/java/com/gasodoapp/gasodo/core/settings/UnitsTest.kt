@@ -2,6 +2,7 @@ package com.gasodoapp.gasodo.core.settings
 
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -57,5 +58,40 @@ class UnitsTest {
         assertThat(units.pricePerLiquidLabel).isEqualTo("£/L")
         assertThat(units.consumptionLabel).isEqualTo("L/100 mi")
         assertThat(units.costPerDistanceLabel).isEqualTo("£/100 mi")
+    }
+
+    @Test
+    fun `fuel consumption defaults to liquid per hundred distance`() {
+        assertThat(Units().fuelConsumption).isEqualTo(FuelConsumption.LIQUID_PER_100_DISTANCE)
+    }
+
+    /**
+     * Switching the ratio has to change the consumption label, otherwise the value rendered next to
+     * it would be read in the wrong unit.
+     */
+    @Test
+    fun `distance per liquid inverts the consumption label`() {
+        val units = Units(
+            distance = Distance.MILE,
+            liquid = Liquid.GALLON,
+            fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID,
+        )
+
+        assertThat(units.consumptionLabel).isEqualTo("mi per gal")
+    }
+
+    /**
+     * The cost figure is always accrued over a hundred distance units, so it must not follow the
+     * consumption ratio above.
+     */
+    @Test
+    fun `cost label ignores the fuel consumption ratio`() {
+        val units = Units(
+            distance = Distance.MILE,
+            currency = Currency.USD,
+            fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID,
+        )
+
+        assertThat(units.costPerDistanceLabel).isEqualTo("$/100 mi")
     }
 }

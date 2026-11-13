@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.AppSettings
 import com.gasodoapp.gasodo.core.settings.SettingsRepository
@@ -82,6 +83,15 @@ class SettingsScreenViewModel @Inject constructor(
     fun onDynamicThemeChange(dynamic: Boolean) {
         viewModelScope.launch {
             repository.setDynamicTheme(dynamic)
+        }
+    }
+
+    /**
+     * Stores the ratio fuel consumption is presented as.
+     */
+    fun onFuelConsumptionUnitChange(unit: FuelConsumption) {
+        viewModelScope.launch {
+            repository.setFuelConsumption(unit)
         }
     }
 }

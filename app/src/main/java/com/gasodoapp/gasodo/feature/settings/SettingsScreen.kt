@@ -39,6 +39,7 @@ import com.gasodoapp.gasodo.R
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.AppSettings
 import com.gasodoapp.gasodo.core.settings.Units
@@ -78,6 +79,7 @@ fun SettingsScreen(
             onLiquidUnitChange = viewModel::onLiquidUnitChange,
             onCurrencyUnitChange = viewModel::onCurrencySymbolChange,
             onDynamicThemeSwitch = viewModel::onDynamicThemeChange,
+            onFuelConsumptionUnitChange = viewModel::onFuelConsumptionUnitChange,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -92,6 +94,7 @@ private fun SettingsContent(
     onLiquidUnitChange: (Liquid) -> Unit,
     onCurrencyUnitChange: (Currency) -> Unit,
     onDynamicThemeSwitch: (Boolean) -> Unit,
+    onFuelConsumptionUnitChange: (FuelConsumption) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -135,6 +138,13 @@ private fun SettingsContent(
                 selected = units.currency,
                 optionLabel = { stringResource(it.nameRes) },
                 onSelect = onCurrencyUnitChange,
+            )
+            SettingsDropdown(
+                label = stringResource(R.string.settings_fuel_consumption),
+                options = FuelConsumption.entries,
+                selected = units.fuelConsumption,
+                optionLabel = { it.getName(units.distance, units.liquid) },
+                onSelect = onFuelConsumptionUnitChange
             )
         }
     }
@@ -289,6 +299,7 @@ private fun SettingsContentSystemPreview() {
             onLiquidUnitChange = {},
             onCurrencyUnitChange = {},
             onDynamicThemeSwitch = {},
+            onFuelConsumptionUnitChange = {},
         )
     }
 }
@@ -305,6 +316,7 @@ private fun SettingsContentLightPreview() {
             onLiquidUnitChange = {},
             onCurrencyUnitChange = {},
             onDynamicThemeSwitch = {},
+            onFuelConsumptionUnitChange = {},
         )
     }
 }
@@ -321,6 +333,7 @@ private fun SettingsContentDarkPreview() {
             onLiquidUnitChange = {},
             onCurrencyUnitChange = {},
             onDynamicThemeSwitch = {},
+            onFuelConsumptionUnitChange = {},
         )
     }
 }
@@ -337,6 +350,7 @@ private fun SettingsContentImperialUnitsPreview() {
             onLiquidUnitChange = {},
             onCurrencyUnitChange = {},
             onDynamicThemeSwitch = {},
+            onFuelConsumptionUnitChange = {},
         )
     }
 }

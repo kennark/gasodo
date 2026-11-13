@@ -7,10 +7,12 @@ import androidx.datastore.preferences.core.emptyPreferences
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.CURRENCY_SYMBOL_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DISTANCE_UNIT_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DYNAMIC_THEME_KEY
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.FUEL_CONSUMPTION_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.LIQUID_UNIT_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.THEME_MODE_KEY
 import kotlinx.coroutines.flow.Flow
@@ -42,6 +44,7 @@ class SettingsRepositoryImpl @Inject constructor(
                     distance = Distance.fromName(preferences[DISTANCE_UNIT_KEY]),
                     liquid = Liquid.fromName(preferences[LIQUID_UNIT_KEY]),
                     currency = Currency.fromName(preferences[CURRENCY_SYMBOL_KEY]),
+                    fuelConsumption = FuelConsumption.fromName(preferences[FUEL_CONSUMPTION_KEY])
                 )
             }
 
@@ -72,6 +75,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setCurrencySymbol(symbol: Currency) {
         dataStore.edit { preferences ->
             preferences[CURRENCY_SYMBOL_KEY] = symbol.name
+        }
+    }
+
+    override suspend fun setFuelConsumption(unit: FuelConsumption) {
+        dataStore.edit { preferences ->
+            preferences[FUEL_CONSUMPTION_KEY] = unit.name
         }
     }
 

@@ -14,4 +14,6 @@ object SettingsRepositoryKeys {
     val LIQUID_UNIT_KEY = stringPreferencesKey("liquid_unit")
 
     val CURRENCY_SYMBOL_KEY = stringPreferencesKey("currency_symbol")
+
+    val FUEL_CONSUMPTION_KEY = stringPreferencesKey("fuel_consumption")
 }

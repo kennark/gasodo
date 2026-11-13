@@ -61,6 +61,7 @@ import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.utils.toDisplayString
@@ -798,7 +799,12 @@ fun RefuelStatsCardImperialPreview() {
         totalMileage = 934085L,
         fuelConsumption = BigDecimal("5.46"),
         fuelCost = BigDecimal("9.99"),
-        units = Units(distance = Distance.MILE, liquid = Liquid.GALLON, currency = Currency.USD)
+        units = Units(
+            distance = Distance.MILE,
+            liquid = Liquid.GALLON,
+            currency = Currency.USD,
+            fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID
+        )
     )
 }
 

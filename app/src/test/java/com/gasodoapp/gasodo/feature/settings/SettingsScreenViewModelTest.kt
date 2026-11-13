@@ -3,6 +3,7 @@ package com.gasodoapp.gasodo.feature.settings
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import com.gasodoapp.gasodo.core.settings.AppSettings
 import com.gasodoapp.gasodo.core.settings.SettingsRepository
@@ -52,6 +53,7 @@ class SettingsScreenViewModelTest {
         coEvery { repository.setDistanceUnit(any()) } just runs
         coEvery { repository.setLiquidUnit(any()) } just runs
         coEvery { repository.setCurrencySymbol(any()) } just runs
+        coEvery { repository.setFuelConsumption(any()) } just runs
         coEvery { repository.setDynamicTheme(any()) } just runs
         viewModel = SettingsScreenViewModel(repository)
     }
@@ -299,5 +301,79 @@ class SettingsScreenViewModelTest {
         // Assert
         coVerify(exactly = 0) { repository.setDistanceUnit(any()) }
         coVerify(exactly = 0) { repository.setLiquidUnit(any()) }
+        coVerify(exactly = 0) { repository.setFuelConsumption(any()) }
+    }
+
+    @Test
+    fun `fuel consumption defaults to LIQUID_PER_100_DISTANCE`() = runTest {
+        // Arrange
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.units.collect {}
+        }
+
+        // Act
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.units.value.fuelConsumption)
+            .isEqualTo(FuelConsumption.LIQUID_PER_100_DISTANCE)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `stored fuel consumption is exposed by the units state`() = runTest {
+        // Arrange
+        storedUnits.value = Units(fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID)
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.units.collect {}
+        }
+
+        // Act
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.units.value.fuelConsumption)
+            .isEqualTo(FuelConsumption.DISTANCE_PER_LIQUID)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `onFuelConsumptionUnitChange stores the value in the repository`() = runTest {
+        // Act
+        viewModel.onFuelConsumptionUnitChange(FuelConsumption.DISTANCE_PER_LIQUID)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 1) {
+            repository.setFuelConsumption(FuelConsumption.DISTANCE_PER_LIQUID)
+        }
+    }
+
+    @Test
+    fun `onFuelConsumptionUnitChange back to LIQUID_PER_100_DISTANCE is stored`() = runTest {
+        // Act
+        viewModel.onFuelConsumptionUnitChange(FuelConsumption.LIQUID_PER_100_DISTANCE)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 1) {
+            repository.setFuelConsumption(FuelConsumption.LIQUID_PER_100_DISTANCE)
+        }
+    }
+
+    @Test
+    fun `onFuelConsumptionUnitChange does not touch the other preferences`() = runTest {
+        // Act
+        viewModel.onFuelConsumptionUnitChange(FuelConsumption.DISTANCE_PER_LIQUID)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 0) { repository.setDistanceUnit(any()) }
+        coVerify(exactly = 0) { repository.setLiquidUnit(any()) }
+        coVerify(exactly = 0) { repository.setCurrencySymbol(any()) }
+        coVerify(exactly = 0) { repository.setThemeMode(any()) }
+        coVerify(exactly = 0) { repository.setDynamicTheme(any()) }
     }
 }

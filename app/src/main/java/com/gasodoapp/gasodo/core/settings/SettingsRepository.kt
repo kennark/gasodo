@@ -3,6 +3,7 @@ package com.gasodoapp.gasodo.core.settings
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 import kotlinx.coroutines.flow.Flow
 
@@ -50,4 +51,9 @@ interface SettingsRepository {
      * Stores the currency prices and totals are shown in.
      */
     suspend fun setCurrencySymbol(symbol: Currency)
+
+    /**
+     * Stores the ratio fuel consumption is presented as.
+     */
+    suspend fun setFuelConsumption(unit: FuelConsumption)
 }

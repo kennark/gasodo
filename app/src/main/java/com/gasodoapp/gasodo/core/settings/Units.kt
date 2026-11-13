@@ -2,6 +2,7 @@ package com.gasodoapp.gasodo.core.settings
 
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
+import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
 import com.gasodoapp.gasodo.core.enums.units.Liquid
 
 /**
@@ -31,6 +32,17 @@ data class Units(
      * Defaults to [Currency.DEFAULT].
      */
     val currency: Currency = Currency.DEFAULT,
+
+    /**
+     * Ratio fuel consumption is presented as: either a volume per hundred distance units or a
+     * distance per volume unit.
+     *
+     * It only selects which of the two ratios is shown; the units taking part in it are [distance]
+     * and [liquid].
+     *
+     * Defaults to [FuelConsumption.DEFAULT].
+     */
+    val fuelConsumption: FuelConsumption = FuelConsumption.DEFAULT,
 ) {
 
     // region Display labels
@@ -63,10 +75,11 @@ data class Units(
         get() = "${currency.symbol}/${liquid.shorthand}"
 
     /**
-     * Label for fuel consumption over a hundred distance units, for example `L/100 km`.
+     * Label for fuel consumption, for example `L/100 km` or `mi per gal`, depending on
+     * [fuelConsumption].
      */
     val consumptionLabel: String
-        get() = "${liquid.shorthand}/100 ${distance.shorthand}"
+        get() = fuelConsumption.getShorthand(distance, liquid)
 
     /**
      * Label for a cost accrued over a hundred distance units, for example `€/100 km`.

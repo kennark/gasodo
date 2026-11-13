@@ -14,6 +14,7 @@ import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
+import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
 import com.gasodoapp.gasodo.core.settings.SettingsRepository
 import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
@@ -23,6 +24,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -61,11 +65,21 @@ class OverviewScreenViewModel @Inject constructor(
     private val _totalMileage = MutableStateFlow<Long?>(null)
     val totalMileage = _totalMileage.asStateFlow()
 
-    // L per 100km
+    /**
+     * Consumption over the distance between the first and the last full fill-up, expressed in the
+     * unit picked in the settings: either liquid per hundred distance units (`L/100 km`) or
+     * distance per liquid unit (`mi/gal`). Both are computed from the same events, only the ratio
+     * is inverted, which is why a single field can serve both.
+     */
     private val _fuelConsumption = MutableStateFlow<BigDecimal?>(null)
     val fuelConsumption = _fuelConsumption.asStateFlow()
 
-    // € per 100km
+    /**
+     * Cost of the fuel burnt over a hundred distance units (for example `€/100 km`).
+     *
+     * It deliberately ignores [Units.fuelConsumption]: the label rendered next to it
+     * ([Units.costPerDistanceLabel]) always reads as a cost per hundred distance units.
+     */
     private val _fuelCost = MutableStateFlow<BigDecimal?>(null)
     val fuelCost = _fuelCost.asStateFlow()
 
@@ -125,10 +139,27 @@ class OverviewScreenViewModel @Inject constructor(
 
     init {
         loadDataForSelectedRange()
+        recalculateOnFuelConsumptionChange()
     }
 
     fun onDateSelected() {
         loadDataForSelectedRange()
+    }
+
+    /**
+     * Recomputes the fuel figures when the user switches the fuel consumption unit.
+     *
+     * The stored events do not change, so the repository flow does not emit again. Without this the
+     * screen would keep showing a value computed with the previous unit until the data is reloaded.
+     */
+    private fun recalculateOnFuelConsumptionChange() {
+        viewModelScope.launch {
+            units
+                .drop(1)
+                .map { it.fuelConsumption }
+                .distinctUntilChanged()
+                .collect { calculateRefuelStatistics(_refuelData.value) }
+        }
     }
 
     /**
@@ -165,76 +196,174 @@ class OverviewScreenViewModel @Inject constructor(
 
 
     internal fun calculateRefuelStatistics(data: List<RefuelEvent>) {
-        if (data.isNotEmpty()) {
-            _totalRefuelCost.value = data.sumOf { it.totalCost ?: BigDecimal.ZERO }
-            _totalLiters.value = data.sumOf { it.amountLiters ?: BigDecimal.ZERO }
-            _averagePricePerLiter.value = data.sumOf { it.pricePerLiter ?: BigDecimal.ZERO }
-                .let {
-                    if (it == BigDecimal.ZERO)
-                        return else
-                        it.divide(
-                            BigDecimal(data.count { event -> event.pricePerLiter != null }),
-                            2, BigDecimalUtils.ROUNDING_MODE
-                        )
-                }
-
-
-            if (data.size > 1) {
-                _totalMileage.value =
-                    data.first { event -> event.base.mileage != null }.base.mileage?.minus(
-                        data.last { event -> event.base.mileage != null }.base.mileage ?: 0
-                    )
-
-                val firstFullDataEntry =
-                    data.indexOfFirst { event -> event.fullFillUp && event.base.mileage != null && event.amountLiters != null }
-                val lastFullDataEntry =
-                    data.indexOfLast { event -> event.fullFillUp && event.base.mileage != null && event.amountLiters != null }
-
-                val eventsBetweenFullFills =
-                    data.subList(firstFullDataEntry, lastFullDataEntry + 1)
-                        .sortedBy { event -> event.base.mileage }
-
-                if (eventsBetweenFullFills.size > 1) {
-                    val fullFillMileage =
-                        eventsBetweenFullFills.last().base.mileage!!.minus(
-                            eventsBetweenFullFills.first().base.mileage!!
-                        )
-                    if (eventsBetweenFullFills.all { event -> event.amountLiters != null }) {
-                        val fullFillAmount =
-                            eventsBetweenFullFills.subList(1, eventsBetweenFullFills.size)
-                                .sumOf { event -> event.amountLiters!! }
-                        _fuelConsumption.value = fullFillAmount.divide(
-                            BigDecimal(fullFillMileage),
-                            BigDecimalUtils.CONTEXT
-                        )
-                            .multiply(
-                                BigDecimal(100)
-                            )
-                            .setScale(
-                                2,
-                                BigDecimalUtils.ROUNDING_MODE
-                            )
-                    }
-                    if (eventsBetweenFullFills.all { event -> event.totalCost != null }) {
-                        val fullFillCost =
-                            eventsBetweenFullFills.subList(1, eventsBetweenFullFills.size)
-                                .sumOf { event -> event.totalCost!! }
-                        _fuelCost.value = fullFillCost.divide(
-                            BigDecimal(fullFillMileage),
-                            BigDecimalUtils.CONTEXT
-                        )
-                            .multiply(
-                                BigDecimal(100)
-                            )
-                            .setScale(
-                                2,
-                                BigDecimalUtils.ROUNDING_MODE
-                            )
-                    }
-                }
-            }
+        if (data.isEmpty()) {
+            return
         }
+
+        _totalRefuelCost.value = data.sumOf { it.totalCost ?: BigDecimal.ZERO }
+        _totalLiters.value = data.sumOf { it.amountLiters ?: BigDecimal.ZERO }
+        _averagePricePerLiter.value = calculateAveragePricePerLiter(data)
+
+        if (data.size <= 1) {
+            return
+        }
+
+        _totalMileage.value = calculateTotalMileage(data)
+
+        val eventsBetweenFullFills = eventsBetweenFullFills(data)
+        if (eventsBetweenFullFills.size <= 1) {
+            return
+        }
+
+        val fullFillMileage =
+            eventsBetweenFullFills.last().base.mileage!! - eventsBetweenFullFills.first().base.mileage!!
+
+        // A zero distance between the two full fill-ups (two entries on the same mileage) would
+        // make the divisions below blow up, so both figures are left as they are.
+        if (fullFillMileage <= 0) {
+            return
+        }
+
+        _fuelConsumption.value = calculateFuelConsumption(
+            eventsBetweenFullFills,
+            fullFillMileage,
+            units.value.fuelConsumption
+        )
+        _fuelCost.value = calculateFuelCost(eventsBetweenFullFills, fullFillMileage)
     }
+
+    /**
+     * Mean price paid per liquid unit, over the events that actually carry a price.
+     *
+     * Returns `null` when no event has a price, so the UI can render its "no data" state instead
+     * of a meaningless zero.
+     */
+    private fun calculateAveragePricePerLiter(data: List<RefuelEvent>): BigDecimal? {
+        val pricedEvents = data.filter { event -> event.pricePerLiter != null }
+        if (pricedEvents.isEmpty()) {
+            return null
+        }
+
+        return pricedEvents.sumOf { event -> event.pricePerLiter!! }
+            .divide(
+                BigDecimal(pricedEvents.size),
+                2,
+                BigDecimalUtils.ROUNDING_MODE
+            )
+    }
+
+    /**
+     * Distance covered between the highest and the lowest mileage of the range.
+     *
+     * The repository already returns the events sorted by mileage descending, but the extremes are
+     * resolved by comparison so the result does not depend on that ordering.
+     */
+    private fun calculateTotalMileage(data: List<RefuelEvent>): Long? {
+        val mileages = data.mapNotNull { event -> event.base.mileage }
+        if (mileages.isEmpty()) {
+            return null
+        }
+
+        return mileages.max() - mileages.min()
+    }
+
+    /**
+     * Events between the first and the last full fill-up, both included and in ascending mileage
+     * order.
+     *
+     * Consumption can only be measured between two full fill-ups, so anything outside that window
+     * is dropped. Every event between them carries a mileage and an amount, because an event without
+     * them cannot be part of a full fill-up in the first place. Nothing is returned when fewer than
+     * two such events exist.
+     */
+    private fun eventsBetweenFullFills(data: List<RefuelEvent>): List<RefuelEvent> {
+        val firstFullFill = data.indexOfFirst { event ->
+            event.fullFillUp && event.base.mileage != null && event.amountLiters != null
+        }
+        val lastFullFill = data.indexOfLast { event ->
+            event.fullFillUp && event.base.mileage != null && event.amountLiters != null
+        }
+
+        // indexOfFirst returns -1 when no full fill-up exists, indexOfLast returns -1 as well.
+        if (firstFullFill == -1 || lastFullFill == -1 || lastFullFill <= firstFullFill) {
+            return emptyList()
+        }
+
+        return data.subList(firstFullFill, lastFullFill + 1)
+            .sortedBy { event -> event.base.mileage }
+    }
+
+    /**
+     * Fuel burnt over the distance of the full fill-ups, in the unit chosen in the settings.
+     *
+     * The first full fill-up only serves as the starting point of the measurement, so only the
+     * liquid of the events after it is counted.
+     *
+     * `L/100 km` is the liquid per hundred distance units, `MPG` is its inverted ratio, which is why
+     * both are produced from the same volume and distance. Returns `null` when any event is missing
+     * an amount, so the UI falls back to its "no data" state.
+     */
+    private fun calculateFuelConsumption(
+        eventsBetweenFullFills: List<RefuelEvent>,
+        fullFillMileage: Long,
+        fuelConsumption: FuelConsumption,
+    ): BigDecimal? {
+        if (eventsBetweenFullFills.any { event -> event.amountLiters == null }) {
+            return null
+        }
+
+        val fullFillAmount = eventsBetweenFullFills
+            .subList(1, eventsBetweenFullFills.size)
+            .sumOf { event -> event.amountLiters!! }
+
+        return fuelConsumption.convertConsumption(fullFillAmount, BigDecimal(fullFillMileage))
+    }
+
+    /**
+     * Cost of the fuel bought between the full fill-ups, per hundred distance units.
+     *
+     * The unit is fixed rather than following [Units.fuelConsumption]: the label the UI renders is
+     * [Units.costPerDistanceLabel] (`€/100 km`), so inverting this ratio would contradict it.
+     * Returns `null` when any event is missing a cost.
+     */
+    private fun calculateFuelCost(
+        eventsBetweenFullFills: List<RefuelEvent>,
+        fullFillMileage: Long,
+    ): BigDecimal? {
+        if (eventsBetweenFullFills.any { event -> event.totalCost == null }) {
+            return null
+        }
+
+        val fullFillCost = eventsBetweenFullFills
+            .subList(1, eventsBetweenFullFills.size)
+            .sumOf { event -> event.totalCost!! }
+
+        return fullFillCost
+            .divide(BigDecimal(fullFillMileage), BigDecimalUtils.CONTEXT)
+            .multiply(BigDecimal(100))
+            .setScale(2, BigDecimalUtils.ROUNDING_MODE)
+    }
+
+    /**
+     * Turns a volume and a distance into a consumption figure for [this] unit.
+     *
+     * [volume] and [distance] must describe the same stretch of road, so the two branches only
+     * differ by the ratio they build from them.
+     */
+    private fun FuelConsumption.convertConsumption(
+        volume: BigDecimal,
+        distance: BigDecimal,
+    ): BigDecimal = when (this) {
+        // Liquid burnt per hundred distance units: volume / distance * 100.
+        FuelConsumption.LIQUID_PER_100_DISTANCE -> volume
+            .divide(distance, BigDecimalUtils.CONTEXT)
+            .multiply(BigDecimal(100))
+
+        // Distance covered per liquid unit, the inverse ratio: distance / volume.
+        FuelConsumption.DISTANCE_PER_LIQUID -> distance
+            .divide(volume, BigDecimalUtils.CONTEXT)
+    }.setScale(2, BigDecimalUtils.ROUNDING_MODE)
+
 
     internal fun loadMaintenanceData(start: LocalDate?, end: LocalDate?) {
         viewModelScope.launch {

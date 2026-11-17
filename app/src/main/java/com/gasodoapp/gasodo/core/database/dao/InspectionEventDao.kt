@@ -38,6 +38,16 @@ interface InspectionEventDao {
     @Query("DELETE FROM inspection_events WHERE id = :id")
     suspend fun deleteById(id: UUID)
 
+    /**
+     * Deletes every event whose id is in [ids] in a single statement.
+     *
+     * The [UUID] type converter is applied to each element of the collection, so Room can bind the
+     * list to the `IN` clause directly. Linked rows in `used_inspectable_parts` are removed by the
+     * `onDelete = CASCADE` foreign key on [com.gasodoapp.gasodo.core.database.entity.UsedInspectablePart].
+     */
+    @Query("DELETE FROM inspection_events WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: Collection<UUID>)
+
     @Transaction
     @Query("SELECT * FROM inspection_events ORDER BY date DESC")
     fun getAllWithPartsOrderByDate(): PagingSource<Int, InspectionEventWithParts>

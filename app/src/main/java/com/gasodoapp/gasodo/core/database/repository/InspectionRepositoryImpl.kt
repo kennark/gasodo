@@ -64,6 +64,12 @@ class InspectionRepositoryImpl @Inject constructor(
         dao.delete(event)
     }
 
+    override suspend fun deleteByIds(ids: Collection<UUID>) {
+        // An empty `IN ()` clause is a no-op for SQLite, but returning early avoids the round trip.
+        if (ids.isEmpty()) return
+        dao.deleteByIds(ids)
+    }
+
     override suspend fun insertWithUsedParts(
         event: InspectionEvent,
         parts: Set<InspectablePart>

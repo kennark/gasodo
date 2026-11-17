@@ -19,6 +19,12 @@ interface InspectionRepository {
     suspend fun insert(event: InspectionEvent)
     suspend fun update(event: InspectionEvent, parts: Set<InspectablePart>? = null)
     suspend fun delete(event: InspectionEvent)
+
+    /**
+     * Deletes every event whose id is in [ids]. Does nothing when [ids] is empty.
+     */
+    suspend fun deleteByIds(ids: Collection<UUID>)
+
     suspend fun insertWithUsedParts(
         event: InspectionEvent,
         parts: Set<InspectablePart> = emptySet()

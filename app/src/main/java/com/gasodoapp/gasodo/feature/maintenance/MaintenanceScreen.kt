@@ -103,7 +103,7 @@ fun MaintenanceScreen(
     TopBarScaffold(
         title = if (selection.active) {
             pluralStringResource(
-                R.plurals.maintenance_selection_count,
+                R.plurals.common_selection_count,
                 selection.count,
                 selection.count
             )
@@ -141,7 +141,7 @@ fun MaintenanceScreen(
                     onNavigateToManageDestination = onNavigateToManageDestination,
                     extraItems = listOf(
                         OverflowMenuItem(
-                            label = stringResource(R.string.maintenance_select_action),
+                            label = stringResource(R.string.common_select_event),
                             onClick = viewModel::onSelectClick
                         )
                     )
@@ -167,7 +167,7 @@ fun MaintenanceScreen(
             onDismissRequest = { showDeleteDialog = false },
             onConfirmRequest = { viewModel.onDeleteSelected() },
             title = pluralStringResource(
-                R.plurals.maintenance_delete_selected_title,
+                R.plurals.common_delete_selected_title,
                 selection.count,
                 selection.count
             )

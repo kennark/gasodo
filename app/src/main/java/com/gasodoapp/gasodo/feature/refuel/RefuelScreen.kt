@@ -100,7 +100,7 @@ fun RefuelScreen(
     TopBarScaffold(
         title = if (selection.active) {
             pluralStringResource(
-                R.plurals.refuel_selection_count,
+                R.plurals.common_selection_count,
                 selection.count,
                 selection.count
             )
@@ -138,7 +138,7 @@ fun RefuelScreen(
                     onNavigateToManageDestination = onNavigateToManageDestination,
                     extraItems = listOf(
                         OverflowMenuItem(
-                            label = stringResource(R.string.refuel_select_action),
+                            label = stringResource(R.string.common_select_event),
                             onClick = viewModel::onSelectClick
                         )
                     )
@@ -164,7 +164,7 @@ fun RefuelScreen(
             onDismissRequest = { showDeleteDialog = false },
             onConfirmRequest = { viewModel.onDeleteSelected() },
             title = pluralStringResource(
-                R.plurals.refuel_delete_selected_title,
+                R.plurals.common_delete_selected_title,
                 selection.count,
                 selection.count
             )

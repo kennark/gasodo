@@ -15,6 +15,16 @@
     <string name="common_create_new">Create new</string>
     <string name="common_create_new_item">Create new item</string>
     <string name="common_search_or_enter_new_name">Search or enter new name</string>
+    <string name="common_select_event">Select events</string>
+    <plurals name="common_selection_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+
+    <plurals name="common_delete_selected_title">
+        <item quantity="one">Delete selected event?</item>
+        <item quantity="other">Delete %1$d selected events?</item>
+    </plurals>
 
     <!-- Entity field labels reused by the editor dialogs and the event cards -->
     <string name="common_name">Name</string>

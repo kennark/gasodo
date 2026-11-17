@@ -24,20 +24,4 @@
         <item quantity="one">Inspected areas/parts (%1$d)</item>
         <item quantity="other">Inspected areas/parts (%1$d)</item>
     </plurals>
-
-    <!-- Overflow menu action that enters multi-select mode -->
-    <string name="inspection_select_action">Select events</string>
-
-    <!-- Title of the app bar while events are being selected -->
-    <plurals name="inspection_selection_count">
-        <item quantity="one">%1$d selected</item>
-        <item quantity="other">%1$d selected</item>
-    </plurals>
-
-    <!-- Confirmation dialog for deleting every selected event -->
-    <plurals name="inspection_delete_selected_title">
-        <item quantity="one">Delete selected event?</item>
-        <item quantity="other">Delete %1$d selected events?</item>
-    </plurals>
-
 </resources>

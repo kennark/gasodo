@@ -18,6 +18,11 @@ interface MaintenanceRepository {
     suspend fun insert(event: MaintenanceEvent)
     suspend fun update(event: MaintenanceEvent, services: Set<MaintenanceServiceType>? = null)
     suspend fun delete(event: MaintenanceEvent)
+
+    /**
+     * Deletes every event whose id is in [ids]. Does nothing when [ids] is empty.
+     */
+    suspend fun deleteByIds(ids: Collection<UUID>)
     suspend fun insertWithUsedServices(
         event: MaintenanceEvent,
         services: Set<MaintenanceServiceType> = emptySet()

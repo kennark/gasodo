@@ -9,6 +9,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
+import com.gasodoapp.gasodo.core.database.entity.UsedMaintenanceService
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
@@ -37,6 +38,16 @@ interface MaintenanceEventDao {
 
     @Query("DELETE FROM maintenance_events WHERE event_id = :id")
     suspend fun deleteById(id: UUID)
+
+    /**
+     * Deletes every event whose id is in [ids] in a single statement.
+     *
+     * The [UUID] type converter is applied to each element of the collection, so Room can bind the
+     * list to the `IN` clause directly. Linked rows in `used_maintenance_services` are removed by
+     * the `onDelete = CASCADE` foreign key on [UsedMaintenanceService].
+     */
+    @Query("DELETE FROM maintenance_events WHERE event_id IN (:ids)")
+    suspend fun deleteByIds(ids: Collection<UUID>)
 
     @Transaction
     @Query("SELECT * FROM maintenance_events ORDER BY date DESC")

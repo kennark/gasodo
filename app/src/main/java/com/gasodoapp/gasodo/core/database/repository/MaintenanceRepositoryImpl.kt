@@ -62,6 +62,12 @@ class MaintenanceRepositoryImpl @Inject constructor(
         eventDao.delete(event)
     }
 
+    override suspend fun deleteByIds(ids: Collection<UUID>) {
+        // An empty `IN ()` clause is a no-op for SQLite, but returning early avoids the round trip.
+        if (ids.isEmpty()) return
+        eventDao.deleteByIds(ids)
+    }
+
     override suspend fun insertWithUsedServices(
         event: MaintenanceEvent,
         services: Set<MaintenanceServiceType>

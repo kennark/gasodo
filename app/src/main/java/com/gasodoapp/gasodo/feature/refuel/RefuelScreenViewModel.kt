@@ -8,6 +8,11 @@ import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
 import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
+import com.gasodoapp.gasodo.core.selection.SelectionState
+import com.gasodoapp.gasodo.core.selection.beginSelection
+import com.gasodoapp.gasodo.core.selection.clearSelection
+import com.gasodoapp.gasodo.core.selection.selectItem
+import com.gasodoapp.gasodo.core.selection.toggleItem
 import com.gasodoapp.gasodo.core.settings.SettingsRepository
 import com.gasodoapp.gasodo.core.settings.Units
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +22,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
@@ -67,7 +71,7 @@ class RefuelScreenViewModel @Inject constructor(
      * Enters selection mode from the overflow menu, with nothing selected yet.
      */
     fun onSelectClick() {
-        _selection.value = RefuelSelection(active = true)
+        _selection.beginSelection()
     }
 
     /**
@@ -75,9 +79,7 @@ class RefuelScreenViewModel @Inject constructor(
      * keeps it selected.
      */
     fun onEventLongPress(id: UUID) {
-        _selection.update { current ->
-            RefuelSelection(active = true, ids = current.ids + id)
-        }
+        _selection.selectItem(id)
     }
 
     /**
@@ -85,20 +87,14 @@ class RefuelScreenViewModel @Inject constructor(
      * keeps its default behaviour.
      */
     fun onEventTap(id: UUID) {
-        _selection.update { current ->
-            if (!current.active) return@update current
-
-            val ids = if (id in current.ids) current.ids - id else current.ids + id
-            // Deselecting the last event leaves selection mode, like other Material apps do.
-            RefuelSelection(active = ids.isNotEmpty(), ids = ids)
-        }
+        _selection.toggleItem(id)
     }
 
     /**
      * Leaves selection mode and drops every selected id.
      */
     fun onClearSelection() {
-        _selection.value = RefuelSelection()
+        _selection.clearSelection()
     }
 
     /**
@@ -122,13 +118,5 @@ class RefuelScreenViewModel @Inject constructor(
 
 /**
  * Selection state of the refuel list.
- *
- * [active] is tracked separately from [ids] because selection mode can be entered from the overflow
- * menu before any event is picked.
  */
-data class RefuelSelection(
-    val active: Boolean = false,
-    val ids: Set<UUID> = emptySet(),
-) {
-    val count: Int get() = ids.size
-}
+typealias RefuelSelection = SelectionState<UUID>

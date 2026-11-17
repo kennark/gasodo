@@ -24,4 +24,19 @@
         <item quantity="other">Done services (%1$d)</item>
     </plurals>
 
+    <!-- Overflow menu action that enters multi-select mode -->
+    <string name="maintenance_select_action">Select events</string>
+
+    <!-- Title of the app bar while events are being selected -->
+    <plurals name="maintenance_selection_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+
+    <!-- Confirmation dialog for deleting every selected event -->
+    <plurals name="maintenance_delete_selected_title">
+        <item quantity="one">Delete selected event?</item>
+        <item quantity="other">Delete %1$d selected events?</item>
+    </plurals>
+
 </resources>

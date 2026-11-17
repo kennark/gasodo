@@ -37,6 +37,15 @@ interface RefuelEventDao {
     @Query("DELETE FROM refuel_events WHERE id = :id")
     suspend fun deleteById(id: UUID)
 
+    /**
+     * Deletes every event whose id is in [ids] in a single statement.
+     *
+     * The [UUID] type converter is applied to each element of the collection, so Room can bind the
+     * list to the `IN` clause directly.
+     */
+    @Query("DELETE FROM refuel_events WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: Collection<UUID>)
+
     @Query("SELECT * FROM refuel_events ORDER BY date DESC")
     fun getAllOrderByDate(): PagingSource<Int, RefuelEvent>
 

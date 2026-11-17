@@ -1,8 +1,10 @@
 package com.gasodoapp.gasodo.feature.refuel
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,10 +19,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,9 +33,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,9 +63,11 @@ import com.gasodoapp.gasodo.ui.components.LoadingPlaceholder
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
 import com.gasodoapp.gasodo.ui.components.NoDataCard
 import com.gasodoapp.gasodo.ui.components.NoDataText
+import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.check_box
 import com.gasodoapp.gasodo.ui.icons.check_box_outline_blank
+import com.gasodoapp.gasodo.ui.icons.close
 import com.gasodoapp.gasodo.ui.icons.delete
 import com.gasodoapp.gasodo.ui.icons.edit
 import com.gasodoapp.gasodo.ui.icons.expand_circle_down
@@ -73,13 +85,65 @@ fun RefuelScreen(
 ) {
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
     val units by viewModel.units.collectAsStateWithLifecycle()
+    val selection by viewModel.selection.collectAsStateWithLifecycle()
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // Back leaves selection mode instead of the screen, matching the clear button.
+    BackHandler(enabled = selection.active) { viewModel.onClearSelection() }
+
+    // Leaving the screen always drops the selection, so coming back starts from a clean list.
+    DisposableEffect(Unit) {
+        onDispose { viewModel.onClearSelection() }
+    }
 
     TopBarScaffold(
-        title = stringResource(R.string.refuel_title),
-        actions = {
-            AppOverflowMenu(
-                onNavigateToManageDestination = onNavigateToManageDestination
+        title = if (selection.active) {
+            pluralStringResource(
+                R.plurals.refuel_selection_count,
+                selection.count,
+                selection.count
             )
+        } else {
+            stringResource(R.string.refuel_title)
+        },
+        navigationIcon = if (selection.active) {
+            {
+                IconButton(onClick = viewModel::onClearSelection) {
+                    Icon(
+                        imageVector = close,
+                        contentDescription = stringResource(R.string.cd_clear_selection)
+                    )
+                }
+            }
+        } else {
+            null
+        },
+        actions = {
+            if (selection.active) {
+                FilledIconButton(
+                    onClick = { showDeleteDialog = true },
+                    enabled = selection.count > 0,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = delete,
+                        contentDescription = stringResource(R.string.cd_delete_selected)
+                    )
+                }
+            } else {
+                AppOverflowMenu(
+                    onNavigateToManageDestination = onNavigateToManageDestination,
+                    extraItems = listOf(
+                        OverflowMenuItem(
+                            label = stringResource(R.string.refuel_select_action),
+                            onClick = viewModel::onSelectClick
+                        )
+                    )
+                )
+            }
         }
     ) { paddingValues ->
         MainContent(
@@ -88,7 +152,22 @@ fun RefuelScreen(
             viewModel::onDeleteEvent,
             onNavigateToEdit,
             getSavedLocation = viewModel::getSavedLocation,
-            units = units
+            units = units,
+            selection = selection,
+            onEventTap = viewModel::onEventTap,
+            onEventLongPress = viewModel::onEventLongPress
+        )
+    }
+
+    if (showDeleteDialog) {
+        DeleteDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            onConfirmRequest = { viewModel.onDeleteSelected() },
+            title = pluralStringResource(
+                R.plurals.refuel_delete_selected_title,
+                selection.count,
+                selection.count
+            )
         )
     }
 }
@@ -100,7 +179,10 @@ private fun MainContent(
     onDeleteEvent: (RefuelEvent) -> Unit,
     onNavigateToEdit: (id: UUID) -> Unit,
     getSavedLocation: suspend (id: UUID) -> SavedLocation?,
-    units: Units = Units()
+    units: Units = Units(),
+    selection: RefuelSelection = RefuelSelection(),
+    onEventTap: (UUID) -> Unit = {},
+    onEventLongPress: (UUID) -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier
@@ -120,7 +202,11 @@ private fun MainContent(
                     onDeleteEvent = onDeleteEvent,
                     onNavigateToEdit = onNavigateToEdit,
                     getSavedLocation = getSavedLocation,
-                    units = units
+                    units = units,
+                    isSelected = refuel.id in selection.ids,
+                    selectionMode = selection.active,
+                    onClick = { onEventTap(refuel.id) },
+                    onLongClick = { onEventLongPress(refuel.id) }
                 )
             } else {
                 // Show placeholder for empty slots while paging
@@ -146,15 +232,35 @@ fun RefuelEventRow(
     onDeleteEvent: (RefuelEvent) -> Unit,
     onNavigateToEdit: (id: UUID) -> Unit,
     getSavedLocation: suspend (id: UUID) -> SavedLocation?,
-    units: Units = Units()
+    units: Units = Units(),
+    isSelected: Boolean = false,
+    selectionMode: Boolean = false,
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {}
 ) {
     val isExpanded = remember { mutableStateOf(false) }
+    val hapticFeedback = LocalHapticFeedback.current
 
     Card(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .semantics { selected = isSelected }
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick()
+                }
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        colors = if (isSelected) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+            )
+        } else {
+            CardDefaults.cardColors()
+        }
     ) {
         Column(
             modifier = Modifier
@@ -162,7 +268,6 @@ fun RefuelEventRow(
                 .animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -365,16 +470,18 @@ fun RefuelEventRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        FilledIconButton(
-                            onClick = {
-                                showDeleteDialog = true
-                            },
-                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Icon(
-                                imageVector = delete,
-                                contentDescription = stringResource(R.string.cd_delete_event)
-                            )
+                        if (!selectionMode) {
+                            FilledIconButton(
+                                onClick = {
+                                    showDeleteDialog = true
+                                },
+                                colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Icon(
+                                    imageVector = delete,
+                                    contentDescription = stringResource(R.string.cd_delete_event)
+                                )
+                            }
                         }
                         FilledIconButton(onClick = {
                             onNavigateToEdit(refuelEvent.id)
@@ -400,7 +507,7 @@ fun RefuelEventRow(
     }
 }
 
-@Preview
+@Preview(wallpaper = Wallpapers.NONE)
 @Composable
 fun RefuelCardPreview() {
     RefuelEventRow(

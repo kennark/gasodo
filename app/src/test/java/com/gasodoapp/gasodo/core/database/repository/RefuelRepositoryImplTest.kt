@@ -154,6 +154,28 @@ class RefuelRepositoryImplTest {
         coVerify { dao.delete(event) }
     }
 
+    @Test
+    fun `deleteByIds delegates the ids to DAO`() = runTest {
+        // Arrange
+        val ids = listOf(UUID.randomUUID(), UUID.randomUUID())
+        coEvery { dao.deleteByIds(ids) } returns Unit
+
+        // Act
+        repository.deleteByIds(ids)
+
+        // Assert
+        coVerify(exactly = 1) { dao.deleteByIds(ids) }
+    }
+
+    @Test
+    fun `deleteByIds with an empty collection does not touch the DAO`() = runTest {
+        // Act
+        repository.deleteByIds(emptyList())
+
+        // Assert
+        coVerify(exactly = 0) { dao.deleteByIds(any()) }
+    }
+
     private fun makeRefuelEvent(
         id: UUID = UUID.randomUUID(),
         date: LocalDate? = LocalDate.of(2025, 6, 15),

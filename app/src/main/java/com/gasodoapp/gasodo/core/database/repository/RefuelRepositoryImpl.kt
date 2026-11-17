@@ -57,4 +57,10 @@ class RefuelRepositoryImpl @Inject constructor(
     override suspend fun delete(event: RefuelEvent) {
         dao.delete(event)
     }
+
+    override suspend fun deleteByIds(ids: Collection<UUID>) {
+        // An empty `IN ()` clause is a no-op for SQLite, but returning early avoids the round trip.
+        if (ids.isEmpty()) return
+        dao.deleteByIds(ids)
+    }
 }

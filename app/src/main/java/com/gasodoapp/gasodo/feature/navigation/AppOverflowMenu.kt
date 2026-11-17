@@ -26,14 +26,16 @@ private val overflowDestinations = listOf(
  * Overflow menu shown in the app bar.
  *
  * @param onNavigateToManageDestination invoked with the selected manage destination.
+ * @param extraItems screen specific entries, shown in their own group above the shared ones.
  */
 @Composable
 fun AppOverflowMenu(
     onNavigateToManageDestination: (Destinations) -> Unit,
     modifier: Modifier = Modifier,
+    extraItems: List<OverflowMenuItem> = emptyList(),
 ) {
     // Items to show in the menu
-    val items = overflowDestinations.map { listOfDestinations ->
+    val sharedItems = overflowDestinations.map { listOfDestinations ->
         listOfDestinations.map { destination ->
             OverflowMenuItem(
                 label = stringResource(destination.labelRes),
@@ -41,6 +43,10 @@ fun AppOverflowMenu(
             )
         }
     }
+
+    // The caller supplied entries form their own leading group, omitted when there are none so
+    // screens that do not use this parameter keep their current grouping.
+    val items = listOfNotNull(extraItems.takeIf { it.isNotEmpty() }) + sharedItems
 
     OverflowMenu(items = items, modifier = modifier)
 }

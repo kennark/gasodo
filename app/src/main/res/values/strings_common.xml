@@ -47,6 +47,8 @@
     <string name="cd_delete_item">Delete %1$s</string>
     <string name="cd_edit_event">Edit event</string>
     <string name="cd_delete_event">Delete event</string>
+    <string name="cd_clear_selection">Clear selection</string>
+    <string name="cd_delete_selected">Delete selected events</string>
     <string name="cd_expand_details">Expand details</string>
     <string name="cd_collapse_details">Collapse details</string>
     <string name="cd_save_event">Save event</string>

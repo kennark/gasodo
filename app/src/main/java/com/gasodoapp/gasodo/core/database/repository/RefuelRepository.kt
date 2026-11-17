@@ -19,4 +19,9 @@ interface RefuelRepository {
     suspend fun upsert(event: RefuelEvent)
     suspend fun update(event: RefuelEvent)
     suspend fun delete(event: RefuelEvent)
+
+    /**
+     * Deletes every event whose id is in [ids]. Does nothing when [ids] is empty.
+     */
+    suspend fun deleteByIds(ids: Collection<UUID>)
 }

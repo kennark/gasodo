@@ -67,6 +67,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindowProvider
@@ -84,12 +85,13 @@ import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.settings.liquidSingularLabel
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
 import com.gasodoapp.gasodo.core.utils.toDisplayString
-import com.gasodoapp.gasodo.ui.components.RowOfTextAndSwitch
+import com.gasodoapp.gasodo.ui.components.OptionButtonRow
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.add
 import com.gasodoapp.gasodo.ui.icons.arrow_back
 import com.gasodoapp.gasodo.ui.icons.check
 import com.gasodoapp.gasodo.ui.icons.error
+import com.gasodoapp.gasodo.ui.theme.GasodoTheme
 import com.gasodoapp.gasodo.ui.theme.LocalIsDarkTheme
 import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
@@ -476,21 +478,36 @@ fun RefuelForm(
             }
         )
 
-        // Full Fill-Up Toggle
-        RowOfTextAndSwitch(
-            text = stringResource(R.string.common_full_fill_up),
-            checked = state.fullFillUp,
-            onCheckedChange = onFullFillUpChange
+        // Tank fill type: partial or full
+        OptionButtonRow(
+            label = stringResource(R.string.add_event_fill_type),
+            options = listOf(false, true),
+            selectedOption = state.fullFillUp,
+            optionLabel = { fullFillUp ->
+                stringResource(
+                    if (fullFillUp) R.string.add_event_full_tank
+                    else R.string.add_event_partial_tank
+                )
+            },
+            onSelectionChange = onFullFillUpChange,
         )
 
-        // Cost Calculation Mode Toggle
-        RowOfTextAndSwitch(
-            text = stringResource(
-                R.string.add_event_calculate_from_price_per_liquid,
-                units.liquidSingularLabel()
-            ),
-            checked = state.calculateCost,
-            onCheckedChange = onCalculateCostChange
+        // Which value the user enters and which one is derived from it
+        OptionButtonRow(
+            label = stringResource(R.string.add_event_calculate_from),
+            options = listOf(false, true),
+            selectedOption = state.calculateCost,
+            optionLabel = { calculateCost ->
+                if (calculateCost) {
+                    stringResource(
+                        R.string.add_event_price_per_liquid,
+                        units.liquidSingularLabel()
+                    )
+                } else {
+                    stringResource(R.string.common_cost)
+                }
+            },
+            onSelectionChange = onCalculateCostChange,
         )
 
         if (state.calculateCost) {
@@ -580,6 +597,38 @@ fun RefuelForm(
         PaymentMethodDropdown(
             selectedValue = state.paymentMethod,
             onPaymentMethodChange = onPaymentMethodChange
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RefuelFormPreview() {
+    GasodoTheme {
+        RefuelForm(
+            state = RefuelEventFormState(),
+            amountState = rememberTextFieldState(),
+            onCalculateCostChange = {},
+            costState = rememberTextFieldState(),
+            pricePerLiterState = rememberTextFieldState(),
+            onPaymentMethodChange = {},
+            onFullFillUpChange = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RefuelFormPricePerLiquidPreview() {
+    GasodoTheme {
+        RefuelForm(
+            state = RefuelEventFormState(calculateCost = true, fullFillUp = false),
+            amountState = rememberTextFieldState(),
+            onCalculateCostChange = {},
+            costState = rememberTextFieldState(),
+            pricePerLiterState = rememberTextFieldState(),
+            onPaymentMethodChange = {},
+            onFullFillUpChange = {},
         )
     }
 }

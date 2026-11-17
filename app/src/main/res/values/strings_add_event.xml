@@ -10,7 +10,10 @@
 
     <!-- Refuel form -->
     <string name="add_event_section_refuel_details">Refuel Details</string>
-    <string name="add_event_calculate_from_price_per_liquid">Calculate from Price/%1$s</string>
+    <string name="add_event_fill_type">Fill Type</string>
+    <string name="add_event_partial_tank">Partial Tank</string>
+    <string name="add_event_full_tank">Full Tank</string>
+    <string name="add_event_calculate_from">Calculate From</string>
     <!-- %1$s is the singular form of the selected volume unit, e.g. "Liter" -->
     <string name="add_event_price_per_liquid">Price per %1$s</string>
     <string name="add_event_total_cost">Total Cost</string>

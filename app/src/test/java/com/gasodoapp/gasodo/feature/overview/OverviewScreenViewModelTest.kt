@@ -101,9 +101,10 @@ class OverviewScreenViewModelTest {
         amountLiters: BigDecimal?,
         pricePerLiter: BigDecimal?,
         totalCost: BigDecimal?,
-        fullFillUp: Boolean = false
+        fullFillUp: Boolean = false,
+        date: LocalDate? = null
     ): RefuelEvent = RefuelEvent(
-        base = BaseColumns(mileage = mileage),
+        base = BaseColumns(date = date, mileage = mileage),
         amountLiters = amountLiters,
         pricePerLiter = pricePerLiter,
         totalCost = totalCost,
@@ -683,6 +684,611 @@ class OverviewScreenViewModelTest {
         assertThat(viewModel.totalRefuelCost.value).isEqualTo(BigDecimal.ZERO)
         assertThat(viewModel.totalLiters.value).isEqualTo(BigDecimal.ZERO)
         assertThat(viewModel.averagePricePerLiter.value).isNull()
+    }
+
+    // endregion
+
+    // region Detailed fuel consumption chart
+
+    @Test
+    fun `chart has one point per full fill interval`() {
+        val january = LocalDate.of(2025, 1, 10)
+        val february = LocalDate.of(2025, 2, 10)
+        val march = LocalDate.of(2025, 3, 10)
+
+        // Database query sorts the data by mileage descending
+        val data = listOf(
+            refuelEvent(
+                1200L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = march
+            ),
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = february
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = january
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        val points = viewModel.fuelConsumptionChart.value
+
+        // Three full fill-ups delimit two intervals, not three: the last one only closes
+        assertThat(points).hasSize(2)
+        assertThat(points.map { it.time })
+            .containsExactly(february, march)
+            .inOrder()
+        // 10 liquid over 100 distance units = 10.00 liquid per hundred distance units
+        assertThat(points.map { it.value })
+            .containsExactly(BigDecimal("10.00"), BigDecimal("10.00"))
+            .inOrder()
+    }
+
+    /**
+     * A point describes the consumption of the interval that ENDS on it, which only becomes known
+     * once the tank is filled up again. Dating it to the opening fill-up would shift the whole chart
+     * to the left and make the most recent interval impossible to place on the timeline.
+     */
+    @Test
+    fun `chart point is dated to the closing fill-up`() {
+        val opening = LocalDate.of(2025, 1, 10)
+        val closing = LocalDate.of(2025, 3, 10)
+
+        val data = listOf(
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = closing
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = opening
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        val points = viewModel.fuelConsumptionChart.value
+
+        assertThat(points).hasSize(1)
+        assertThat(points.single().time).isEqualTo(closing)
+        assertThat(points.single().time).isNotEqualTo(opening)
+    }
+
+    @Test
+    fun `chart points are ordered by ascending date`() {
+        val january = LocalDate.of(2025, 1, 10)
+        val february = LocalDate.of(2025, 2, 10)
+        val march = LocalDate.of(2025, 3, 10)
+
+        val data = listOf(
+            refuelEvent(
+                1200L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = march
+            ),
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = february
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = january
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        // The repository hands the events over by descending mileage, the chart must still be
+        // readable left to right on a timeline.
+        assertThat(viewModel.fuelConsumptionChart.value.map { it.time })
+            .containsExactly(february, march)
+            .inOrder()
+    }
+
+    /**
+     * Intervals are measured in mileage order, but they are drawn on a timeline and joined in list
+     * order. A user who back-dates an entry makes the two orders disagree, and the curve would then
+     * run backwards on itself, so the emitted points must be sorted by date regardless of how they
+     * were measured.
+     */
+    @Test
+    fun `chart sorts points by date when entries are back dated`() {
+        val backDated = LocalDate.of(2025, 3, 1)
+        val later = LocalDate.of(2025, 1, 1)
+        val latest = LocalDate.of(2025, 2, 1)
+
+        // Mileage ascends 1000 -> 1100 -> 1200 while the dates are deliberately shuffled.
+        val data = listOf(
+            refuelEvent(
+                1200L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = later
+            ),
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = backDated
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = latest
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        // Interval 1 closes at mileage 1100 (dated March) and interval 2 at 1200 (dated January),
+        // so measuring order alone would emit March before January.
+        assertThat(viewModel.fuelConsumptionChart.value.map { it.time })
+            .containsExactly(later, backDated)
+            .inOrder()
+    }
+
+    @Test
+    fun `chart folds partial fills into the segment volume`() {
+        val opening = LocalDate.of(2025, 1, 10)
+        val closing = LocalDate.of(2025, 2, 10)
+
+        val data = listOf(
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = closing
+            ),
+            refuelEvent(
+                1050L,
+                BigDecimal("20"),
+                BigDecimal("2"),
+                BigDecimal("40"),
+                date = LocalDate.of(2025, 1, 20)
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = opening
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        val points = viewModel.fuelConsumptionChart.value
+
+        // The partial fill belongs to the interval it was bought in: 20 + 10 = 30 liquid over 100
+        // distance units = 30.00 liquid per hundred distance units
+        assertThat(points).hasSize(1)
+        assertThat(points.single().value).isEqualTo(BigDecimal("30.00"))
+        assertThat(points.single().time).isEqualTo(closing)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `chart computes distance per liquid when configured`() = runTest {
+        unitsFlow.value = Units(fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID)
+        advanceUntilIdle()
+
+        val opening = LocalDate.of(2025, 1, 10)
+        val closing = LocalDate.of(2025, 2, 10)
+
+        val data = listOf(
+            refuelEvent(
+                1050L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = closing
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = opening
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        // 10 liquid over 50 distance units = 5.00 distance units per liquid unit
+        assertThat(viewModel.fuelConsumptionChart.value.single().value)
+            .isEqualTo(BigDecimal("5.00"))
+    }
+
+    /**
+     * A missing amount makes the interval's volume unknown. Zero-filling it would draw a point on
+     * the chart that claims the car burnt nothing, so the interval is dropped instead while the
+     * neighbouring ones keep their points.
+     */
+    @Test
+    fun `chart skips segments with a null amount`() {
+        val february = LocalDate.of(2025, 2, 10)
+        val march = LocalDate.of(2025, 3, 10)
+
+        val data = listOf(
+            refuelEvent(
+                1200L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = march
+            ),
+            refuelEvent(1150L, null, BigDecimal("2"), BigDecimal("20")),
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = february
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = LocalDate.of(2025, 1, 10)
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        val points = viewModel.fuelConsumptionChart.value
+
+        // The 1000 -> 1100 interval is measurable, the 1100 -> 1200 one is not
+        assertThat(points).hasSize(1)
+        assertThat(points.single().time).isEqualTo(february)
+        assertThat(points.single().value).isEqualTo(BigDecimal("10.00"))
+    }
+
+    /**
+     * Two fill-ups logged on the same mileage cover no distance, so the ratio would be a division by
+     * zero. No point may be emitted for such an interval.
+     */
+    @Test
+    fun `chart skips segments with no distance`() {
+        val data = listOf(
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = LocalDate.of(2025, 2, 10)
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = LocalDate.of(2025, 1, 10)
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        assertThat(viewModel.fuelConsumptionChart.value).isEmpty()
+    }
+
+    /**
+     * A point cannot be placed on a timeline without a date. The interval is skipped rather than
+     * pinned to an arbitrary `LocalDate`.
+     */
+    @Test
+    fun `chart skips segments without a date`() {
+        val data = listOf(
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = null
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = LocalDate.of(2025, 1, 10)
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        assertThat(viewModel.fuelConsumptionChart.value).isEmpty()
+    }
+
+    @Test
+    fun `chart ignores events without a mileage`() {
+        val closing = LocalDate.of(2025, 2, 10)
+
+        val data = listOf(
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = closing
+            ),
+            // Cannot be placed between two fill-ups, so it neither opens nor breaks an interval
+            refuelEvent(
+                null,
+                BigDecimal("999"),
+                BigDecimal("2"),
+                BigDecimal("1998"),
+                date = LocalDate.of(2025, 1, 20)
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = LocalDate.of(2025, 1, 10)
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        val points = viewModel.fuelConsumptionChart.value
+
+        // 10 liquid over 100 distance units; the 999 liter event takes no part in the volume
+        assertThat(points).hasSize(1)
+        assertThat(points.single().value).isEqualTo(BigDecimal("10.00"))
+        assertThat(points.single().time).isEqualTo(closing)
+    }
+
+    @Test
+    fun `chart is empty with fewer than two full fill ups`() {
+        val data = listOf(
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                date = LocalDate.of(2025, 3, 10)
+            ),
+            refuelEvent(
+                1050L,
+                BigDecimal("20"),
+                BigDecimal("2"),
+                BigDecimal("40"),
+                date = LocalDate.of(2025, 2, 10)
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = LocalDate.of(2025, 1, 10)
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        // A single full fill-up opens an interval but nothing can close it
+        assertThat(viewModel.fuelConsumptionChart.value).isEmpty()
+    }
+
+    /**
+     * The chart belongs to the selected period. When the user narrows the range and the new events
+     * no longer yield a point, the previous series must be dropped: keeping it would render old data
+     * as if it belonged to the new range, which is worse than an empty chart.
+     */
+    @Test
+    fun `chart is cleared when the period no longer yields points`() {
+        val february = LocalDate.of(2025, 2, 10)
+        val march = LocalDate.of(2025, 3, 10)
+
+        val data = listOf(
+            refuelEvent(
+                1200L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = march
+            ),
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = february
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = LocalDate.of(2025, 1, 10)
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+        assertThat(viewModel.fuelConsumptionChart.value).hasSize(2)
+
+        viewModel.calculateDetailedFuelConsumptionChart(emptyList())
+        assertThat(viewModel.fuelConsumptionChart.value).isEmpty()
+
+        // Same for a period holding a single event, which cannot describe an interval either
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+        assertThat(viewModel.fuelConsumptionChart.value).hasSize(2)
+
+        viewModel.calculateDetailedFuelConsumptionChart(data.take(1))
+        assertThat(viewModel.fuelConsumptionChart.value).isEmpty()
+    }
+
+    @Test
+    fun `chart ignores refuels outside the full fill up window`() {
+        val closing = LocalDate.of(2025, 2, 10)
+
+        // Database query sorts the data by mileage descending
+        val data = listOf(
+            refuelEvent(
+                1400L,
+                BigDecimal("100"),
+                BigDecimal("2"),
+                BigDecimal("200"),
+                date = LocalDate.of(2025, 3, 10)
+            ),
+            refuelEvent(
+                1200L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = closing
+            ),
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                date = LocalDate.of(2025, 1, 20)
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = LocalDate.of(2025, 1, 10)
+            ),
+            refuelEvent(
+                900L,
+                BigDecimal("50"),
+                BigDecimal("2"),
+                BigDecimal("100"),
+                date = LocalDate.of(2025, 1, 5)
+            )
+        )
+
+        viewModel.calculateDetailedFuelConsumptionChart(data)
+
+        val points = viewModel.fuelConsumptionChart.value
+
+        // Only the 1000 -> 1200 window is measured: 20 liquid over 200 distance units
+        assertThat(points).hasSize(1)
+        assertThat(points.single().time).isEqualTo(closing)
+        assertThat(points.single().value).isEqualTo(BigDecimal("10.00"))
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `chart is recomputed when the unit changes without reloading`() = runTest {
+        val february = LocalDate.of(2025, 2, 10)
+        val march = LocalDate.of(2025, 3, 10)
+
+        val data = listOf(
+            refuelEvent(
+                1100L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = march
+            ),
+            refuelEvent(
+                1050L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = february
+            ),
+            refuelEvent(
+                1000L,
+                BigDecimal("10"),
+                BigDecimal("2"),
+                BigDecimal("20"),
+                fullFillUp = true,
+                date = LocalDate.of(2025, 1, 10)
+            )
+        )
+
+        every { refuelRepository.getAllWithinTime(any(), any()) } returns flowOf(data)
+
+        // init block + this explicit load
+        viewModel.loadRefuelData(RANGE_START, RANGE_END)
+        advanceUntilIdle()
+
+        // 10 / 50 * 100 = 20.00 liquid per hundred distance units, one point per interval
+        assertThat(viewModel.fuelConsumptionChart.value.map { it.value })
+            .containsExactly(BigDecimal("20.00"), BigDecimal("20.00"))
+            .inOrder()
+
+        unitsFlow.value = Units(fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID)
+        advanceUntilIdle()
+
+        // The same stretches read the other way round: 50 / 10 = 5.00, on the same dates
+        assertThat(viewModel.fuelConsumptionChart.value.map { it.value })
+            .containsExactly(BigDecimal("5.00"), BigDecimal("5.00"))
+            .inOrder()
+        assertThat(viewModel.fuelConsumptionChart.value.map { it.time })
+            .containsExactly(february, march)
+            .inOrder()
+        // The stored events did not change, so the repository must not have been queried again.
+        coVerify(exactly = 2) { refuelRepository.getAllWithinTime(any(), any()) }
     }
 
     // endregion

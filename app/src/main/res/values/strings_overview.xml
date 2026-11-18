@@ -21,6 +21,15 @@
     <string name="overview_average_fuel_consumption">Average Fuel Consumption</string>
     <string name="overview_average_fuel_cost">Average Fuel Cost</string>
 
+    <!-- Fuel consumption trend chart, shown in a bottom sheet -->
+    <string name="overview_fuel_consumption_chart_title">Fuel Consumption Trend</string>
+    <!-- Content description of the icon button that opens the chart -->
+    <string name="overview_show_fuel_consumption_chart">Show fuel consumption chart</string>
+    <string name="overview_chart_no_data_title">Not enough data for a chart</string>
+    <string name="overview_chart_no_data_subtitle">Log at least three full fill-ups in this period</string>
+    <!-- Accessibility summary of the chart, %1$d is the number of plotted points -->
+    <string name="overview_chart_content_description">Fuel consumption trend chart with %1$d data points</string>
+
     <!-- Maintenance statistics card -->
     <string name="overview_maintenance_stats_title">Maintenance Statistics</string>
     <string name="overview_total_maintenance_cost">Total Maintenance Cost</string>

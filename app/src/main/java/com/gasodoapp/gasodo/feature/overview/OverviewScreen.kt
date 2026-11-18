@@ -27,6 +27,7 @@ import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DateRangePickerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,6 +74,7 @@ import com.gasodoapp.gasodo.ui.icons.build
 import com.gasodoapp.gasodo.ui.icons.content_paste_search
 import com.gasodoapp.gasodo.ui.icons.error
 import com.gasodoapp.gasodo.ui.icons.local_gas_station
+import com.gasodoapp.gasodo.ui.icons.timeline
 import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -92,6 +94,7 @@ fun OverviewScreen(
     val totalMileage by viewModel.totalMileage.collectAsState()
     val fuelConsumption by viewModel.fuelConsumption.collectAsState()
     val fuelCost by viewModel.fuelCost.collectAsState()
+    val fuelConsumptionChart by viewModel.fuelConsumptionChart.collectAsState()
 
     val maintenanceData by viewModel.maintenanceData.collectAsState()
     val totalMaintenanceCost by viewModel.totalMaintenanceCost.collectAsState()
@@ -128,6 +131,7 @@ fun OverviewScreen(
             totalMileage,
             fuelConsumption,
             fuelCost,
+            fuelConsumptionChart,
             maintenanceData,
             totalMaintenanceCost,
             maintenanceActions,
@@ -158,6 +162,7 @@ private fun MainContent(
     totalMileage: Long?,
     fuelConsumption: BigDecimal?,
     fuelCost: BigDecimal?,
+    fuelConsumptionChart: List<TimelineDataPoint>,
     maintenanceData: List<MaintenanceEventWithServices>,
     totalMaintenanceCost: BigDecimal,
     maintenanceActions: List<MaintenanceServiceType>,
@@ -194,6 +199,8 @@ private fun MainContent(
                     modifier = Modifier.size(48.dp), color = MaterialTheme.colorScheme.primary
                 )
             } else {
+                var showFuelChart by remember { mutableStateOf(false) }
+
                 if (refuelData.isNotEmpty())
                     RefuelStatsCard(
                         totalCost = totalRefuelCost,
@@ -202,10 +209,22 @@ private fun MainContent(
                         totalMileage = totalMileage,
                         fuelConsumption = fuelConsumption,
                         fuelCost = fuelCost,
-                        units = units
+                        units = units,
+                        onShowFuelChart = { showFuelChart = true }
                     )
                 else
                     NoStatsCard(local_gas_station, R.string.overview_noun_refuels)
+
+                if (showFuelChart)
+                    FuelConsumptionBottomSheet(
+                        dataPoints = fuelConsumptionChart,
+                        valueUnitLabel = units.consumptionLabel,
+                        // The axis spans what the user asked about, not just the plotted points, so
+                        // a period with a gap in the middle reads as a gap rather than as a shortcut.
+                        domainStart = dateRangePickerState.getSelectedStartDate(),
+                        domainEnd = dateRangePickerState.getSelectedEndDate(),
+                        onDismissRequest = { showFuelChart = false }
+                    )
 
                 if (maintenanceData.isNotEmpty())
                     MaintenanceStatsCard(
@@ -373,11 +392,22 @@ fun RefuelStatsCard(
     totalMileage: Long?,
     fuelConsumption: BigDecimal?,
     fuelCost: BigDecimal?,
-    units: Units = Units()
+    units: Units = Units(),
+    onShowFuelChart: () -> Unit = {}
 ) {
     StatisticsCardFrame(
         stringResource(R.string.overview_refuel_stats_title),
-        local_gas_station
+        local_gas_station,
+        leftIcon = {
+            IconButton(
+                onClick = onShowFuelChart
+            ) {
+                Icon(
+                    imageVector = timeline,
+                    contentDescription = stringResource(R.string.overview_show_fuel_consumption_chart)
+                )
+            }
+        }
     ) {
         Row(
             modifier = Modifier.height(IntrinsicSize.Min),
@@ -694,6 +724,7 @@ private fun InspectionLegendRow(
 fun StatisticsCardFrame(
     title: String,
     icon: ImageVector,
+    leftIcon: @Composable (() -> Unit)? = null,
     content: @Composable (() -> Unit)
 ) {
     Card(
@@ -707,21 +738,31 @@ fun StatisticsCardFrame(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(modifier = Modifier.padding(2.dp)) {
-                    Icon(
-                        imageVector = icon,
-                        // Decorative: the card title next to it already names the section.
-                        contentDescription = null
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(modifier = Modifier.padding(2.dp)) {
+                        Icon(
+                            imageVector = icon,
+                            // Decorative: the card title next to it already names the section.
+                            contentDescription = null
+                        )
+                    }
+                    Text(
+                        text = title,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
-                Text(
-                    text = title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleMedium
-                )
+
+                if (leftIcon != null) {
+
+                    leftIcon()
+                }
             }
             content()
         }

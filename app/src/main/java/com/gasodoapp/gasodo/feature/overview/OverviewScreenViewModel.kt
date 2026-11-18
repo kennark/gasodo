@@ -83,6 +83,16 @@ class OverviewScreenViewModel @Inject constructor(
     private val _fuelCost = MutableStateFlow<BigDecimal?>(null)
     val fuelCost = _fuelCost.asStateFlow()
 
+    /**
+     * Consumption of every interval between two full fill-ups, one point per interval.
+     *
+     * Points are ordered by ascending date and each one is dated to the closing fill-up of its
+     * interval, so the chart can place them on a real timeline instead of spacing them evenly.
+     * Empty when no interval can be measured.
+     */
+    private val _fuelConsumptionChart = MutableStateFlow<List<TimelineDataPoint>>(emptyList())
+    val fuelConsumptionChart = _fuelConsumptionChart.asStateFlow()
+
     private val _averagePricePerLiter = MutableStateFlow<BigDecimal?>(null)
     val averagePricePerLiter = _averagePricePerLiter.asStateFlow()
 
@@ -158,7 +168,7 @@ class OverviewScreenViewModel @Inject constructor(
                 .drop(1)
                 .map { it.fuelConsumption }
                 .distinctUntilChanged()
-                .collect { calculateRefuelStatistics(_refuelData.value) }
+                .collect { recalculateRefuelFigures(_refuelData.value) }
         }
     }
 
@@ -187,13 +197,24 @@ class OverviewScreenViewModel @Inject constructor(
                     }
                     .collect { data ->
                         _refuelData.value = data
-                        calculateRefuelStatistics(_refuelData.value)
+                        recalculateRefuelFigures(_refuelData.value)
                         _isLoading.value = false
                     }
             }
         }
     }
 
+    /**
+     * Recomputes every refuel derived value from [data].
+     *
+     * Both the card statistics and the chart depend on [Units.fuelConsumption], so the two are
+     * always refreshed together to keep the chart from drifting out of sync with the figures
+     * rendered next to its button.
+     */
+    private fun recalculateRefuelFigures(data: List<RefuelEvent>) {
+        calculateRefuelStatistics(data)
+        calculateDetailedFuelConsumptionChart(data)
+    }
 
     internal fun calculateRefuelStatistics(data: List<RefuelEvent>) {
         if (data.isEmpty()) {
@@ -277,12 +298,8 @@ class OverviewScreenViewModel @Inject constructor(
      * two such events exist.
      */
     private fun eventsBetweenFullFills(data: List<RefuelEvent>): List<RefuelEvent> {
-        val firstFullFill = data.indexOfFirst { event ->
-            event.fullFillUp && event.base.mileage != null && event.amountLiters != null
-        }
-        val lastFullFill = data.indexOfLast { event ->
-            event.fullFillUp && event.base.mileage != null && event.amountLiters != null
-        }
+        val firstFullFill = data.indexOfFirst { event -> event.canAnchorInterval() }
+        val lastFullFill = data.indexOfLast { event -> event.canAnchorInterval() }
 
         // indexOfFirst returns -1 when no full fill-up exists, indexOfLast returns -1 as well.
         if (firstFullFill == -1 || lastFullFill == -1 || lastFullFill <= firstFullFill) {
@@ -292,6 +309,17 @@ class OverviewScreenViewModel @Inject constructor(
         return data.subList(firstFullFill, lastFullFill + 1)
             .sortedBy { event -> event.base.mileage }
     }
+
+    /**
+     * Whether this event can open or close a measured interval.
+     *
+     * A consumption figure needs two full fill-ups and the mileage and volume between them, so an
+     * event missing any of those cannot take part. Shared by [eventsBetweenFullFills] and
+     * [calculateDetailedFuelConsumptionChart] so the card and the chart always measure the same
+     * fill-ups.
+     */
+    private fun RefuelEvent.canAnchorInterval(): Boolean =
+        fullFillUp && base.mileage != null && amountLiters != null
 
     /**
      * Fuel burnt over the distance of the full fill-ups, in the unit chosen in the settings.
@@ -445,4 +473,99 @@ class OverviewScreenViewModel @Inject constructor(
         BigDecimal(count)
             .multiply(BigDecimal(100))
             .divide(BigDecimal(total), 2, BigDecimalUtils.ROUNDING_MODE)
+
+    /**
+     * Builds one [TimelineDataPoint] per interval between two consecutive full fill-ups.
+     *
+     * An interval opens at a full fill-up and closes at the next one, and only the volume refuelled
+     * after the opening point is counted, because the tank was already full when the interval
+     * started. Intervals that contain an event without an amount, that cover no distance, or that
+     * cannot be dated are skipped rather than zero-filled: the resulting number would not describe
+     * anything real, so no point is emitted and the chart simply joins the surviving ones.
+     *
+     * Each point is dated to the closing fill-up, the moment its consumption is realised, and the
+     * list is ordered by ascending date so the renderer can join consecutive points.
+     */
+    internal fun calculateDetailedFuelConsumptionChart(data: List<RefuelEvent>) {
+        // Clear first so a period that no longer yields points does not keep showing the previous
+        // ones, which would silently mislabel old data as belonging to the new range.
+        _fuelConsumptionChart.value = emptyList()
+
+        if (data.size < 2) {
+            return
+        }
+
+        // An event without a mileage cannot be placed between two fill-ups, so it takes no part in
+        // the intervals. The repository returns the events by descending mileage, so re-sort.
+        val events = data
+            .filter { event -> event.base.mileage != null }
+            .sortedBy { event -> event.base.mileage }
+
+        val points = mutableListOf<TimelineDataPoint>()
+        var index = 0
+
+        while (index < events.size) {
+            val start = events[index]
+            if (!start.canAnchorInterval()) {
+                index++
+                continue
+            }
+
+            val endIndex = (index + 1 until events.size).firstOrNull { candidate ->
+                events[candidate].canAnchorInterval()
+            }
+
+            // The last full fill-up closes the previous interval but opens nothing on its own.
+            if (endIndex == null) {
+                break
+            }
+
+            createDataPoint(events.subList(index, endIndex + 1))?.let(points::add)
+
+            // Continue from the closing fill-up, which is the opening one of the next interval.
+            index = endIndex
+        }
+
+        // Intervals are measured in mileage order because that is what the ratio is built from, but
+        // the renderer draws them on a timeline and joins them in list order. The two orders only
+        // coincide when the driver logs entries as they go, so sort by date to keep a late or
+        // back-dated entry from bending the curve backwards on itself.
+        _fuelConsumptionChart.value = points.sortedBy { point -> point.time }
+    }
+
+    /**
+     * Turns one interval into a plottable point, or `null` when the interval cannot be measured.
+     *
+     * [interval] spans from the opening full fill-up to the closing one, both included, and is
+     * already ordered by ascending mileage.
+     */
+    private fun createDataPoint(interval: List<RefuelEvent>): TimelineDataPoint? {
+        val start = interval.first()
+        val end = interval.last()
+
+        // Every event in the window contributes its volume, so a single missing amount makes the
+        // whole figure unreliable.
+        if (interval.any { event -> event.amountLiters == null }) {
+            return null
+        }
+
+        val distance = end.base.mileage!! - start.base.mileage!!
+
+        // Two fill-ups logged at the same mileage describe no driven distance, which would make
+        // the ratio either infinite or meaningless.
+        if (distance <= 0) {
+            return null
+        }
+
+        val date = end.base.date ?: return null
+
+        val volume = interval
+            .drop(1)
+            .sumOf { event -> event.amountLiters!! }
+
+        val value = units.value.fuelConsumption
+            .convertConsumption(volume, BigDecimal(distance))
+
+        return TimelineDataPoint(time = date, value = value)
+    }
 }

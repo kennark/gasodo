@@ -1,5 +1,6 @@
 package com.gasodoapp.gasodo.core.settings
 
+import com.gasodoapp.gasodo.core.enums.DefaultTimePeriod
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
@@ -36,6 +37,11 @@ interface SettingsRepository {
      * Only has a visible effect on Android 12 and above.
      */
     suspend fun setDynamicTheme(dynamic: Boolean)
+
+    /**
+     * Stores the period the overview screen selects by default.
+     */
+    suspend fun setOverviewDefaultTimePeriod(period: DefaultTimePeriod)
 
     /**
      * Stores the unit used for distances and mileage.

@@ -4,6 +4,7 @@ import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.DateRangePickerState
 import androidx.compose.material3.getSelectedEndDate
 import androidx.compose.material3.getSelectedStartDate
+import androidx.compose.material3.setSelection
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
@@ -13,8 +14,10 @@ import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
+import com.gasodoapp.gasodo.core.enums.DefaultTimePeriod
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
+import com.gasodoapp.gasodo.core.settings.AppSettings
 import com.gasodoapp.gasodo.core.settings.SettingsRepository
 import com.gasodoapp.gasodo.core.settings.Units
 import com.gasodoapp.gasodo.core.utils.BigDecimalUtils
@@ -26,6 +29,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -38,7 +42,7 @@ class OverviewScreenViewModel @Inject constructor(
     private val refuelRepository: RefuelRepository,
     private val maintenanceRepository: MaintenanceRepository,
     private val inspectionRepository: InspectionRepository,
-    settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     /**
@@ -137,19 +141,48 @@ class OverviewScreenViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    /**
+     * Range of the statistics currently on screen.
+     *
+     * The picker starts out empty on purpose: the range depends on the stored default, which is read
+     * asynchronously, so [applyDefaultTimePeriod] does the initial selection once it is known. Until
+     * then the screen shows its "period not set" state instead of flashing a range that is about to
+     * be replaced.
+     */
     val dateRangePickerState = DateRangePickerState(
         locale = CalendarLocale.getDefault(),
-        initialSelectedStartDate = LocalDate.of(
-            LocalDate.now().year,
-            LocalDate.now().monthValue,
-            1
-        ),
-        initialSelectedEndDate = LocalDate.now()
     )
 
     init {
-        loadDataForSelectedRange()
+        applyDefaultTimePeriod()
         recalculateOnFuelConsumptionChange()
+    }
+
+    /**
+     * Selects the stored default period and loads the data it covers.
+     *
+     * Only the first emission is read: the picker belongs to this screen instance, so a change made
+     * in the settings later on applies to the next visit rather than yanking the range from under a
+     * user who is already looking at their statistics.
+     */
+    private fun applyDefaultTimePeriod() {
+        viewModelScope.launch {
+            val period = settingsRepository.settings
+                .catch { _ -> emit(AppSettings()) }
+                .map { it.overviewDefaultTimePeriod }
+                .first()
+
+            selectTimePeriod(period)
+        }
+    }
+
+    /**
+     * Moves the picker to the range [period] covers today and loads the data for it.
+     */
+    private fun selectTimePeriod(period: DefaultTimePeriod) {
+        val range = period.dateRange()
+        dateRangePickerState.setSelection(range.start, range.endInclusive)
+        loadDataForSelectedRange()
     }
 
     fun onDateSelected() {

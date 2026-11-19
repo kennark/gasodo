@@ -2,6 +2,7 @@ package com.gasodoapp.gasodo.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gasodoapp.gasodo.core.enums.DefaultTimePeriod
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
@@ -92,6 +93,15 @@ class SettingsScreenViewModel @Inject constructor(
     fun onFuelConsumptionUnitChange(unit: FuelConsumption) {
         viewModelScope.launch {
             repository.setFuelConsumption(unit)
+        }
+    }
+
+    /**
+     * Stores the period the overview screen selects when it is opened.
+     */
+    fun onOverviewDefaultTimePeriodChange(period: DefaultTimePeriod) {
+        viewModelScope.launch {
+            repository.setOverviewDefaultTimePeriod(period)
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import com.gasodoapp.gasodo.core.enums.DefaultTimePeriod
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
@@ -14,6 +15,7 @@ import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DISTANCE_UNIT_K
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DYNAMIC_THEME_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.FUEL_CONSUMPTION_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.LIQUID_UNIT_KEY
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.OVERVIEW_DEFAULT_TIME_PERIOD_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.THEME_MODE_KEY
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -480,5 +482,98 @@ class SettingsRepositoryImplTest {
 
         // Assert
         assertThat(settings.themeMode).isEqualTo(ThemeMode.DARK)
+    }
+
+    /**
+     * Guards the persisted key name, so a rename does not silently reset every user's choice.
+     */
+    @Test
+    fun `the overview default time period is stored under the overview_default_time_period key`() {
+        assertThat(OVERVIEW_DEFAULT_TIME_PERIOD_KEY.name).isEqualTo("overview_default_time_period")
+    }
+
+    @Test
+    fun `overview default time period defaults to YEAR_TO_DATE`() = runTest {
+        // Act
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.overviewDefaultTimePeriod).isEqualTo(DefaultTimePeriod.YEAR_TO_DATE)
+    }
+
+    @Test
+    fun `setOverviewDefaultTimePeriod SEVEN_DAYS is emitted by the settings flow`() = runTest {
+        // Act
+        repository.setOverviewDefaultTimePeriod(DefaultTimePeriod.SEVEN_DAYS)
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.overviewDefaultTimePeriod).isEqualTo(DefaultTimePeriod.SEVEN_DAYS)
+    }
+
+    @Test
+    fun `setOverviewDefaultTimePeriod overwrites the previously stored value`() = runTest {
+        // Act
+        repository.setOverviewDefaultTimePeriod(DefaultTimePeriod.YEAR)
+        repository.setOverviewDefaultTimePeriod(DefaultTimePeriod.THIS_MONTH)
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.overviewDefaultTimePeriod).isEqualTo(DefaultTimePeriod.THIS_MONTH)
+    }
+
+    @Test
+    fun `an unknown stored default time period falls back to YEAR_TO_DATE`() = runTest {
+        // Arrange
+        dataStore.edit { preferences ->
+            preferences[OVERVIEW_DEFAULT_TIME_PERIOD_KEY] = "LAST_DECADE"
+        }
+
+        // Act
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.overviewDefaultTimePeriod).isEqualTo(DefaultTimePeriod.YEAR_TO_DATE)
+    }
+
+    /**
+     * The overview period lives under its own key, so storing it must leave the appearance settings
+     * alone and vice versa.
+     */
+    @Test
+    fun `storing the default time period does not change the appearance settings`() = runTest {
+        // Act
+        repository.setThemeMode(ThemeMode.DARK)
+        repository.setDynamicTheme(false)
+        repository.setOverviewDefaultTimePeriod(DefaultTimePeriod.YEAR_TO_DATE)
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.overviewDefaultTimePeriod).isEqualTo(DefaultTimePeriod.YEAR_TO_DATE)
+        assertThat(settings.themeMode).isEqualTo(ThemeMode.DARK)
+        assertThat(settings.useDynamicTheme).isFalse()
+    }
+
+    @Test
+    fun `storing the appearance settings does not change the default time period`() = runTest {
+        // Act
+        repository.setOverviewDefaultTimePeriod(DefaultTimePeriod.YEAR)
+        repository.setThemeMode(ThemeMode.LIGHT)
+        repository.setDynamicTheme(false)
+        val settings = repository.settings.first()
+
+        // Assert
+        assertThat(settings.overviewDefaultTimePeriod).isEqualTo(DefaultTimePeriod.YEAR)
+    }
+
+    @Test
+    fun `storing the default time period does not change the units`() = runTest {
+        // Act
+        repository.setDistanceUnit(Distance.MILE)
+        repository.setOverviewDefaultTimePeriod(DefaultTimePeriod.SEVEN_DAYS)
+        val units = repository.units.first()
+
+        // Assert
+        assertThat(units.distance).isEqualTo(Distance.MILE)
     }
 }

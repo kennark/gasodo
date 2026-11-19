@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import com.gasodoapp.gasodo.core.enums.DefaultTimePeriod
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
@@ -14,6 +15,7 @@ import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DISTANCE_UNIT_K
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.DYNAMIC_THEME_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.FUEL_CONSUMPTION_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.LIQUID_UNIT_KEY
+import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.OVERVIEW_DEFAULT_TIME_PERIOD_KEY
 import com.gasodoapp.gasodo.core.settings.SettingsRepositoryKeys.THEME_MODE_KEY
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -33,7 +35,10 @@ class SettingsRepositoryImpl @Inject constructor(
             .map { preferences ->
                 AppSettings(
                     themeMode = ThemeMode.fromName(preferences[THEME_MODE_KEY]),
-                    useDynamicTheme = preferences[DYNAMIC_THEME_KEY] ?: true
+                    useDynamicTheme = preferences[DYNAMIC_THEME_KEY] ?: true,
+                    overviewDefaultTimePeriod = DefaultTimePeriod.fromName(
+                        preferences[OVERVIEW_DEFAULT_TIME_PERIOD_KEY]
+                    )
                 )
             }
 
@@ -57,6 +62,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setDynamicTheme(dynamic: Boolean) {
         dataStore.edit { preferences ->
             preferences[DYNAMIC_THEME_KEY] = dynamic
+        }
+    }
+
+    override suspend fun setOverviewDefaultTimePeriod(period: DefaultTimePeriod) {
+        dataStore.edit { preferences ->
+            preferences[OVERVIEW_DEFAULT_TIME_PERIOD_KEY] = period.name
         }
     }
 

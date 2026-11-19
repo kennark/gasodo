@@ -2,6 +2,7 @@
 
 package com.gasodoapp.gasodo.feature.overview
 
+import androidx.compose.material3.getDisplayedMonth
 import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
@@ -12,9 +13,11 @@ import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.MaintenanceRepository
 import com.gasodoapp.gasodo.core.database.repository.RefuelRepository
+import com.gasodoapp.gasodo.core.enums.DefaultTimePeriod
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.PaymentMethod
 import com.gasodoapp.gasodo.core.enums.units.FuelConsumption
+import com.gasodoapp.gasodo.core.settings.AppSettings
 import com.gasodoapp.gasodo.core.settings.SettingsRepository
 import com.gasodoapp.gasodo.core.settings.Units
 import com.google.common.truth.Truth.assertThat
@@ -34,8 +37,10 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneOffset
 
 /**
@@ -52,6 +57,9 @@ class OverviewScreenViewModelTest {
 
     /** Unit preferences the ViewModel observes; tests update it to simulate a settings change. */
     private lateinit var unitsFlow: MutableStateFlow<Units>
+
+    /** General preferences, holding the default time period the picker starts on. */
+    private lateinit var settingsFlow: MutableStateFlow<AppSettings>
 
     private companion object {
         /** Arbitrary, non-null bounds used to drive the explicit loading functions. */
@@ -73,6 +81,9 @@ class OverviewScreenViewModelTest {
 
         unitsFlow = MutableStateFlow(Units())
         every { settingsRepository.units } returns unitsFlow
+
+        settingsFlow = MutableStateFlow(AppSettings())
+        every { settingsRepository.settings } returns settingsFlow
 
         // Default to empty flows so the ViewModel's init block can run without stubbing.
         every { refuelRepository.getAllWithinTime(any(), any()) } returns flowOf(emptyList())
@@ -159,13 +170,67 @@ class OverviewScreenViewModelTest {
     }
 
     @Test
-    fun `initial date range defaults to current month`() {
+    fun `initial date range covers the stored default period`() {
         val now = LocalDate.now()
         assertThat(viewModel.dateRangePickerState.selectedStartDateMillis).isEqualTo(
-            LocalDate.of(now.year, now.monthValue, 1).atStartOfDay(ZoneOffset.UTC)
-                .toInstant().toEpochMilli()
+            LocalDate.of(now.year, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
         )
         assertThat(viewModel.dateRangePickerState.selectedEndDateMillis).isEqualTo(
+            now.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        )
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `the stored default period is loaded when the view model is created`() = runTest {
+        settingsFlow.value = AppSettings(overviewDefaultTimePeriod = DefaultTimePeriod.YEAR)
+
+        val rebuilt = OverviewScreenViewModel(
+            refuelRepository,
+            maintenanceRepository,
+            inspectionRepository,
+            settingsRepository
+        )
+        advanceUntilIdle()
+
+        val now = LocalDate.now()
+        val expectedStart = now.minusYears(1).plusDays(1)
+        assertThat(rebuilt.dateRangePickerState.selectedStartDateMillis).isEqualTo(
+            expectedStart.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        )
+        assertThat(rebuilt.dateRangePickerState.selectedEndDateMillis).isEqualTo(
+            now.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        )
+        // Selecting a range leaves the calendar on the month it was already showing. Every period
+        // ends today, so that is the month the user wants to land on anyway.
+        assertThat(rebuilt.dateRangePickerState.getDisplayedMonth()).isEqualTo(YearMonth.from(now))
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `the default period loads the data it covers`() = runTest {
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { refuelRepository.getAllWithinTime(any(), any()) }
+        coVerify(exactly = 1) { maintenanceRepository.getAllWithinTime(any(), any()) }
+        coVerify(exactly = 1) { inspectionRepository.getAllWithinTime(any(), any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `a failing settings flow still selects the default period`() = runTest {
+        every { settingsRepository.settings } returns flow { throw IOException("unreadable") }
+
+        val rebuilt = OverviewScreenViewModel(
+            refuelRepository,
+            maintenanceRepository,
+            inspectionRepository,
+            settingsRepository
+        )
+        advanceUntilIdle()
+
+        val now = LocalDate.now()
+        assertThat(rebuilt.dateRangePickerState.selectedEndDateMillis).isEqualTo(
             now.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
         )
     }

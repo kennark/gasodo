@@ -5,6 +5,7 @@
 
     <!-- Section cards -->
     <string name="settings_appearance">Appearance</string>
+    <string name="settings_overview">Overview</string>
     <string name="settings_units">Units</string>
 
     <!-- Appearance section -->
@@ -13,6 +14,9 @@
     <string name="settings_theme_light_description">Always use light colours</string>
     <string name="settings_theme_dark_description">Always use dark colours</string>
     <string name="settings_dynamic_theme">Use Material You theming</string>
+
+    <!-- Overview section -->
+    <string name="settings_overview_default_time_period">Default time period</string>
 
     <!-- Units section -->
     <string name="settings_distance">Distance</string>

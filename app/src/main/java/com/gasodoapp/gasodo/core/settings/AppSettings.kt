@@ -1,5 +1,6 @@
 package com.gasodoapp.gasodo.core.settings
 
+import com.gasodoapp.gasodo.core.enums.DefaultTimePeriod
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 
 /**
@@ -9,12 +10,12 @@ import com.gasodoapp.gasodo.core.enums.ThemeMode
  * are introduced later on. Unit preferences live in their own [Units] class.
  */
 data class AppSettings(
+
+    // region theme
     /**
      * Colour scheme to render the app with.
-     *
-     * Defaults to [ThemeMode.SYSTEM].
      */
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val themeMode: ThemeMode = ThemeMode.DEFAULT,
 
     /**
      * Whether to derive the colour scheme from the wallpaper through Material You, instead of using
@@ -24,4 +25,13 @@ data class AppSettings(
      * wallpaper colours.
      */
     val useDynamicTheme: Boolean = true,
+
+    // endregion
+
+    // region overview
+
+    val overviewDefaultTimePeriod: DefaultTimePeriod = DefaultTimePeriod.DEFAULT,
+
+    // endregion
+
 )

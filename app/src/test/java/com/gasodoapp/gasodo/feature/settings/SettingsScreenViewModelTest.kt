@@ -1,5 +1,6 @@
 package com.gasodoapp.gasodo.feature.settings
 
+import com.gasodoapp.gasodo.core.enums.DefaultTimePeriod
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
@@ -55,6 +56,7 @@ class SettingsScreenViewModelTest {
         coEvery { repository.setCurrencySymbol(any()) } just runs
         coEvery { repository.setFuelConsumption(any()) } just runs
         coEvery { repository.setDynamicTheme(any()) } just runs
+        coEvery { repository.setOverviewDefaultTimePeriod(any()) } just runs
         viewModel = SettingsScreenViewModel(repository)
     }
 
@@ -375,5 +377,67 @@ class SettingsScreenViewModelTest {
         coVerify(exactly = 0) { repository.setCurrencySymbol(any()) }
         coVerify(exactly = 0) { repository.setThemeMode(any()) }
         coVerify(exactly = 0) { repository.setDynamicTheme(any()) }
+    }
+
+    @Test
+    fun `overview default time period defaults to YEAR_TO_DATE`() = runTest {
+        // Arrange
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.settings.collect {}
+        }
+
+        // Act
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.settings.value.overviewDefaultTimePeriod)
+            .isEqualTo(DefaultTimePeriod.YEAR_TO_DATE)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `stored overview default time period is exposed by the settings state`() = runTest {
+        // Arrange
+        stored.value = AppSettings(overviewDefaultTimePeriod = DefaultTimePeriod.YEAR_TO_DATE)
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.settings.collect {}
+        }
+
+        // Act
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.settings.value.overviewDefaultTimePeriod)
+            .isEqualTo(DefaultTimePeriod.YEAR_TO_DATE)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `onOverviewDefaultTimePeriodChange stores the value in the repository`() = runTest {
+        // Act
+        viewModel.onOverviewDefaultTimePeriodChange(DefaultTimePeriod.YEAR)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 1) {
+            repository.setOverviewDefaultTimePeriod(DefaultTimePeriod.YEAR)
+        }
+    }
+
+    @Test
+    fun `onOverviewDefaultTimePeriodChange does not touch the other preferences`() = runTest {
+        // Act
+        viewModel.onOverviewDefaultTimePeriodChange(DefaultTimePeriod.SEVEN_DAYS)
+        advanceUntilIdle()
+
+        // Assert
+        coVerify(exactly = 0) { repository.setThemeMode(any()) }
+        coVerify(exactly = 0) { repository.setDynamicTheme(any()) }
+        coVerify(exactly = 0) { repository.setDistanceUnit(any()) }
+        coVerify(exactly = 0) { repository.setLiquidUnit(any()) }
+        coVerify(exactly = 0) { repository.setCurrencySymbol(any()) }
+        coVerify(exactly = 0) { repository.setFuelConsumption(any()) }
     }
 }

@@ -37,6 +37,13 @@
     <string name="theme_mode_light">Light</string>
     <string name="theme_mode_dark">Dark</string>
 
+    <!-- DefaultTimePeriod: every period ends today, the trailing ones count backwards from it -->
+    <string name="default_time_period_seven_days">Last 7 days</string>
+    <string name="default_time_period_this_month">This month</string>
+    <string name="default_time_period_thirty_days">Last 30 days</string>
+    <string name="default_time_period_year_to_date">Year to date</string>
+    <string name="default_time_period_year">Last 12 months</string>
+
     <!-- Distance: plural form is listed in the unit selectors, singular is used in
          sentences such as "Price per Kilometer" -->
     <string name="unit_distance_kilometers">Kilometers</string>

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gasodoapp.gasodo.R
+import com.gasodoapp.gasodo.core.enums.DefaultTimePeriod
 import com.gasodoapp.gasodo.core.enums.ThemeMode
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
@@ -80,6 +81,7 @@ fun SettingsScreen(
             onCurrencyUnitChange = viewModel::onCurrencySymbolChange,
             onDynamicThemeSwitch = viewModel::onDynamicThemeChange,
             onFuelConsumptionUnitChange = viewModel::onFuelConsumptionUnitChange,
+            onOverviewDefaultTimePeriodChange = viewModel::onOverviewDefaultTimePeriodChange,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -95,6 +97,7 @@ private fun SettingsContent(
     onCurrencyUnitChange: (Currency) -> Unit,
     onDynamicThemeSwitch: (Boolean) -> Unit,
     onFuelConsumptionUnitChange: (FuelConsumption) -> Unit,
+    onOverviewDefaultTimePeriodChange: (DefaultTimePeriod) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -115,6 +118,16 @@ private fun SettingsContent(
                     onDynamicThemeSwitch = onDynamicThemeSwitch
                 )
             }
+        }
+
+        SettingsCard(title = stringResource(R.string.settings_overview)) {
+            SettingsDropdown(
+                label = stringResource(R.string.settings_overview_default_time_period),
+                options = DefaultTimePeriod.entries,
+                selected = settings.overviewDefaultTimePeriod,
+                optionLabel = { it.label() },
+                onSelect = onOverviewDefaultTimePeriodChange,
+            )
         }
 
         SettingsCard(title = stringResource(R.string.settings_units)) {
@@ -300,6 +313,7 @@ private fun SettingsContentSystemPreview() {
             onCurrencyUnitChange = {},
             onDynamicThemeSwitch = {},
             onFuelConsumptionUnitChange = {},
+            onOverviewDefaultTimePeriodChange = {},
         )
     }
 }
@@ -317,6 +331,7 @@ private fun SettingsContentLightPreview() {
             onCurrencyUnitChange = {},
             onDynamicThemeSwitch = {},
             onFuelConsumptionUnitChange = {},
+            onOverviewDefaultTimePeriodChange = {},
         )
     }
 }
@@ -334,6 +349,7 @@ private fun SettingsContentDarkPreview() {
             onCurrencyUnitChange = {},
             onDynamicThemeSwitch = {},
             onFuelConsumptionUnitChange = {},
+            onOverviewDefaultTimePeriodChange = {},
         )
     }
 }
@@ -351,6 +367,7 @@ private fun SettingsContentImperialUnitsPreview() {
             onCurrencyUnitChange = {},
             onDynamicThemeSwitch = {},
             onFuelConsumptionUnitChange = {},
+            onOverviewDefaultTimePeriodChange = {},
         )
     }
 }

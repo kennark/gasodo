@@ -16,4 +16,6 @@ object SettingsRepositoryKeys {
     val CURRENCY_SYMBOL_KEY = stringPreferencesKey("currency_symbol")
 
     val FUEL_CONSUMPTION_KEY = stringPreferencesKey("fuel_consumption")
+
+    val OVERVIEW_DEFAULT_TIME_PERIOD_KEY = stringPreferencesKey("overview_default_time_period")
 }

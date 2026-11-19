@@ -138,6 +138,20 @@ class OverviewScreenViewModel @Inject constructor(
     }
 
     /**
+     * Completes a half-picked range by closing it on today and loading the data it now covers.
+     *
+     * Does nothing while no start date is picked: [DateRangePickerState.setSelection] rejects an end
+     * date without a start, and there is no range to close yet. A start date that lies in the future
+     * cannot be paired with an end date before it either, so the selection then collapses onto that
+     * single day instead of being rejected.
+     */
+    fun onEndDateSetToToday() {
+        val start = dateRangePickerState.getSelectedStartDate() ?: return
+        dateRangePickerState.setSelection(start, maxOf(LocalDate.now(), start))
+        loadDataForSelectedRange()
+    }
+
+    /**
      * Recomputes the fuel figures when the user switches the fuel consumption unit.
      *
      * The stored events do not change, so the repository flow does not emit again. Without this the

@@ -3,6 +3,9 @@
 package com.gasodoapp.gasodo.feature.overview
 
 import androidx.compose.material3.getDisplayedMonth
+import androidx.compose.material3.getSelectedEndDate
+import androidx.compose.material3.getSelectedStartDate
+import androidx.compose.material3.setSelection
 import com.gasodoapp.gasodo.core.database.BaseColumns
 import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.entity.MaintenanceEvent
@@ -1686,6 +1689,55 @@ class OverviewScreenViewModelTest {
             .isEqualTo(maintenanceEvents.size)
         assertThat(viewModel.inspectionStatistics.value.totalCount)
             .isEqualTo(inspectionEvents.size)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onEndDateSetToToday closes a half-picked range on today`() = runTest {
+        val start = LocalDate.now().minusDays(10)
+        viewModel.dateRangePickerState.setSelection(start, null)
+
+        viewModel.onEndDateSetToToday()
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.dateRangePickerState.getSelectedStartDate()).isEqualTo(start)
+        assertThat(viewModel.dateRangePickerState.getSelectedEndDate()).isEqualTo(LocalDate.now())
+        // init block + onEndDateSetToToday = 2 calls each
+        coVerify(exactly = 2) { refuelRepository.getAllWithinTime(any(), any()) }
+        coVerify(exactly = 2) { maintenanceRepository.getAllWithinTime(any(), any()) }
+        coVerify(exactly = 2) { inspectionRepository.getAllWithinTime(any(), any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onEndDateSetToToday does nothing without a start date`() = runTest {
+        viewModel.dateRangePickerState.setSelection(null, null)
+
+        viewModel.onEndDateSetToToday()
+
+        advanceUntilIdle()
+
+        assertThat(viewModel.dateRangePickerState.selectedEndDateMillis).isNull()
+        // The init block already triggered one call; an incomplete range must not add another.
+        coVerify(exactly = 1) { refuelRepository.getAllWithinTime(any(), any()) }
+        coVerify(exactly = 1) { maintenanceRepository.getAllWithinTime(any(), any()) }
+        coVerify(exactly = 1) { inspectionRepository.getAllWithinTime(any(), any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `onEndDateSetToToday collapses a future start date onto that day`() = runTest {
+        val future = LocalDate.now().plusDays(5)
+        viewModel.dateRangePickerState.setSelection(future, null)
+
+        viewModel.onEndDateSetToToday()
+
+        advanceUntilIdle()
+
+        // An end date before the start is rejected by the picker, so the range stays valid instead.
+        assertThat(viewModel.dateRangePickerState.getSelectedStartDate()).isEqualTo(future)
+        assertThat(viewModel.dateRangePickerState.getSelectedEndDate()).isEqualTo(future)
     }
 
     // endregion

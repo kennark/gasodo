@@ -25,6 +25,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DateRangePickerState
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,7 +69,6 @@ import com.gasodoapp.gasodo.ui.components.NoDataCard
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.build
 import com.gasodoapp.gasodo.ui.icons.content_paste_search
-import com.gasodoapp.gasodo.ui.icons.error
 import com.gasodoapp.gasodo.ui.icons.local_gas_station
 import com.gasodoapp.gasodo.ui.icons.timeline
 import java.math.BigDecimal
@@ -99,6 +99,7 @@ fun OverviewScreen(
             modifier = Modifier.padding(paddingValues),
             dateRangePickerState = viewModel.dateRangePickerState,
             onDateSelected = viewModel::onDateSelected,
+            onEndDateSetToToday = viewModel::onEndDateSetToToday,
             isLoading = isLoading,
             refuelStatistics = refuelStatistics,
             maintenanceStatistics = maintenanceStatistics,
@@ -113,6 +114,7 @@ private fun MainContent(
     modifier: Modifier = Modifier,
     dateRangePickerState: DateRangePickerState,
     onDateSelected: () -> Unit,
+    onEndDateSetToToday: () -> Unit,
     isLoading: Boolean,
     refuelStatistics: RefuelStatistics,
     maintenanceStatistics: MaintenanceStatistics,
@@ -177,9 +179,23 @@ private fun MainContent(
                     NoStatsCard(content_paste_search, R.string.overview_noun_inspections)
             }
         } else {
+            // Only a half-picked range can be completed, so the shortcut is offered once a start
+            // date exists; with nothing picked the user first has to open the picker.
+            val setEndDateToToday: (@Composable () -> Unit)? =
+                if (dateRangePickerState.getSelectedStartDate() != null) {
+                    {
+                        FilledTonalButton(onClick = onEndDateSetToToday) {
+                            Text(stringResource(R.string.overview_set_end_date_today))
+                        }
+                    }
+                } else {
+                    null
+                }
+
             NoDataCard(
                 title = stringResource(R.string.overview_no_period_title),
-                subtitle = stringResource(R.string.overview_no_period_subtitle)
+                subtitle = stringResource(R.string.overview_no_period_subtitle),
+                action = setEndDateToToday
             )
         }
     }
@@ -281,34 +297,15 @@ fun NoStatsCard(icon: ImageVector, @StringRes typeRes: Int) {
 @Preview
 @Composable
 fun MissingEndDateCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = error,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(48.dp)
-            )
-            Text(
-                text = stringResource(R.string.overview_no_period_title),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = stringResource(R.string.overview_no_period_subtitle),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
+    NoDataCard(
+        title = stringResource(R.string.overview_no_period_title),
+        subtitle = stringResource(R.string.overview_no_period_subtitle),
+        action = {
+            FilledTonalButton(onClick = {}) {
+                Text(stringResource(R.string.overview_set_end_date_today))
+            }
         }
-    }
+    )
 }
 
 @Composable
@@ -680,11 +677,7 @@ fun StatisticsCardFrame(
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
-
-                if (leftIcon != null) {
-
-                    leftIcon()
-                }
+                leftIcon?.invoke()
             }
             content()
         }

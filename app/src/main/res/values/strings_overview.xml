@@ -11,6 +11,8 @@
     <!-- Shown while no end date has been picked -->
     <string name="overview_no_period_title">Time period not set</string>
     <string name="overview_no_period_subtitle">Select an end date to see statistics</string>
+    <!-- Button of the "period not set" card that closes the range on today -->
+    <string name="overview_set_end_date_today">Set end date to today</string>
 
     <!-- Refuel statistics card -->
     <string name="overview_refuel_stats_title">Refuel Statistics</string>

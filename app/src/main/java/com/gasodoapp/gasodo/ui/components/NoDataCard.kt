@@ -18,8 +18,18 @@ import androidx.compose.ui.unit.dp
 import com.gasodoapp.gasodo.ui.icons.error
 
 
+/**
+ * Card shown when there is nothing to render for the current state.
+ *
+ * @param action optional slot rendered below the texts, used by callers that can offer the user a
+ * way out of the empty state (for example a button that completes a missing selection).
+ */
 @Composable
-fun NoDataCard(title: String, subtitle: String) {
+fun NoDataCard(
+    title: String,
+    subtitle: String,
+    action: (@Composable () -> Unit)? = null,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
     ) {
@@ -46,6 +56,7 @@ fun NoDataCard(title: String, subtitle: String) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )
+            action?.invoke()
         }
     }
 }

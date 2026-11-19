@@ -55,10 +55,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.gasodoapp.gasodo.R
-import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
-import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
-import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
-import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
 import com.gasodoapp.gasodo.core.enums.InspectionStatus
 import com.gasodoapp.gasodo.core.enums.units.Currency
 import com.gasodoapp.gasodo.core.enums.units.Distance
@@ -86,29 +82,9 @@ fun OverviewScreen(
     viewModel: OverviewScreenViewModel = hiltViewModel<OverviewScreenViewModel>()
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
-    val refuelData by viewModel.refuelData.collectAsState()
-
-    val totalRefuelCost by viewModel.totalRefuelCost.collectAsState()
-    val averageCost by viewModel.averagePricePerLiter.collectAsState()
-    val totalLiters by viewModel.totalLiters.collectAsState()
-    val totalMileage by viewModel.totalMileage.collectAsState()
-    val fuelConsumption by viewModel.fuelConsumption.collectAsState()
-    val fuelCost by viewModel.fuelCost.collectAsState()
-    val fuelConsumptionChart by viewModel.fuelConsumptionChart.collectAsState()
-
-    val maintenanceData by viewModel.maintenanceData.collectAsState()
-    val totalMaintenanceCost by viewModel.totalMaintenanceCost.collectAsState()
-    val maintenanceActions by viewModel.maintenanceActions.collectAsState()
-    val topMaintenanceActions by viewModel.topMaintenanceActions.collectAsState()
-
-    val inspectionData by viewModel.inspectionData.collectAsState()
-    val inspectionCount by viewModel.inspectionCount.collectAsState()
-    val passCount by viewModel.passCount.collectAsState()
-    val failCount by viewModel.failCount.collectAsState()
-    val conditionalPassCount by viewModel.conditionalPassCount.collectAsState()
-    val passPercentage by viewModel.passPercentage.collectAsState()
-    val failPercentage by viewModel.failPercentage.collectAsState()
-    val conditionalPassPercentage by viewModel.conditionalPassPercentage.collectAsState()
+    val refuelStatistics by viewModel.refuelStatistics.collectAsState()
+    val maintenanceStatistics by viewModel.maintenanceStatistics.collectAsState()
+    val inspectionStatistics by viewModel.inspectionStatistics.collectAsState()
     val units by viewModel.units.collectAsState()
 
     TopBarScaffold(
@@ -120,31 +96,14 @@ fun OverviewScreen(
         }
     ) { paddingValues ->
         MainContent(
-            Modifier.padding(paddingValues),
-            viewModel.dateRangePickerState,
-            viewModel::onDateSelected,
-            isLoading,
-            refuelData,
-            totalRefuelCost,
-            averageCost,
-            totalLiters,
-            totalMileage,
-            fuelConsumption,
-            fuelCost,
-            fuelConsumptionChart,
-            maintenanceData,
-            totalMaintenanceCost,
-            maintenanceActions,
-            topMaintenanceActions,
-            inspectionData,
-            inspectionCount,
-            passCount,
-            failCount,
-            conditionalPassCount,
-            passPercentage,
-            failPercentage,
-            conditionalPassPercentage,
-            units
+            modifier = Modifier.padding(paddingValues),
+            dateRangePickerState = viewModel.dateRangePickerState,
+            onDateSelected = viewModel::onDateSelected,
+            isLoading = isLoading,
+            refuelStatistics = refuelStatistics,
+            maintenanceStatistics = maintenanceStatistics,
+            inspectionStatistics = inspectionStatistics,
+            units = units
         )
     }
 }
@@ -155,26 +114,9 @@ private fun MainContent(
     dateRangePickerState: DateRangePickerState,
     onDateSelected: () -> Unit,
     isLoading: Boolean,
-    refuelData: List<RefuelEvent>,
-    totalRefuelCost: BigDecimal,
-    averageCost: BigDecimal?,
-    totalLiters: BigDecimal,
-    totalMileage: Long?,
-    fuelConsumption: BigDecimal?,
-    fuelCost: BigDecimal?,
-    fuelConsumptionChart: List<TimelineDataPoint>,
-    maintenanceData: List<MaintenanceEventWithServices>,
-    totalMaintenanceCost: BigDecimal,
-    maintenanceActions: List<MaintenanceServiceType>,
-    topMaintenanceActions: List<TopMaintenanceAction>,
-    inspectionData: List<InspectionEventWithParts>,
-    inspectionCount: Int,
-    passCount: Int,
-    failCount: Int,
-    conditionalPassCount: Int,
-    passPercentage: BigDecimal,
-    failPercentage: BigDecimal,
-    conditionalPassPercentage: BigDecimal,
+    refuelStatistics: RefuelStatistics,
+    maintenanceStatistics: MaintenanceStatistics,
+    inspectionStatistics: InspectionStatistics,
     units: Units = Units()
 ) {
     Column(
@@ -201,14 +143,9 @@ private fun MainContent(
             } else {
                 var showFuelChart by remember { mutableStateOf(false) }
 
-                if (refuelData.isNotEmpty())
+                if (refuelStatistics.eventCount > 0)
                     RefuelStatsCard(
-                        totalCost = totalRefuelCost,
-                        averageCost = averageCost,
-                        totalLiters = totalLiters,
-                        totalMileage = totalMileage,
-                        fuelConsumption = fuelConsumption,
-                        fuelCost = fuelCost,
+                        statistics = refuelStatistics,
                         units = units,
                         onShowFuelChart = { showFuelChart = true }
                     )
@@ -217,7 +154,7 @@ private fun MainContent(
 
                 if (showFuelChart)
                     FuelConsumptionBottomSheet(
-                        dataPoints = fuelConsumptionChart,
+                        dataPoints = refuelStatistics.fuelConsumptionChart,
                         valueUnitLabel = units.consumptionLabel,
                         // The axis spans what the user asked about, not just the plotted points, so
                         // a period with a gap in the middle reads as a gap rather than as a shortcut.
@@ -226,26 +163,16 @@ private fun MainContent(
                         onDismissRequest = { showFuelChart = false }
                     )
 
-                if (maintenanceData.isNotEmpty())
+                if (maintenanceStatistics.eventCount > 0)
                     MaintenanceStatsCard(
-                        totalCost = totalMaintenanceCost,
-                        maintenanceActions = maintenanceActions,
-                        topMaintenanceActions = topMaintenanceActions,
+                        statistics = maintenanceStatistics,
                         units = units
                     )
                 else
                     NoStatsCard(build, R.string.overview_noun_maintenances)
 
-                if (inspectionData.isNotEmpty())
-                    InspectionStatsCard(
-                        inspectionCount = inspectionCount,
-                        passCount = passCount,
-                        failCount = failCount,
-                        conditionalPassCount = conditionalPassCount,
-                        passPercentage = passPercentage,
-                        failPercentage = failPercentage,
-                        conditionalPassPercentage = conditionalPassPercentage
-                    )
+                if (inspectionStatistics.totalCount > 0)
+                    InspectionStatsCard(statistics = inspectionStatistics)
                 else
                     NoStatsCard(content_paste_search, R.string.overview_noun_inspections)
             }
@@ -386,15 +313,15 @@ fun MissingEndDateCard() {
 
 @Composable
 fun RefuelStatsCard(
-    totalCost: BigDecimal,
-    averageCost: BigDecimal?,
-    totalLiters: BigDecimal,
-    totalMileage: Long?,
-    fuelConsumption: BigDecimal?,
-    fuelCost: BigDecimal?,
+    statistics: RefuelStatistics,
     units: Units = Units(),
     onShowFuelChart: () -> Unit = {}
 ) {
+    val averageCost = statistics.averagePricePerLiter
+    val totalMileage = statistics.totalMileage
+    val fuelConsumption = statistics.fuelConsumption
+    val fuelCost = statistics.fuelCost
+
     StatisticsCardFrame(
         stringResource(R.string.overview_refuel_stats_title),
         local_gas_station,
@@ -422,7 +349,7 @@ fun RefuelStatsCard(
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        ValueText(totalCost.toDisplayString(2))
+                        ValueText(statistics.totalCost.toDisplayString(2))
                         ValueText(units.currencyLabel)
                     }
                 }
@@ -431,7 +358,7 @@ fun RefuelStatsCard(
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        ValueText(totalLiters.toDisplayString(2))
+                        ValueText(statistics.totalLiters.toDisplayString(2))
                         ValueText(units.liquidLabel)
                     }
                 }
@@ -500,9 +427,7 @@ fun RefuelStatsCard(
 
 @Composable
 fun MaintenanceStatsCard(
-    totalCost: BigDecimal,
-    maintenanceActions: List<MaintenanceServiceType>,
-    topMaintenanceActions: List<TopMaintenanceAction>,
+    statistics: MaintenanceStatistics,
     units: Units = Units()
 ) {
 
@@ -520,31 +445,31 @@ fun MaintenanceStatsCard(
             ) {
                 LabelAndValueSpacing {
                     LabelText(stringResource(R.string.overview_total_maintenance_cost))
-                    ValueText("${totalCost.toDisplayString(2)} ${units.currencyLabel}")
+                    ValueText("${statistics.totalCost.toDisplayString(2)} ${units.currencyLabel}")
                 }
 
                 LabelAndValueSpacing {
                     LabelText(stringResource(R.string.overview_maintenance_action_count))
-                    if (maintenanceActions.isNotEmpty())
+                    if (statistics.actionCount > 0)
                         ValueText(
                             pluralStringResource(
                                 R.plurals.overview_maintenance_action_count_value,
-                                maintenanceActions.size,
-                                maintenanceActions.size
+                                statistics.actionCount,
+                                statistics.actionCount
                             )
                         )
                     else
                         NoDataText()
                 }
             }
-            if (topMaintenanceActions.isNotEmpty()) {
+            if (statistics.topActions.isNotEmpty()) {
                 VerticalDivider()
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     LabelText(stringResource(R.string.overview_top_maintenance_actions))
-                    for (action in topMaintenanceActions) {
+                    for (action in statistics.topActions) {
                         ValueText(
                             stringResource(
                                 R.string.overview_top_maintenance_action_value,
@@ -560,15 +485,12 @@ fun MaintenanceStatsCard(
 }
 
 @Composable
-fun InspectionStatsCard(
-    inspectionCount: Int,
-    passCount: Int,
-    failCount: Int,
-    conditionalPassCount: Int,
-    passPercentage: BigDecimal,
-    failPercentage: BigDecimal,
-    conditionalPassPercentage: BigDecimal
-) {
+fun InspectionStatsCard(statistics: InspectionStatistics) {
+    val inspectionCount = statistics.totalCount
+    val passCount = statistics.passCount
+    val failCount = statistics.failCount
+    val conditionalPassCount = statistics.conditionalPassCount
+
     StatisticsCardFrame(
         stringResource(R.string.overview_inspection_stats_title),
         content_paste_search
@@ -601,21 +523,21 @@ fun InspectionStatsCard(
                     InspectionLegendRow(
                         label = stringResource(InspectionStatus.PASS.labelRes),
                         count = passCount,
-                        percentage = passPercentage,
+                        percentage = statistics.passPercentage,
                         color = MaterialTheme.colorScheme.primary
                     )
                 if (failCount > 0)
                     InspectionLegendRow(
                         label = stringResource(InspectionStatus.FAIL.labelRes),
                         count = failCount,
-                        percentage = failPercentage,
+                        percentage = statistics.failPercentage,
                         color = MaterialTheme.colorScheme.error
                     )
                 if (conditionalPassCount > 0)
                     InspectionLegendRow(
                         label = stringResource(InspectionStatus.CONDITIONAL_PASS.labelRes),
                         count = conditionalPassCount,
-                        percentage = conditionalPassPercentage,
+                        percentage = statistics.conditionalPassPercentage,
                         color = MaterialTheme.colorScheme.tertiary
                     )
             }
@@ -808,12 +730,15 @@ fun LabelAndValueSpacing(
 @Composable
 fun RefuelStatsCardPreview() {
     RefuelStatsCard(
-        totalCost = BigDecimal("10.00"),
-        averageCost = BigDecimal("1.23"),
-        totalLiters = BigDecimal("123.45"),
-        totalMileage = 934085L,
-        fuelConsumption = BigDecimal("5.46"),
-        fuelCost = BigDecimal("9.99")
+        statistics = RefuelStatistics(
+            eventCount = 2,
+            totalCost = BigDecimal("10.00"),
+            totalLiters = BigDecimal("123.45"),
+            averagePricePerLiter = BigDecimal("1.23"),
+            totalMileage = 934085L,
+            fuelConsumption = BigDecimal("5.46"),
+            fuelCost = BigDecimal("9.99")
+        )
     )
 }
 
@@ -821,12 +746,11 @@ fun RefuelStatsCardPreview() {
 @Composable
 fun RefuelStatsCardEmptyPreview() {
     RefuelStatsCard(
-        totalCost = BigDecimal("10.00"),
-        averageCost = null,
-        totalLiters = BigDecimal("123.45"),
-        totalMileage = null,
-        fuelConsumption = null,
-        fuelCost = null
+        statistics = RefuelStatistics(
+            eventCount = 1,
+            totalCost = BigDecimal("10.00"),
+            totalLiters = BigDecimal("123.45")
+        )
     )
 }
 
@@ -834,12 +758,15 @@ fun RefuelStatsCardEmptyPreview() {
 @Composable
 fun RefuelStatsCardImperialPreview() {
     RefuelStatsCard(
-        totalCost = BigDecimal("10.00"),
-        averageCost = BigDecimal("1.23"),
-        totalLiters = BigDecimal("123.45"),
-        totalMileage = 934085L,
-        fuelConsumption = BigDecimal("5.46"),
-        fuelCost = BigDecimal("9.99"),
+        statistics = RefuelStatistics(
+            eventCount = 2,
+            totalCost = BigDecimal("10.00"),
+            totalLiters = BigDecimal("123.45"),
+            averagePricePerLiter = BigDecimal("1.23"),
+            totalMileage = 934085L,
+            fuelConsumption = BigDecimal("5.46"),
+            fuelCost = BigDecimal("9.99")
+        ),
         units = Units(
             distance = Distance.MILE,
             liquid = Liquid.GALLON,

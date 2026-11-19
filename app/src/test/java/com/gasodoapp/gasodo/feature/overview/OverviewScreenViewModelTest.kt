@@ -148,25 +148,9 @@ class OverviewScreenViewModelTest {
 
     @Test
     fun `initial state has empty data and zero totals`() {
-        assertThat(viewModel.refuelData.value).isEmpty()
-        assertThat(viewModel.maintenanceData.value).isEmpty()
-        assertThat(viewModel.inspectionData.value).isEmpty()
-        assertThat(viewModel.totalRefuelCost.value).isEqualTo(BigDecimal.ZERO)
-        assertThat(viewModel.totalLiters.value).isEqualTo(BigDecimal.ZERO)
-        assertThat(viewModel.totalMileage.value).isNull()
-        assertThat(viewModel.fuelConsumption.value).isNull()
-        assertThat(viewModel.fuelCost.value).isNull()
-        assertThat(viewModel.averagePricePerLiter.value).isNull()
-        assertThat(viewModel.totalMaintenanceCost.value).isEqualTo(BigDecimal.ZERO)
-        assertThat(viewModel.maintenanceActions.value).isEmpty()
-        assertThat(viewModel.topMaintenanceActions.value).isEmpty()
-        assertThat(viewModel.inspectionCount.value).isEqualTo(0)
-        assertThat(viewModel.passCount.value).isEqualTo(0)
-        assertThat(viewModel.failCount.value).isEqualTo(0)
-        assertThat(viewModel.conditionalPassCount.value).isEqualTo(0)
-        assertThat(viewModel.passPercentage.value).isEqualTo(BigDecimal.ZERO)
-        assertThat(viewModel.failPercentage.value).isEqualTo(BigDecimal.ZERO)
-        assertThat(viewModel.conditionalPassPercentage.value).isEqualTo(BigDecimal.ZERO)
+        assertThat(viewModel.refuelStatistics.value).isEqualTo(RefuelStatistics())
+        assertThat(viewModel.maintenanceStatistics.value).isEqualTo(MaintenanceStatistics())
+        assertThat(viewModel.inspectionStatistics.value).isEqualTo(InspectionStatistics())
     }
 
     @Test
@@ -264,7 +248,7 @@ class OverviewScreenViewModelTest {
 
         advanceUntilIdle()
 
-        assertThat(viewModel.refuelData.value).isEqualTo(events)
+        assertThat(viewModel.refuelStatistics.value.eventCount).isEqualTo(events.size)
         assertThat(viewModel.isLoading.value).isFalse()
     }
 
@@ -277,7 +261,7 @@ class OverviewScreenViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { refuelRepository.getAllWithinTime(any(), any()) }
-        assertThat(viewModel.refuelData.value).isEmpty()
+        assertThat(viewModel.refuelStatistics.value).isEqualTo(RefuelStatistics())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -289,7 +273,7 @@ class OverviewScreenViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { refuelRepository.getAllWithinTime(any(), any()) }
-        assertThat(viewModel.refuelData.value).isEmpty()
+        assertThat(viewModel.refuelStatistics.value).isEqualTo(RefuelStatistics())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -303,7 +287,7 @@ class OverviewScreenViewModelTest {
 
         advanceUntilIdle()
 
-        assertThat(viewModel.refuelData.value).isEmpty()
+        assertThat(viewModel.refuelStatistics.value).isEqualTo(RefuelStatistics())
     }
 
     // endregion
@@ -331,8 +315,8 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateRefuelStatistics(data)
 
-        assertThat(viewModel.totalRefuelCost.value).isEqualTo(BigDecimal("44"))
-        assertThat(viewModel.totalLiters.value).isEqualTo(BigDecimal("22"))
+        assertThat(viewModel.refuelStatistics.value.totalCost).isEqualTo(BigDecimal("44"))
+        assertThat(viewModel.refuelStatistics.value.totalLiters).isEqualTo(BigDecimal("22"))
     }
 
     @Test
@@ -350,8 +334,8 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateRefuelStatistics(data)
 
-        assertThat(viewModel.totalRefuelCost.value).isEqualTo(BigDecimal("20"))
-        assertThat(viewModel.totalLiters.value).isEqualTo(BigDecimal("10"))
+        assertThat(viewModel.refuelStatistics.value.totalCost).isEqualTo(BigDecimal("20"))
+        assertThat(viewModel.refuelStatistics.value.totalLiters).isEqualTo(BigDecimal("10"))
     }
 
     @Test
@@ -376,7 +360,7 @@ class OverviewScreenViewModelTest {
         viewModel.calculateRefuelStatistics(data)
 
         // (2.00 + 3.00) / 2 = 2.50
-        assertThat(viewModel.averagePricePerLiter.value).isEqualTo(BigDecimal("2.50"))
+        assertThat(viewModel.refuelStatistics.value.averagePricePerLiter).isEqualTo(BigDecimal("2.50"))
     }
 
     @Test
@@ -388,7 +372,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateRefuelStatistics(data)
 
-        assertThat(viewModel.averagePricePerLiter.value).isNull()
+        assertThat(viewModel.refuelStatistics.value.averagePricePerLiter).isNull()
     }
 
     @Test
@@ -420,7 +404,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateRefuelStatistics(data)
 
-        assertThat(viewModel.totalMileage.value).isEqualTo(200L)
+        assertThat(viewModel.refuelStatistics.value.totalMileage).isEqualTo(200L)
     }
 
     @Test
@@ -431,9 +415,9 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateRefuelStatistics(data)
 
-        assertThat(viewModel.totalMileage.value).isNull()
-        assertThat(viewModel.fuelConsumption.value).isNull()
-        assertThat(viewModel.fuelCost.value).isNull()
+        assertThat(viewModel.refuelStatistics.value.totalMileage).isNull()
+        assertThat(viewModel.refuelStatistics.value.fuelConsumption).isNull()
+        assertThat(viewModel.refuelStatistics.value.fuelCost).isNull()
     }
 
     @Test
@@ -466,7 +450,7 @@ class OverviewScreenViewModelTest {
 
         // Liters after the first full fill = 10 + 10 = 20, mileage = 200
         // 20 / 200 * 100 = 10.00
-        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("10.00"))
+        assertThat(viewModel.refuelStatistics.value.fuelConsumption).isEqualTo(BigDecimal("10.00"))
     }
 
     @Test
@@ -499,7 +483,7 @@ class OverviewScreenViewModelTest {
 
         // Cost after the first full fill = 20 + 20 = 40, mileage = 200
         // 40 / 200 * 100 = 20.00
-        assertThat(viewModel.fuelCost.value).isEqualTo(BigDecimal("20.00"))
+        assertThat(viewModel.refuelStatistics.value.fuelCost).isEqualTo(BigDecimal("20.00"))
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -535,9 +519,9 @@ class OverviewScreenViewModelTest {
         viewModel.calculateRefuelStatistics(data)
 
         // 20 liquid over 100 distance units = 5.00 distance units per liquid unit
-        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("5.00"))
+        assertThat(viewModel.refuelStatistics.value.fuelConsumption).isEqualTo(BigDecimal("5.00"))
         // Fuel cost keeps its per hundred distance units meaning, it does not follow the toggle
-        assertThat(viewModel.fuelCost.value).isEqualTo(BigDecimal("40.00"))
+        assertThat(viewModel.refuelStatistics.value.fuelCost).isEqualTo(BigDecimal("40.00"))
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -566,8 +550,8 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateRefuelStatistics(data)
 
-        assertThat(viewModel.fuelConsumption.value).isNull()
-        assertThat(viewModel.fuelCost.value).isEqualTo(BigDecimal("40.00"))
+        assertThat(viewModel.refuelStatistics.value.fuelConsumption).isNull()
+        assertThat(viewModel.refuelStatistics.value.fuelCost).isEqualTo(BigDecimal("40.00"))
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -604,13 +588,13 @@ class OverviewScreenViewModelTest {
         advanceUntilIdle()
 
         // 20 / 100 * 100 = 20.00 liquid per hundred distance units
-        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("20.00"))
+        assertThat(viewModel.refuelStatistics.value.fuelConsumption).isEqualTo(BigDecimal("20.00"))
 
         unitsFlow.value = Units(fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID)
         advanceUntilIdle()
 
         // The same stretch read the other way round: 100 / 20 = 5.00
-        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("5.00"))
+        assertThat(viewModel.refuelStatistics.value.fuelConsumption).isEqualTo(BigDecimal("5.00"))
         // The stored events did not change, so the repository must not have been queried again.
         coVerify(exactly = 2) { refuelRepository.getAllWithinTime(any(), any()) }
     }
@@ -638,8 +622,8 @@ class OverviewScreenViewModelTest {
         viewModel.calculateRefuelStatistics(data)
 
         // Every amount is present, so the consumption is still measurable
-        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("10.00"))
-        assertThat(viewModel.fuelCost.value).isNull()
+        assertThat(viewModel.refuelStatistics.value.fuelConsumption).isEqualTo(BigDecimal("10.00"))
+        assertThat(viewModel.refuelStatistics.value.fuelCost).isNull()
     }
 
     /**
@@ -667,9 +651,9 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateRefuelStatistics(data)
 
-        assertThat(viewModel.totalMileage.value).isEqualTo(0L)
-        assertThat(viewModel.fuelConsumption.value).isNull()
-        assertThat(viewModel.fuelCost.value).isNull()
+        assertThat(viewModel.refuelStatistics.value.totalMileage).isEqualTo(0L)
+        assertThat(viewModel.refuelStatistics.value.fuelConsumption).isNull()
+        assertThat(viewModel.refuelStatistics.value.fuelCost).isNull()
     }
 
     /**
@@ -702,11 +686,11 @@ class OverviewScreenViewModelTest {
         viewModel.calculateRefuelStatistics(data)
 
         // Only the 1000 -> 1200 window is measured: 20 liquid and 40 cost over 200 distance units
-        assertThat(viewModel.fuelConsumption.value).isEqualTo(BigDecimal("10.00"))
-        assertThat(viewModel.fuelCost.value).isEqualTo(BigDecimal("20.00"))
+        assertThat(viewModel.refuelStatistics.value.fuelConsumption).isEqualTo(BigDecimal("10.00"))
+        assertThat(viewModel.refuelStatistics.value.fuelCost).isEqualTo(BigDecimal("20.00"))
         // The totals still cover every event of the period
-        assertThat(viewModel.totalLiters.value).isEqualTo(BigDecimal("180"))
-        assertThat(viewModel.totalMileage.value).isEqualTo(500L)
+        assertThat(viewModel.refuelStatistics.value.totalLiters).isEqualTo(BigDecimal("180"))
+        assertThat(viewModel.refuelStatistics.value.totalMileage).isEqualTo(500L)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -736,19 +720,19 @@ class OverviewScreenViewModelTest {
         unitsFlow.value = Units(fuelConsumption = FuelConsumption.DISTANCE_PER_LIQUID)
         advanceUntilIdle()
 
-        assertThat(viewModel.totalRefuelCost.value).isEqualTo(BigDecimal("40"))
-        assertThat(viewModel.totalLiters.value).isEqualTo(BigDecimal("20"))
-        assertThat(viewModel.totalMileage.value).isEqualTo(100L)
-        assertThat(viewModel.averagePricePerLiter.value).isEqualTo(BigDecimal("2.00"))
+        assertThat(viewModel.refuelStatistics.value.totalCost).isEqualTo(BigDecimal("40"))
+        assertThat(viewModel.refuelStatistics.value.totalLiters).isEqualTo(BigDecimal("20"))
+        assertThat(viewModel.refuelStatistics.value.totalMileage).isEqualTo(100L)
+        assertThat(viewModel.refuelStatistics.value.averagePricePerLiter).isEqualTo(BigDecimal("2.00"))
     }
 
     @Test
     fun `calculateRefuelStatistics does nothing for empty data`() {
         viewModel.calculateRefuelStatistics(emptyList())
 
-        assertThat(viewModel.totalRefuelCost.value).isEqualTo(BigDecimal.ZERO)
-        assertThat(viewModel.totalLiters.value).isEqualTo(BigDecimal.ZERO)
-        assertThat(viewModel.averagePricePerLiter.value).isNull()
+        assertThat(viewModel.refuelStatistics.value.totalCost).isEqualTo(BigDecimal.ZERO)
+        assertThat(viewModel.refuelStatistics.value.totalLiters).isEqualTo(BigDecimal.ZERO)
+        assertThat(viewModel.refuelStatistics.value.averagePricePerLiter).isNull()
     }
 
     // endregion
@@ -791,7 +775,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateDetailedFuelConsumptionChart(data)
 
-        val points = viewModel.fuelConsumptionChart.value
+        val points = viewModel.refuelStatistics.value.fuelConsumptionChart
 
         // Three full fill-ups delimit two intervals, not three: the last one only closes
         assertThat(points).hasSize(2)
@@ -835,7 +819,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateDetailedFuelConsumptionChart(data)
 
-        val points = viewModel.fuelConsumptionChart.value
+        val points = viewModel.refuelStatistics.value.fuelConsumptionChart
 
         assertThat(points).hasSize(1)
         assertThat(points.single().time).isEqualTo(closing)
@@ -879,7 +863,7 @@ class OverviewScreenViewModelTest {
 
         // The repository hands the events over by descending mileage, the chart must still be
         // readable left to right on a timeline.
-        assertThat(viewModel.fuelConsumptionChart.value.map { it.time })
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart.map { it.time })
             .containsExactly(february, march)
             .inOrder()
     }
@@ -928,7 +912,7 @@ class OverviewScreenViewModelTest {
 
         // Interval 1 closes at mileage 1100 (dated March) and interval 2 at 1200 (dated January),
         // so measuring order alone would emit March before January.
-        assertThat(viewModel.fuelConsumptionChart.value.map { it.time })
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart.map { it.time })
             .containsExactly(later, backDated)
             .inOrder()
     }
@@ -966,7 +950,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateDetailedFuelConsumptionChart(data)
 
-        val points = viewModel.fuelConsumptionChart.value
+        val points = viewModel.refuelStatistics.value.fuelConsumptionChart
 
         // The partial fill belongs to the interval it was bought in: 20 + 10 = 30 liquid over 100
         // distance units = 30.00 liquid per hundred distance units
@@ -1006,7 +990,7 @@ class OverviewScreenViewModelTest {
         viewModel.calculateDetailedFuelConsumptionChart(data)
 
         // 10 liquid over 50 distance units = 5.00 distance units per liquid unit
-        assertThat(viewModel.fuelConsumptionChart.value.single().value)
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart.single().value)
             .isEqualTo(BigDecimal("5.00"))
     }
 
@@ -1050,7 +1034,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateDetailedFuelConsumptionChart(data)
 
-        val points = viewModel.fuelConsumptionChart.value
+        val points = viewModel.refuelStatistics.value.fuelConsumptionChart
 
         // The 1000 -> 1100 interval is measurable, the 1100 -> 1200 one is not
         assertThat(points).hasSize(1)
@@ -1085,7 +1069,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateDetailedFuelConsumptionChart(data)
 
-        assertThat(viewModel.fuelConsumptionChart.value).isEmpty()
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart).isEmpty()
     }
 
     /**
@@ -1115,7 +1099,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateDetailedFuelConsumptionChart(data)
 
-        assertThat(viewModel.fuelConsumptionChart.value).isEmpty()
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart).isEmpty()
     }
 
     @Test
@@ -1151,7 +1135,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateDetailedFuelConsumptionChart(data)
 
-        val points = viewModel.fuelConsumptionChart.value
+        val points = viewModel.refuelStatistics.value.fuelConsumptionChart
 
         // 10 liquid over 100 distance units; the 999 liter event takes no part in the volume
         assertThat(points).hasSize(1)
@@ -1189,7 +1173,7 @@ class OverviewScreenViewModelTest {
         viewModel.calculateDetailedFuelConsumptionChart(data)
 
         // A single full fill-up opens an interval but nothing can close it
-        assertThat(viewModel.fuelConsumptionChart.value).isEmpty()
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart).isEmpty()
     }
 
     /**
@@ -1230,17 +1214,17 @@ class OverviewScreenViewModelTest {
         )
 
         viewModel.calculateDetailedFuelConsumptionChart(data)
-        assertThat(viewModel.fuelConsumptionChart.value).hasSize(2)
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart).hasSize(2)
 
         viewModel.calculateDetailedFuelConsumptionChart(emptyList())
-        assertThat(viewModel.fuelConsumptionChart.value).isEmpty()
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart).isEmpty()
 
         // Same for a period holding a single event, which cannot describe an interval either
         viewModel.calculateDetailedFuelConsumptionChart(data)
-        assertThat(viewModel.fuelConsumptionChart.value).hasSize(2)
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart).hasSize(2)
 
         viewModel.calculateDetailedFuelConsumptionChart(data.take(1))
-        assertThat(viewModel.fuelConsumptionChart.value).isEmpty()
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart).isEmpty()
     }
 
     @Test
@@ -1290,7 +1274,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateDetailedFuelConsumptionChart(data)
 
-        val points = viewModel.fuelConsumptionChart.value
+        val points = viewModel.refuelStatistics.value.fuelConsumptionChart
 
         // Only the 1000 -> 1200 window is measured: 20 liquid over 200 distance units
         assertThat(points).hasSize(1)
@@ -1338,7 +1322,7 @@ class OverviewScreenViewModelTest {
         advanceUntilIdle()
 
         // 10 / 50 * 100 = 20.00 liquid per hundred distance units, one point per interval
-        assertThat(viewModel.fuelConsumptionChart.value.map { it.value })
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart.map { it.value })
             .containsExactly(BigDecimal("20.00"), BigDecimal("20.00"))
             .inOrder()
 
@@ -1346,10 +1330,10 @@ class OverviewScreenViewModelTest {
         advanceUntilIdle()
 
         // The same stretches read the other way round: 50 / 10 = 5.00, on the same dates
-        assertThat(viewModel.fuelConsumptionChart.value.map { it.value })
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart.map { it.value })
             .containsExactly(BigDecimal("5.00"), BigDecimal("5.00"))
             .inOrder()
-        assertThat(viewModel.fuelConsumptionChart.value.map { it.time })
+        assertThat(viewModel.refuelStatistics.value.fuelConsumptionChart.map { it.time })
             .containsExactly(february, march)
             .inOrder()
         // The stored events did not change, so the repository must not have been queried again.
@@ -1371,7 +1355,7 @@ class OverviewScreenViewModelTest {
 
         advanceUntilIdle()
 
-        assertThat(viewModel.maintenanceData.value).isEqualTo(data)
+        assertThat(viewModel.maintenanceStatistics.value.eventCount).isEqualTo(data.size)
         assertThat(viewModel.isLoading.value).isFalse()
     }
 
@@ -1384,7 +1368,7 @@ class OverviewScreenViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { maintenanceRepository.getAllWithinTime(any(), any()) }
-        assertThat(viewModel.maintenanceData.value).isEmpty()
+        assertThat(viewModel.maintenanceStatistics.value).isEqualTo(MaintenanceStatistics())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -1396,7 +1380,7 @@ class OverviewScreenViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { maintenanceRepository.getAllWithinTime(any(), any()) }
-        assertThat(viewModel.maintenanceData.value).isEmpty()
+        assertThat(viewModel.maintenanceStatistics.value).isEqualTo(MaintenanceStatistics())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -1410,7 +1394,7 @@ class OverviewScreenViewModelTest {
 
         advanceUntilIdle()
 
-        assertThat(viewModel.maintenanceData.value).isEmpty()
+        assertThat(viewModel.maintenanceStatistics.value).isEqualTo(MaintenanceStatistics())
     }
 
     // endregion
@@ -1430,8 +1414,7 @@ class OverviewScreenViewModelTest {
 
         advanceUntilIdle()
 
-        assertThat(viewModel.inspectionData.value).isEqualTo(data)
-        assertThat(viewModel.inspectionCount.value).isEqualTo(2)
+        assertThat(viewModel.inspectionStatistics.value.totalCount).isEqualTo(2)
         assertThat(viewModel.isLoading.value).isFalse()
     }
 
@@ -1444,7 +1427,7 @@ class OverviewScreenViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { inspectionRepository.getAllWithinTime(any(), any()) }
-        assertThat(viewModel.inspectionData.value).isEmpty()
+        assertThat(viewModel.inspectionStatistics.value).isEqualTo(InspectionStatistics())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -1456,7 +1439,7 @@ class OverviewScreenViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { inspectionRepository.getAllWithinTime(any(), any()) }
-        assertThat(viewModel.inspectionData.value).isEmpty()
+        assertThat(viewModel.inspectionStatistics.value).isEqualTo(InspectionStatistics())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -1470,7 +1453,7 @@ class OverviewScreenViewModelTest {
 
         advanceUntilIdle()
 
-        assertThat(viewModel.inspectionData.value).isEmpty()
+        assertThat(viewModel.inspectionStatistics.value).isEqualTo(InspectionStatistics())
     }
 
     // endregion
@@ -1478,7 +1461,7 @@ class OverviewScreenViewModelTest {
     // region Maintenance statistics
 
     @Test
-    fun `calculateMaintenanceStatistics sums cost and flattens services`() {
+    fun `calculateMaintenanceStatistics sums cost and counts actions`() {
         val serviceA = MaintenanceServiceType(id = 1, serviceName = "Oil change")
         val serviceB = MaintenanceServiceType(id = 2, serviceName = "Tire rotation")
         val data = listOf(
@@ -1488,8 +1471,11 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateMaintenanceStatistics(data)
 
-        assertThat(viewModel.totalMaintenanceCost.value).isEqualTo(BigDecimal("80"))
-        assertThat(viewModel.maintenanceActions.value).containsExactly(serviceA, serviceB, serviceA)
+        val statistics = viewModel.maintenanceStatistics.value
+        assertThat(statistics.eventCount).isEqualTo(2)
+        assertThat(statistics.totalCost).isEqualTo(BigDecimal("80"))
+        // The flattened services are only counted, the card renders the number of actions
+        assertThat(statistics.actionCount).isEqualTo(3)
     }
 
     @Test
@@ -1501,7 +1487,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateMaintenanceStatistics(data)
 
-        assertThat(viewModel.totalMaintenanceCost.value).isEqualTo(BigDecimal("30"))
+        assertThat(viewModel.maintenanceStatistics.value.totalCost).isEqualTo(BigDecimal("30"))
     }
 
     @Test
@@ -1517,7 +1503,7 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateMaintenanceStatistics(data)
 
-        val top = viewModel.topMaintenanceActions.value
+        val top = viewModel.maintenanceStatistics.value.topActions
         assertThat(top).hasSize(3)
         assertThat(top[0].serviceType.serviceName).isEqualTo("Oil change")
         assertThat(top[0].count).isEqualTo(3)
@@ -1533,16 +1519,14 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateMaintenanceStatistics(data)
 
-        assertThat(viewModel.topMaintenanceActions.value).hasSize(3)
+        assertThat(viewModel.maintenanceStatistics.value.topActions).hasSize(3)
     }
 
     @Test
-    fun `calculateMaintenanceStatistics does nothing for empty data`() {
+    fun `calculateMaintenanceStatistics resets for empty data`() {
         viewModel.calculateMaintenanceStatistics(emptyList())
 
-        assertThat(viewModel.totalMaintenanceCost.value).isEqualTo(BigDecimal.ZERO)
-        assertThat(viewModel.maintenanceActions.value).isEmpty()
-        assertThat(viewModel.topMaintenanceActions.value).isEmpty()
+        assertThat(viewModel.maintenanceStatistics.value).isEqualTo(MaintenanceStatistics())
     }
 
     // endregion
@@ -1560,10 +1544,10 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateInspectionStatistics(data)
 
-        assertThat(viewModel.inspectionCount.value).isEqualTo(4)
-        assertThat(viewModel.passCount.value).isEqualTo(2)
-        assertThat(viewModel.failCount.value).isEqualTo(1)
-        assertThat(viewModel.conditionalPassCount.value).isEqualTo(1)
+        assertThat(viewModel.inspectionStatistics.value.totalCount).isEqualTo(4)
+        assertThat(viewModel.inspectionStatistics.value.passCount).isEqualTo(2)
+        assertThat(viewModel.inspectionStatistics.value.failCount).isEqualTo(1)
+        assertThat(viewModel.inspectionStatistics.value.conditionalPassCount).isEqualTo(1)
     }
 
     @Test
@@ -1578,9 +1562,11 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateInspectionStatistics(data)
 
-        assertThat(viewModel.passPercentage.value).isEqualTo(BigDecimal("50.00"))
-        assertThat(viewModel.failPercentage.value).isEqualTo(BigDecimal("25.00"))
-        assertThat(viewModel.conditionalPassPercentage.value).isEqualTo(BigDecimal("25.00"))
+        assertThat(viewModel.inspectionStatistics.value.passPercentage).isEqualTo(BigDecimal("50.00"))
+        assertThat(viewModel.inspectionStatistics.value.failPercentage).isEqualTo(BigDecimal("25.00"))
+        assertThat(viewModel.inspectionStatistics.value.conditionalPassPercentage).isEqualTo(
+            BigDecimal("25.00")
+        )
     }
 
     @Test
@@ -1593,13 +1579,15 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateInspectionStatistics(data)
 
-        assertThat(viewModel.inspectionCount.value).isEqualTo(3)
-        assertThat(viewModel.passCount.value).isEqualTo(3)
-        assertThat(viewModel.failCount.value).isEqualTo(0)
-        assertThat(viewModel.conditionalPassCount.value).isEqualTo(0)
-        assertThat(viewModel.passPercentage.value).isEqualTo(BigDecimal("100.00"))
-        assertThat(viewModel.failPercentage.value).isEqualTo(BigDecimal("0.00"))
-        assertThat(viewModel.conditionalPassPercentage.value).isEqualTo(BigDecimal("0.00"))
+        assertThat(viewModel.inspectionStatistics.value.totalCount).isEqualTo(3)
+        assertThat(viewModel.inspectionStatistics.value.passCount).isEqualTo(3)
+        assertThat(viewModel.inspectionStatistics.value.failCount).isEqualTo(0)
+        assertThat(viewModel.inspectionStatistics.value.conditionalPassCount).isEqualTo(0)
+        assertThat(viewModel.inspectionStatistics.value.passPercentage).isEqualTo(BigDecimal("100.00"))
+        assertThat(viewModel.inspectionStatistics.value.failPercentage).isEqualTo(BigDecimal("0.00"))
+        assertThat(viewModel.inspectionStatistics.value.conditionalPassPercentage).isEqualTo(
+            BigDecimal("0.00")
+        )
     }
 
     @Test
@@ -1612,23 +1600,25 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateInspectionStatistics(data)
 
-        assertThat(viewModel.inspectionCount.value).isEqualTo(3)
-        assertThat(viewModel.passCount.value).isEqualTo(1)
-        assertThat(viewModel.failCount.value).isEqualTo(1)
-        assertThat(viewModel.conditionalPassCount.value).isEqualTo(0)
+        assertThat(viewModel.inspectionStatistics.value.totalCount).isEqualTo(3)
+        assertThat(viewModel.inspectionStatistics.value.passCount).isEqualTo(1)
+        assertThat(viewModel.inspectionStatistics.value.failCount).isEqualTo(1)
+        assertThat(viewModel.inspectionStatistics.value.conditionalPassCount).isEqualTo(0)
     }
 
     @Test
     fun `calculateInspectionStatistics handles empty data`() {
         viewModel.calculateInspectionStatistics(emptyList())
 
-        assertThat(viewModel.inspectionCount.value).isEqualTo(0)
-        assertThat(viewModel.passCount.value).isEqualTo(0)
-        assertThat(viewModel.failCount.value).isEqualTo(0)
-        assertThat(viewModel.conditionalPassCount.value).isEqualTo(0)
-        assertThat(viewModel.passPercentage.value).isEqualTo(BigDecimal.ZERO)
-        assertThat(viewModel.failPercentage.value).isEqualTo(BigDecimal.ZERO)
-        assertThat(viewModel.conditionalPassPercentage.value).isEqualTo(BigDecimal.ZERO)
+        assertThat(viewModel.inspectionStatistics.value.totalCount).isEqualTo(0)
+        assertThat(viewModel.inspectionStatistics.value.passCount).isEqualTo(0)
+        assertThat(viewModel.inspectionStatistics.value.failCount).isEqualTo(0)
+        assertThat(viewModel.inspectionStatistics.value.conditionalPassCount).isEqualTo(0)
+        assertThat(viewModel.inspectionStatistics.value.passPercentage).isEqualTo(BigDecimal.ZERO)
+        assertThat(viewModel.inspectionStatistics.value.failPercentage).isEqualTo(BigDecimal.ZERO)
+        assertThat(viewModel.inspectionStatistics.value.conditionalPassPercentage).isEqualTo(
+            BigDecimal.ZERO
+        )
     }
 
     @Test
@@ -1640,13 +1630,19 @@ class OverviewScreenViewModelTest {
 
         viewModel.calculateInspectionStatistics(data)
 
-        assertThat(viewModel.inspectionCount.value).isEqualTo(2)
-        assertThat(viewModel.passCount.value).isEqualTo(0)
-        assertThat(viewModel.failCount.value).isEqualTo(0)
-        assertThat(viewModel.conditionalPassCount.value).isEqualTo(0)
-        assertThat(viewModel.passPercentage.value).isEqualToIgnoringScale(BigDecimal.ZERO)
-        assertThat(viewModel.failPercentage.value).isEqualToIgnoringScale(BigDecimal.ZERO)
-        assertThat(viewModel.conditionalPassPercentage.value).isEqualToIgnoringScale(BigDecimal.ZERO)
+        assertThat(viewModel.inspectionStatistics.value.totalCount).isEqualTo(2)
+        assertThat(viewModel.inspectionStatistics.value.passCount).isEqualTo(0)
+        assertThat(viewModel.inspectionStatistics.value.failCount).isEqualTo(0)
+        assertThat(viewModel.inspectionStatistics.value.conditionalPassCount).isEqualTo(0)
+        assertThat(viewModel.inspectionStatistics.value.passPercentage).isEqualToIgnoringScale(
+            BigDecimal.ZERO
+        )
+        assertThat(viewModel.inspectionStatistics.value.failPercentage).isEqualToIgnoringScale(
+            BigDecimal.ZERO
+        )
+        assertThat(viewModel.inspectionStatistics.value.conditionalPassPercentage).isEqualToIgnoringScale(
+            BigDecimal.ZERO
+        )
     }
 
     // endregion
@@ -1685,9 +1681,11 @@ class OverviewScreenViewModelTest {
         coVerify(exactly = 2) { refuelRepository.getAllWithinTime(any(), any()) }
         coVerify(exactly = 2) { maintenanceRepository.getAllWithinTime(any(), any()) }
         coVerify(exactly = 2) { inspectionRepository.getAllWithinTime(any(), any()) }
-        assertThat(viewModel.refuelData.value).isEqualTo(refuelEvents)
-        assertThat(viewModel.maintenanceData.value).isEqualTo(maintenanceEvents)
-        assertThat(viewModel.inspectionData.value).isEqualTo(inspectionEvents)
+        assertThat(viewModel.refuelStatistics.value.eventCount).isEqualTo(refuelEvents.size)
+        assertThat(viewModel.maintenanceStatistics.value.eventCount)
+            .isEqualTo(maintenanceEvents.size)
+        assertThat(viewModel.inspectionStatistics.value.totalCount)
+            .isEqualTo(inspectionEvents.size)
     }
 
     // endregion

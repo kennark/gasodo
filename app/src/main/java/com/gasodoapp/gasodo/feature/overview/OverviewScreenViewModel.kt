@@ -7,7 +7,6 @@ import androidx.compose.material3.getSelectedStartDate
 import androidx.compose.material3.setSelection
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gasodoapp.gasodo.core.database.entity.MaintenanceServiceType
 import com.gasodoapp.gasodo.core.database.entity.RefuelEvent
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.junctions.MaintenanceEventWithServices
@@ -32,6 +31,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -56,86 +56,34 @@ class OverviewScreenViewModel @Inject constructor(
                 initialValue = Units(),
             )
 
-    // Refuel data for the selected period
+    /**
+     * Refuels of the selected period.
+     *
+     * Kept only so the derived figures can be recomputed when the fuel consumption unit changes: the
+     * stored events do not change then, so the repository flow does not emit again. The screen reads
+     * [refuelStatistics] instead.
+     */
     private val _refuelData = MutableStateFlow<List<RefuelEvent>>(emptyList())
-    val refuelData: StateFlow<List<RefuelEvent>> = _refuelData.asStateFlow()
-
-    private val _totalRefuelCost = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
-    val totalRefuelCost: StateFlow<BigDecimal> = _totalRefuelCost.asStateFlow()
-
-    private val _totalLiters = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
-    val totalLiters: StateFlow<BigDecimal> = _totalLiters.asStateFlow()
-
-    private val _totalMileage = MutableStateFlow<Long?>(null)
-    val totalMileage = _totalMileage.asStateFlow()
 
     /**
-     * Consumption over the distance between the first and the last full fill-up, expressed in the
-     * unit picked in the settings: either liquid per hundred distance units (`L/100 km`) or
-     * distance per liquid unit (`mi/gal`). Both are computed from the same events, only the ratio
-     * is inverted, which is why a single field can serve both.
+     * Everything the refuel card shows for the selected period.
      */
-    private val _fuelConsumption = MutableStateFlow<BigDecimal?>(null)
-    val fuelConsumption = _fuelConsumption.asStateFlow()
+    private val _refuelStatistics = MutableStateFlow(RefuelStatistics())
+    val refuelStatistics: StateFlow<RefuelStatistics> = _refuelStatistics.asStateFlow()
 
     /**
-     * Cost of the fuel burnt over a hundred distance units (for example `€/100 km`).
-     *
-     * It deliberately ignores [Units.fuelConsumption]: the label rendered next to it
-     * ([Units.costPerDistanceLabel]) always reads as a cost per hundred distance units.
+     * Everything the maintenance card shows for the selected period.
      */
-    private val _fuelCost = MutableStateFlow<BigDecimal?>(null)
-    val fuelCost = _fuelCost.asStateFlow()
+    private val _maintenanceStatistics = MutableStateFlow(MaintenanceStatistics())
+    val maintenanceStatistics: StateFlow<MaintenanceStatistics> =
+        _maintenanceStatistics.asStateFlow()
 
     /**
-     * Consumption of every interval between two full fill-ups, one point per interval.
-     *
-     * Points are ordered by ascending date and each one is dated to the closing fill-up of its
-     * interval, so the chart can place them on a real timeline instead of spacing them evenly.
-     * Empty when no interval can be measured.
+     * Everything the inspection card shows for the selected period.
      */
-    private val _fuelConsumptionChart = MutableStateFlow<List<TimelineDataPoint>>(emptyList())
-    val fuelConsumptionChart = _fuelConsumptionChart.asStateFlow()
-
-    private val _averagePricePerLiter = MutableStateFlow<BigDecimal?>(null)
-    val averagePricePerLiter = _averagePricePerLiter.asStateFlow()
-
-    private val _maintenanceData = MutableStateFlow<List<MaintenanceEventWithServices>>(emptyList())
-    val maintenanceData = _maintenanceData.asStateFlow()
-
-    private val _totalMaintenanceCost = MutableStateFlow<BigDecimal>(BigDecimal.ZERO)
-    val totalMaintenanceCost = _totalMaintenanceCost.asStateFlow()
-
-    private val _maintenanceActions = MutableStateFlow<List<MaintenanceServiceType>>(emptyList())
-    val maintenanceActions = _maintenanceActions.asStateFlow()
-
-    private val _topMaintenanceActions = MutableStateFlow<List<TopMaintenanceAction>>(emptyList())
-    val topMaintenanceActions = _topMaintenanceActions.asStateFlow()
-
-    private val _inspectionData = MutableStateFlow<List<InspectionEventWithParts>>(emptyList())
-    val inspectionData = _inspectionData.asStateFlow()
-
-    private val _inspectionCount = MutableStateFlow(0)
-    val inspectionCount = _inspectionCount.asStateFlow()
-
-    private val _passCount = MutableStateFlow(0)
-    val passCount = _passCount.asStateFlow()
-
-    private val _failCount = MutableStateFlow(0)
-    val failCount = _failCount.asStateFlow()
-
-    private val _conditionalPassCount = MutableStateFlow(0)
-    val conditionalPassCount = _conditionalPassCount.asStateFlow()
-
-    private val _passPercentage = MutableStateFlow(BigDecimal.ZERO)
-    val passPercentage = _passPercentage.asStateFlow()
-
-    private val _failPercentage = MutableStateFlow(BigDecimal.ZERO)
-    val failPercentage = _failPercentage.asStateFlow()
-
-    private val _conditionalPassPercentage = MutableStateFlow(BigDecimal.ZERO)
-    val conditionalPassPercentage = _conditionalPassPercentage.asStateFlow()
-
+    private val _inspectionStatistics = MutableStateFlow(InspectionStatistics())
+    val inspectionStatistics: StateFlow<InspectionStatistics> =
+        _inspectionStatistics.asStateFlow()
 
     // Loading state
     private val _isLoading = MutableStateFlow(true)
@@ -227,10 +175,11 @@ class OverviewScreenViewModel @Inject constructor(
                 refuelRepository.getAllWithinTime(start, end)
                     .catch { _ ->
                         _refuelData.value = emptyList()
+                        recalculateRefuelFigures(emptyList())
                     }
                     .collect { data ->
                         _refuelData.value = data
-                        recalculateRefuelFigures(_refuelData.value)
+                        recalculateRefuelFigures(data)
                         _isLoading.value = false
                     }
             }
@@ -251,39 +200,65 @@ class OverviewScreenViewModel @Inject constructor(
 
     internal fun calculateRefuelStatistics(data: List<RefuelEvent>) {
         if (data.isEmpty()) {
+            updateRefuelStatistics(RefuelStatistics())
             return
         }
 
-        _totalRefuelCost.value = data.sumOf { it.totalCost ?: BigDecimal.ZERO }
-        _totalLiters.value = data.sumOf { it.amountLiters ?: BigDecimal.ZERO }
-        _averagePricePerLiter.value = calculateAveragePricePerLiter(data)
+        val totals = RefuelStatistics(
+            eventCount = data.size,
+            totalCost = data.sumOf { event -> event.totalCost ?: BigDecimal.ZERO },
+            totalLiters = data.sumOf { event -> event.amountLiters ?: BigDecimal.ZERO },
+            averagePricePerLiter = calculateAveragePricePerLiter(data),
+            // A single event covers no distance, even when it carries a mileage.
+            totalMileage = calculateTotalMileage(data).takeIf { data.size > 1 },
+        )
 
-        if (data.size <= 1) {
-            return
+        updateRefuelStatistics(withConsumptionFigures(totals, data))
+    }
+
+    /**
+     * Replaces the card figures while carrying the chart over.
+     *
+     * The chart is produced by [calculateDetailedFuelConsumptionChart] from the same events, so
+     * recomputing the figures must not drop it. Both are always triggered together because they
+     * depend on the same [Units.fuelConsumption].
+     */
+    private fun updateRefuelStatistics(statistics: RefuelStatistics) {
+        _refuelStatistics.update { current ->
+            statistics.copy(fuelConsumptionChart = current.fuelConsumptionChart)
         }
+    }
 
-        _totalMileage.value = calculateTotalMileage(data)
-
+    /**
+     * Fills the consumption figures of [statistics] in, leaving them unset when the events do not
+     * delimit a measurable interval.
+     */
+    private fun withConsumptionFigures(
+        statistics: RefuelStatistics,
+        data: List<RefuelEvent>,
+    ): RefuelStatistics {
         val eventsBetweenFullFills = eventsBetweenFullFills(data)
         if (eventsBetweenFullFills.size <= 1) {
-            return
+            return statistics
         }
 
         val fullFillMileage =
             eventsBetweenFullFills.last().base.mileage!! - eventsBetweenFullFills.first().base.mileage!!
 
         // A zero distance between the two full fill-ups (two entries on the same mileage) would
-        // make the divisions below blow up, so both figures are left as they are.
+        // make the divisions below blow up, so both figures are left unset.
         if (fullFillMileage <= 0) {
-            return
+            return statistics
         }
 
-        _fuelConsumption.value = calculateFuelConsumption(
-            eventsBetweenFullFills,
-            fullFillMileage,
-            units.value.fuelConsumption
+        return statistics.copy(
+            fuelConsumption = calculateFuelConsumption(
+                eventsBetweenFullFills,
+                fullFillMileage,
+                units.value.fuelConsumption
+            ),
+            fuelCost = calculateFuelCost(eventsBetweenFullFills, fullFillMileage),
         )
-        _fuelCost.value = calculateFuelCost(eventsBetweenFullFills, fullFillMileage)
     }
 
     /**
@@ -432,11 +407,10 @@ class OverviewScreenViewModel @Inject constructor(
                 _isLoading.value = true
                 maintenanceRepository.getAllWithinTime(start, end)
                     .catch { _ ->
-                        _maintenanceData.value = emptyList()
+                        calculateMaintenanceStatistics(emptyList())
                     }
                     .collect { data ->
-                        _maintenanceData.value = data
-                        calculateMaintenanceStatistics(_maintenanceData.value)
+                        calculateMaintenanceStatistics(data)
                         _isLoading.value = false
                     }
             }
@@ -444,16 +418,18 @@ class OverviewScreenViewModel @Inject constructor(
     }
 
     internal fun calculateMaintenanceStatistics(data: List<MaintenanceEventWithServices>) {
-        if (data.isNotEmpty()) {
-            _totalMaintenanceCost.value = data.sumOf { it.event.totalCost ?: BigDecimal.ZERO }
-            _maintenanceActions.value = data.flatMap { it.services }
+        val actions = data.flatMap { event -> event.services }
 
-            _topMaintenanceActions.value = _maintenanceActions.value
-                .groupBy { it.serviceName }
+        _maintenanceStatistics.value = MaintenanceStatistics(
+            eventCount = data.size,
+            totalCost = data.sumOf { event -> event.event.totalCost ?: BigDecimal.ZERO },
+            actionCount = actions.size,
+            topActions = actions
+                .groupBy { service -> service.serviceName }
                 .map { (_, services) -> TopMaintenanceAction(services.first(), services.size) }
-                .sortedByDescending { it.count }
-                .take(3)
-        }
+                .sortedByDescending { action -> action.count }
+                .take(3),
+        )
     }
 
     internal fun loadInspectionData(start: LocalDate?, end: LocalDate?) {
@@ -462,11 +438,10 @@ class OverviewScreenViewModel @Inject constructor(
                 _isLoading.value = true
                 inspectionRepository.getAllWithinTime(start, end)
                     .catch { _ ->
-                        _inspectionData.value = emptyList()
+                        calculateInspectionStatistics(emptyList())
                     }
                     .collect { data ->
-                        _inspectionData.value = data
-                        calculateInspectionStatistics(_inspectionData.value)
+                        calculateInspectionStatistics(data)
                         _isLoading.value = false
                     }
             }
@@ -476,15 +451,8 @@ class OverviewScreenViewModel @Inject constructor(
     internal fun calculateInspectionStatistics(data: List<InspectionEventWithParts>) {
         val totalCount = data.size
 
-        _inspectionCount.value = totalCount
-
         if (totalCount == 0) {
-            _passCount.value = 0
-            _failCount.value = 0
-            _conditionalPassCount.value = 0
-            _passPercentage.value = BigDecimal.ZERO
-            _failPercentage.value = BigDecimal.ZERO
-            _conditionalPassPercentage.value = BigDecimal.ZERO
+            _inspectionStatistics.value = InspectionStatistics()
             return
         }
 
@@ -493,13 +461,15 @@ class OverviewScreenViewModel @Inject constructor(
         val conditionalPassCount =
             data.count { it.event.status == InspectionStatus.CONDITIONAL_PASS }
 
-        _passCount.value = passCount
-        _failCount.value = failCount
-        _conditionalPassCount.value = conditionalPassCount
-
-        _passPercentage.value = percentage(passCount, totalCount)
-        _failPercentage.value = percentage(failCount, totalCount)
-        _conditionalPassPercentage.value = percentage(conditionalPassCount, totalCount)
+        _inspectionStatistics.value = InspectionStatistics(
+            totalCount = totalCount,
+            passCount = passCount,
+            failCount = failCount,
+            conditionalPassCount = conditionalPassCount,
+            passPercentage = percentage(passCount, totalCount),
+            failPercentage = percentage(failCount, totalCount),
+            conditionalPassPercentage = percentage(conditionalPassCount, totalCount),
+        )
     }
 
     private fun percentage(count: Int, total: Int): BigDecimal =
@@ -520,12 +490,21 @@ class OverviewScreenViewModel @Inject constructor(
      * list is ordered by ascending date so the renderer can join consecutive points.
      */
     internal fun calculateDetailedFuelConsumptionChart(data: List<RefuelEvent>) {
-        // Clear first so a period that no longer yields points does not keep showing the previous
-        // ones, which would silently mislabel old data as belonging to the new range.
-        _fuelConsumptionChart.value = emptyList()
+        _refuelStatistics.update { current ->
+            current.copy(fuelConsumptionChart = buildDataPoints(data))
+        }
+    }
 
+    /**
+     * The points of the consumption chart for [data], ordered by ascending date.
+     *
+     * Empty when no interval can be measured, so a period that yields nothing drops the previous
+     * series instead of keeping it: rendering old data as if it belonged to the new range is worse
+     * than rendering no curve at all.
+     */
+    private fun buildDataPoints(data: List<RefuelEvent>): List<TimelineDataPoint> {
         if (data.size < 2) {
-            return
+            return emptyList()
         }
 
         // An event without a mileage cannot be placed between two fill-ups, so it takes no part in
@@ -563,7 +542,7 @@ class OverviewScreenViewModel @Inject constructor(
         // the renderer draws them on a timeline and joins them in list order. The two orders only
         // coincide when the driver logs entries as they go, so sort by date to keep a late or
         // back-dated entry from bending the curve backwards on itself.
-        _fuelConsumptionChart.value = points.sortedBy { point -> point.time }
+        return points.sortedBy { point -> point.time }
     }
 
     /**

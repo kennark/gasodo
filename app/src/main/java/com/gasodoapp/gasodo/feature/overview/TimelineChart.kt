@@ -1,19 +1,26 @@
 package com.gasodoapp.gasodo.feature.overview
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -38,43 +45,104 @@ import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 
 /**
- * Bottom sheet presenting the fuel consumption trend for the selected period.
+ * Bottom sheet presenting the trend of the series selected among [series].
  *
  * The sheet always opens, so a user who taps the chart button is never left wondering whether the
- * tap registered: when the period holds fewer than two consumption values there is nothing to plot,
- * and an explanation of what to log replaces the curve.
+ * tap registered: when the selected series holds fewer than two values there is nothing to plot,
+ * and an explanation of what to log replaces the curve. Only the selected series is drawn, never
+ * several at once.
  *
- * @param dataPoints consumption values sorted by ascending [TimelineDataPoint.time].
- * @param valueUnitLabel unit suffix the values are expressed in, for example `L/100 km`.
+ * @param title heading of the sheet.
+ * @param series selectable series, the first one being the default selection.
  * @param domainStart first date of the selected period, or `null` when no period is selected.
  * @param domainEnd last date of the selected period, or `null` when no period is selected.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FuelConsumptionBottomSheet(
-    dataPoints: List<TimelineDataPoint>,
-    valueUnitLabel: String,
+fun TimelineChartBottomSheet(
+    title: String,
+    series: List<TimelineChartSeries>,
     domainStart: LocalDate?,
     domainEnd: LocalDate?,
     onDismissRequest: () -> Unit,
 ) {
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    // Surviving the configuration change keeps the metric the user picked selected on rotation.
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
     ) {
+        TimelineChartSheetBody(
+            title = title,
+            series = series,
+            selectedIndex = selectedIndex,
+            onSelectIndex = { index -> selectedIndex = index },
+            domainStart = domainStart,
+            domainEnd = domainEnd,
+        )
+    }
+}
+
+/**
+ * Content of [TimelineChartBottomSheet], split out so it can be previewed and composed without a
+ * sheet hosting it.
+ *
+ * @param series selectable series. An index outside [series] falls back to the first one, so a
+ * caller can never select a series that does not exist.
+ */
+@Composable
+fun TimelineChartSheetBody(
+    title: String,
+    series: List<TimelineChartSeries>,
+    selectedIndex: Int,
+    onSelectIndex: (Int) -> Unit,
+    domainStart: LocalDate?,
+    domainEnd: LocalDate?,
+    modifier: Modifier = Modifier,
+) {
+    if (series.isEmpty()) {
+        return
+    }
+
+    val selected = series[selectedIndex.coerceIn(series.indices)]
+
+    Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = stringResource(R.string.overview_fuel_consumption_chart_title),
+            text = title,
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
         )
+        // The extra line names what is currently plotted together with its unit, so the curve is
+        // never left unexplained now that the sheet hosts several metrics.
         Text(
-            text = valueUnitLabel,
+            text = stringResource(
+                R.string.overview_chart_selection_description,
+                selected.description,
+                selected.unitLabel,
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 24.dp),
         )
+
+        // Wraps rather than ellipsizing: a long translated label pushes the row to a second line
+        // instead of hiding a metric behind a truncation.
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            series.forEachIndexed { index, item ->
+                FilterChip(
+                    selected = item === selected,
+                    onClick = { onSelectIndex(index) },
+                    label = { Text(item.label) },
+                )
+            }
+        }
 
         Column(
             modifier = Modifier
@@ -82,15 +150,21 @@ fun FuelConsumptionBottomSheet(
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 8.dp),
         ) {
-            if (dataPoints.size < 2) {
+            if (selected.dataPoints.size < 2) {
                 NoDataCard(
                     title = stringResource(R.string.overview_chart_no_data_title),
-                    subtitle = stringResource(R.string.overview_chart_no_data_subtitle),
+                    subtitle = selected.emptyStateSubtitle,
                 )
             } else {
-                FuelConsumptionLineChart(
-                    dataPoints = dataPoints,
-                    valueUnitLabel = valueUnitLabel,
+                TimelineChart(
+                    dataPoints = selected.dataPoints,
+                    valueUnitLabel = selected.unitLabel,
+                    valueDecimals = selected.valueDecimals,
+                    contentDescription = stringResource(
+                        R.string.overview_chart_content_description,
+                        selected.description,
+                        selected.dataPoints.size,
+                    ),
                     domainStart = domainStart,
                     domainEnd = domainEnd,
                 )
@@ -100,7 +174,7 @@ fun FuelConsumptionBottomSheet(
 }
 
 /**
- * Hand drawn consumption curve: straight segments through the fill-ups, area fill underneath, and a
+ * Hand drawn timeline curve: straight segments through the points, area fill underneath, and a
  * dated x axis.
  *
  * Drawn on a [Canvas] instead of pulling in a charting library because the whole chart is a handful
@@ -110,18 +184,22 @@ fun FuelConsumptionBottomSheet(
  * Renders nothing when fewer than two points are supplied, since a single point describes no trend;
  * callers that need to explain the absence to the user should show their own empty state instead.
  *
- * @param dataPoints consumption values sorted by ascending [TimelineDataPoint.time].
+ * @param dataPoints values sorted by ascending [TimelineDataPoint.time].
  * @param valueUnitLabel unit suffix the values are expressed in, captioned above the plot.
+ * @param contentDescription accessibility summary of the series, since a canvas exposes no text.
  * @param domainStart first date of the selected period, or `null` to use the earliest data point.
  * @param domainEnd last date of the selected period, or `null` to use the latest data point.
+ * @param valueDecimals decimals the axis labels are rendered with.
  */
 @Composable
-fun FuelConsumptionLineChart(
+fun TimelineChart(
     dataPoints: List<TimelineDataPoint>,
     valueUnitLabel: String,
+    contentDescription: String,
     domainStart: LocalDate?,
     domainEnd: LocalDate?,
     modifier: Modifier = Modifier,
+    valueDecimals: Int = 2,
 ) {
     if (dataPoints.size < 2) {
         return
@@ -152,9 +230,6 @@ fun FuelConsumptionLineChart(
     )
     val textMeasurer = rememberTextMeasurer()
 
-    val chartDescription =
-        stringResource(R.string.overview_chart_content_description, dataPoints.size)
-
     val leftGutter = 40.dp
     val bottomGutter = 20.dp
     val topInset = 18.dp
@@ -169,7 +244,7 @@ fun FuelConsumptionLineChart(
             .fillMaxWidth()
             .height(220.dp)
             // A Canvas exposes no text to accessibility services, so the series is summarised here.
-            .semantics { contentDescription = chartDescription },
+            .semantics { this.contentDescription = contentDescription },
     ) {
         val plotLeft = leftGutter.toPx()
         val plotRight = (size.width - rightInset.toPx()).coerceAtLeast(plotLeft)
@@ -195,7 +270,8 @@ fun FuelConsumptionLineChart(
 
             val gridValue =
                 bounds.min.add(valueSpan.multiply(BigDecimal.valueOf(fraction.toDouble())))
-            val labelLayout = textMeasurer.measure(gridValue.toDisplayString(2), labelStyle)
+            val labelLayout =
+                textMeasurer.measure(gridValue.toDisplayString(valueDecimals), labelStyle)
             drawText(
                 textLayoutResult = labelLayout,
                 topLeft = Offset(
@@ -305,8 +381,8 @@ private fun clampLabelX(x: Float, width: Int, canvasWidth: Float): Float =
 
 @Preview(showBackground = true)
 @Composable
-fun FuelConsumptionLineChartPreview() {
-    FuelConsumptionLineChart(
+fun TimelineChartPreview() {
+    TimelineChart(
         dataPoints = listOf(
             TimelineDataPoint(LocalDate.of(2025, 1, 4), BigDecimal("7.42")),
             TimelineDataPoint(LocalDate.of(2025, 1, 19), BigDecimal("6.98")),
@@ -316,6 +392,7 @@ fun FuelConsumptionLineChartPreview() {
             TimelineDataPoint(LocalDate.of(2025, 5, 2), BigDecimal("6.31")),
         ),
         valueUnitLabel = "L/100 km",
+        contentDescription = "Fuel consumption trend chart with 6 data points",
         domainStart = LocalDate.of(2025, 1, 1),
         domainEnd = LocalDate.of(2025, 5, 31),
     )
@@ -323,8 +400,8 @@ fun FuelConsumptionLineChartPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun FuelConsumptionLineChartFlatPreview() {
-    FuelConsumptionLineChart(
+fun TimelineChartFlatPreview() {
+    TimelineChart(
         dataPoints = listOf(
             TimelineDataPoint(LocalDate.of(2025, 2, 3), BigDecimal("6.50")),
             TimelineDataPoint(LocalDate.of(2025, 2, 21), BigDecimal("6.50")),
@@ -332,6 +409,7 @@ fun FuelConsumptionLineChartFlatPreview() {
             TimelineDataPoint(LocalDate.of(2025, 4, 8), BigDecimal("6.50")),
         ),
         valueUnitLabel = "L/100 km",
+        contentDescription = "Fuel consumption trend chart with 4 data points",
         domainStart = LocalDate.of(2025, 2, 1),
         domainEnd = LocalDate.of(2025, 4, 30),
     )
@@ -339,14 +417,115 @@ fun FuelConsumptionLineChartFlatPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun FuelConsumptionLineChartTwoPointsPreview() {
-    FuelConsumptionLineChart(
+fun TimelineChartTwoPointsPreview() {
+    TimelineChart(
         dataPoints = listOf(
             TimelineDataPoint(LocalDate.of(2025, 1, 12), BigDecimal("8.10")),
             TimelineDataPoint(LocalDate.of(2025, 3, 30), BigDecimal("7.05")),
         ),
         valueUnitLabel = "L/100 km",
+        contentDescription = "Fuel consumption trend chart with 2 data points",
         domainStart = LocalDate.of(2025, 1, 1),
         domainEnd = LocalDate.of(2025, 3, 31),
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TimelineChartPriceDecimalsPreview() {
+    TimelineChart(
+        dataPoints = listOf(
+            TimelineDataPoint(LocalDate.of(2025, 1, 12), BigDecimal("1.239")),
+            TimelineDataPoint(LocalDate.of(2025, 2, 8), BigDecimal("1.512")),
+            TimelineDataPoint(LocalDate.of(2025, 3, 30), BigDecimal("1.401")),
+        ),
+        valueUnitLabel = "€/L",
+        contentDescription = "Fuel price trend chart with 3 data points",
+        domainStart = LocalDate.of(2025, 1, 1),
+        domainEnd = LocalDate.of(2025, 3, 31),
+        valueDecimals = 3,
+    )
+}
+
+private val previewSeries = listOf(
+    TimelineChartSeries(
+        label = "Consumption",
+        description = "Fuel consumption",
+        unitLabel = "L/100 km",
+        dataPoints = listOf(
+            TimelineDataPoint(LocalDate.of(2025, 1, 4), BigDecimal("7.42")),
+            TimelineDataPoint(LocalDate.of(2025, 2, 2), BigDecimal("7.15")),
+            TimelineDataPoint(LocalDate.of(2025, 3, 15), BigDecimal("6.62")),
+            TimelineDataPoint(LocalDate.of(2025, 5, 2), BigDecimal("6.31")),
+        ),
+        valueDecimals = 2,
+        emptyStateSubtitle = "Log at least three full fill-ups in this period",
+    ),
+    TimelineChartSeries(
+        label = "Cost",
+        description = "Fuel cost",
+        unitLabel = "€/100 km",
+        dataPoints = listOf(
+            TimelineDataPoint(LocalDate.of(2025, 1, 4), BigDecimal("8.90")),
+            TimelineDataPoint(LocalDate.of(2025, 2, 2), BigDecimal("9.40")),
+            TimelineDataPoint(LocalDate.of(2025, 3, 15), BigDecimal("8.10")),
+            TimelineDataPoint(LocalDate.of(2025, 5, 2), BigDecimal("7.65")),
+        ),
+        valueDecimals = 2,
+        emptyStateSubtitle = "Log at least three full fill-ups in this period",
+    ),
+    TimelineChartSeries(
+        label = "Price",
+        description = "Fuel price",
+        unitLabel = "€/L",
+        dataPoints = listOf(
+            TimelineDataPoint(LocalDate.of(2025, 1, 4), BigDecimal("1.239")),
+            TimelineDataPoint(LocalDate.of(2025, 2, 2), BigDecimal("1.512")),
+            TimelineDataPoint(LocalDate.of(2025, 3, 15), BigDecimal("1.401")),
+            TimelineDataPoint(LocalDate.of(2025, 5, 2), BigDecimal("1.355")),
+        ),
+        valueDecimals = 3,
+        emptyStateSubtitle = "Log at least two refuels with a price in this period",
+    ),
+)
+
+@Preview(showBackground = true)
+@Composable
+fun TimelineChartSheetBodyPreview() {
+    TimelineChartSheetBody(
+        title = "Fuel Trends",
+        series = previewSeries,
+        selectedIndex = 0,
+        onSelectIndex = {},
+        domainStart = LocalDate.of(2025, 1, 1),
+        domainEnd = LocalDate.of(2025, 5, 31),
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TimelineChartSheetBodyPricePreview() {
+    TimelineChartSheetBody(
+        title = "Fuel Trends",
+        series = previewSeries,
+        selectedIndex = 2,
+        onSelectIndex = {},
+        domainStart = LocalDate.of(2025, 1, 1),
+        domainEnd = LocalDate.of(2025, 5, 31),
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TimelineChartSheetBodyEmptyPreview() {
+    TimelineChartSheetBody(
+        title = "Fuel Trends",
+        series = previewSeries.map { series ->
+            series.copy(dataPoints = emptyList())
+        },
+        selectedIndex = 1,
+        onSelectIndex = {},
+        domainStart = LocalDate.of(2025, 1, 1),
+        domainEnd = LocalDate.of(2025, 5, 31),
     )
 }

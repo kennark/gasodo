@@ -1,5 +1,9 @@
 package com.gasodoapp.gasodo.feature.overview
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.gasodoapp.gasodo.R
+import com.gasodoapp.gasodo.core.settings.Units
 import java.math.BigDecimal
 
 /**
@@ -37,4 +41,53 @@ data class RefuelStatistics(
     val fuelConsumptionChart: List<TimelineDataPoint> = emptyList(),
     val fuelCostChart: List<TimelineDataPoint> = emptyList(),
     val fuelPriceChart: List<TimelineDataPoint> = emptyList()
+)
+
+
+/**
+ * The refuel figures as selectable chart series, in the order the selector presents them:
+ * consumption, then cost, then price.
+ *
+ * Kept next to the screen rather than inside the chart component so the renderer stays free of any
+ * knowledge about fuel: it only sees labels and numbers. The wording is resolved here because the
+ * labels are translated and the unit labels come from the user's settings.
+ *
+ * A series is returned even when it has too few points to be plotted, so the selector always offers
+ * the full set of metrics; the sheet turns the empty ones into its explanation card.
+ *
+ * @param units user preferences the unit labels are read from.
+ */
+@Composable
+fun RefuelStatistics.toChartSeries(units: Units): List<TimelineChartSeries> = listOf(
+    TimelineChartSeries(
+        label = stringResource(R.string.overview_chart_type_consumption),
+        description = stringResource(R.string.overview_chart_consumption_description),
+        unitLabel = units.consumptionLabel,
+        dataPoints = fuelConsumptionChart,
+        valueDecimals = 2,
+        emptyStateSubtitle = stringResource(R.string.overview_chart_no_data_subtitle),
+    ),
+    TimelineChartSeries(
+        label = stringResource(R.string.overview_chart_type_cost),
+        description = stringResource(R.string.overview_chart_cost_description),
+        // The cost is always a cost per hundred distance units, whatever ratio the consumption
+        // is shown as, so the label ignores Units.fuelConsumption for the same reason the card
+        // figure does.
+        unitLabel = units.costPerDistanceLabel,
+        dataPoints = fuelCostChart,
+        valueDecimals = 2,
+        emptyStateSubtitle = stringResource(R.string.overview_chart_no_data_subtitle),
+    ),
+    TimelineChartSeries(
+        label = stringResource(R.string.overview_chart_type_price),
+        description = stringResource(R.string.overview_chart_price_description),
+        unitLabel = units.pricePerLiquidLabel,
+        dataPoints = fuelPriceChart,
+        // A price is stored with its third decimal, and the view model deliberately keeps it: only
+        // the renderer decides how much of it to show, and rounding here would throw it away.
+        valueDecimals = 3,
+        // A price needs no full fill-up, only a logged price, so the advice differs from the other
+        // two series.
+        emptyStateSubtitle = stringResource(R.string.overview_chart_price_no_data_subtitle),
+    ),
 )

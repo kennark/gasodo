@@ -143,26 +143,26 @@ private fun MainContent(
                     modifier = Modifier.size(48.dp), color = MaterialTheme.colorScheme.primary
                 )
             } else {
-                var showFuelChart by remember { mutableStateOf(false) }
+                var showFuelChartSheet by remember { mutableStateOf(false) }
 
                 if (refuelStatistics.eventCount > 0)
                     RefuelStatsCard(
                         statistics = refuelStatistics,
                         units = units,
-                        onShowFuelChart = { showFuelChart = true }
+                        onShowFuelChart = { showFuelChartSheet = true }
                     )
                 else
                     NoStatsCard(local_gas_station, R.string.overview_noun_refuels)
 
-                if (showFuelChart)
-                    FuelConsumptionBottomSheet(
-                        dataPoints = refuelStatistics.fuelConsumptionChart,
-                        valueUnitLabel = units.consumptionLabel,
+                if (showFuelChartSheet)
+                    TimelineChartBottomSheet(
+                        title = stringResource(R.string.overview_fuel_chart_title),
+                        series = refuelStatistics.toChartSeries(units),
                         // The axis spans what the user asked about, not just the plotted points, so
                         // a period with a gap in the middle reads as a gap rather than as a shortcut.
                         domainStart = dateRangePickerState.getSelectedStartDate(),
                         domainEnd = dateRangePickerState.getSelectedEndDate(),
-                        onDismissRequest = { showFuelChart = false }
+                        onDismissRequest = { showFuelChartSheet = false }
                     )
 
                 if (maintenanceStatistics.eventCount > 0)
@@ -328,7 +328,7 @@ fun RefuelStatsCard(
             ) {
                 Icon(
                     imageVector = timeline,
-                    contentDescription = stringResource(R.string.overview_show_fuel_consumption_chart)
+                    contentDescription = stringResource(R.string.overview_show_fuel_chart)
                 )
             }
         }

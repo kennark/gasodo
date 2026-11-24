@@ -23,14 +23,28 @@
     <string name="overview_average_fuel_consumption">Average Fuel Consumption</string>
     <string name="overview_average_fuel_cost">Average Fuel Cost</string>
 
-    <!-- Fuel consumption trend chart, shown in a bottom sheet -->
-    <string name="overview_fuel_consumption_chart_title">Fuel Consumption Trend</string>
+    <!-- Fuel trend chart, shown in a bottom sheet with a metric selector -->
+    <string name="overview_fuel_chart_title">Refuel Trends</string>
     <!-- Content description of the icon button that opens the chart -->
-    <string name="overview_show_fuel_consumption_chart">Show fuel consumption chart</string>
+    <string name="overview_show_fuel_chart">Show fuel chart</string>
+
+    <!-- Metric selector of the chart, one series is plotted at a time -->
+    <string name="overview_chart_type_consumption">Consumption</string>
+    <string name="overview_chart_type_cost">Cost</string>
+    <string name="overview_chart_type_price">Price</string>
+
+    <!-- Line under the chart title naming what is plotted, %1$s is the metric name and
+         %2$s the unit its values are expressed in -->
+    <string name="overview_chart_selection_description">%1$s trend • %2$s</string>
+    <string name="overview_chart_consumption_description">Fuel consumption</string>
+    <string name="overview_chart_cost_description">Fuel cost</string>
+    <string name="overview_chart_price_description">Fuel price</string>
+
     <string name="overview_chart_no_data_title">Not enough data for a chart</string>
     <string name="overview_chart_no_data_subtitle">Log at least three full fill-ups in this period</string>
-    <!-- Accessibility summary of the chart, %1$d is the number of plotted points -->
-    <string name="overview_chart_content_description">Fuel consumption trend chart with %1$d data points</string>
+    <string name="overview_chart_price_no_data_subtitle">Log at least two refuels with a price in this period</string>
+    <!-- Accessibility summary of the chart, %1$s is the metric name and %2$d the point count -->
+    <string name="overview_chart_content_description">%1$s trend chart with %2$d data points</string>
 
     <!-- Maintenance statistics card -->
     <string name="overview_maintenance_stats_title">Maintenance Statistics</string>

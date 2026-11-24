@@ -203,13 +203,15 @@ class OverviewScreenViewModel @Inject constructor(
     /**
      * Recomputes every refuel derived value from [data].
      *
-     * Both the card statistics and the chart depend on [Units.fuelConsumption], so the two are
-     * always refreshed together to keep the chart from drifting out of sync with the figures
-     * rendered next to its button.
+     * The card figures and the three charts all describe the same events, and the consumption ones
+     * also depend on [Units.fuelConsumption], so they are always refreshed together to keep a chart
+     * from drifting out of sync with the figure rendered next to its button.
      */
     private fun recalculateRefuelFigures(data: List<RefuelEvent>) {
         calculateRefuelStatistics(data)
         calculateDetailedFuelConsumptionChart(data)
+        calculateDetailedFuelCostChart(data)
+        calculateDetailedFuelPriceChart(data)
     }
 
     internal fun calculateRefuelStatistics(data: List<RefuelEvent>) {
@@ -231,15 +233,20 @@ class OverviewScreenViewModel @Inject constructor(
     }
 
     /**
-     * Replaces the card figures while carrying the chart over.
+     * Replaces the card figures while carrying the charts over.
      *
-     * The chart is produced by [calculateDetailedFuelConsumptionChart] from the same events, so
-     * recomputing the figures must not drop it. Both are always triggered together because they
-     * depend on the same [Units.fuelConsumption].
+     * The charts are produced by [calculateDetailedFuelConsumptionChart],
+     * [calculateDetailedFuelCostChart] and [calculateDetailedFuelPriceChart] from the same events, so
+     * recomputing the figures must not drop them. They are always triggered together because they
+     * describe the same period.
      */
     private fun updateRefuelStatistics(statistics: RefuelStatistics) {
         _refuelStatistics.update { current ->
-            statistics.copy(fuelConsumptionChart = current.fuelConsumptionChart)
+            statistics.copy(
+                fuelConsumptionChart = current.fuelConsumptionChart,
+                fuelCostChart = current.fuelCostChart,
+                fuelPriceChart = current.fuelPriceChart,
+            )
         }
     }
 
@@ -276,13 +283,13 @@ class OverviewScreenViewModel @Inject constructor(
     }
 
     /**
-     * Mean price paid per liquid unit, over the events that actually carry a price.
+     * Mean price paid per liquid unit over [events], weighting every purchase equally.
      *
-     * Returns `null` when no event has a price, so the UI can render its "no data" state instead
-     * of a meaningless zero.
+     * Returns `null` when none of [events] carries a price, so the UI can render its "no data" state
+     * instead of a meaningless zero.
      */
-    private fun calculateAveragePricePerLiter(data: List<RefuelEvent>): BigDecimal? {
-        val pricedEvents = data.filter { event -> event.pricePerLiter != null }
+    private fun calculateAveragePricePerLiter(events: List<RefuelEvent>): BigDecimal? {
+        val pricedEvents = events.filter { event -> event.pricePerLiter != null }
         if (pricedEvents.isEmpty()) {
             return null
         }
@@ -501,38 +508,137 @@ class OverviewScreenViewModel @Inject constructor(
      * anything real, so no point is emitted and the chart simply joins the surviving ones.
      *
      * Each point is dated to the closing fill-up, the moment its consumption is realised, and the
-     * list is ordered by ascending date so the renderer can join consecutive points.
+     * list follows the interval order so the renderer can join consecutive points.
      */
     internal fun calculateDetailedFuelConsumptionChart(data: List<RefuelEvent>) {
         _refuelStatistics.update { current ->
-            current.copy(fuelConsumptionChart = buildDataPoints(data))
+            current.copy(
+                fuelConsumptionChart = intervals(data).mapNotNull(::createDataPoint)
+            )
         }
     }
 
     /**
-     * The points of the consumption chart for [data], ordered by ascending date.
+     * Turns one interval into a plottable point, or `null` when the interval cannot be measured.
      *
-     * Empty when no interval can be measured, so a period that yields nothing drops the previous
-     * series instead of keeping it: rendering old data as if it belonged to the new range is worse
-     * than rendering no curve at all.
+     * [interval] spans from the opening full fill-up to the closing one, both included, and is
+     * already ordered by ascending mileage.
      */
-    private fun buildDataPoints(data: List<RefuelEvent>): List<TimelineDataPoint> {
+    private fun createDataPoint(interval: List<RefuelEvent>): TimelineDataPoint? {
+        val distance = measurableDistance(interval) ?: return null
+        val date = interval.last().base.date ?: return null
+
+        val volume = refuelledVolume(interval) ?: return null
+
+        val value = units.value.fuelConsumption
+            .convertConsumption(volume, BigDecimal(distance))
+
+        return TimelineDataPoint(time = date, value = value)
+    }
+
+    /**
+     * Builds one [TimelineDataPoint] per interval between two consecutive full fill-ups, holding the
+     * average fuel cost of that interval.
+     *
+     * These are the same intervals as [calculateDetailedFuelConsumptionChart]'s, so the two charts
+     * always plot the very same fill-ups on the same dates. The cost is the one the card shows as
+     * [RefuelStatistics.fuelCost] (a cost per hundred distance units), measured over one interval
+     * instead of the whole period. It does not follow [Units.fuelConsumption] either, for the same
+     * reason: its label is [Units.costPerDistanceLabel], which always reads as a cost per distance.
+     */
+    internal fun calculateDetailedFuelCostChart(data: List<RefuelEvent>) {
+        _refuelStatistics.update { current ->
+            current.copy(
+                fuelCostChart = intervals(data).mapNotNull(::createFuelCostPoint)
+            )
+        }
+    }
+
+    /**
+     * Turns one interval into a plottable fuel cost point, or `null` when the interval cannot be
+     * measured.
+     *
+     * [interval] spans from the opening full fill-up to the closing one, both included, and is
+     * already ordered by ascending mileage.
+     */
+    private fun createFuelCostPoint(interval: List<RefuelEvent>): TimelineDataPoint? {
+        val distance = measurableDistance(interval) ?: return null
+        val date = interval.last().base.date ?: return null
+
+        // The opening fill-up only starts the measurement, so only the refuels after it contribute
+        // their cost. A purchase inside the interval that stored none would silently drag the
+        // figure down, so the whole interval is dropped rather than reported as cheaper than it was.
+        val refills = interval.drop(1)
+        if (refills.any { event -> event.totalCost == null }) {
+            return null
+        }
+
+        val cost = refills
+            .sumOf { event -> event.totalCost!! }
+            .divide(BigDecimal(distance), BigDecimalUtils.CONTEXT)
+            .multiply(BigDecimal(100))
+            .setScale(2, BigDecimalUtils.ROUNDING_MODE)
+
+        return TimelineDataPoint(time = date, value = cost)
+    }
+
+    /**
+     * Builds one [TimelineDataPoint] per refuel holding a price, dated to that refuel.
+     *
+     * This series answers a different question than the consumption and cost ones: a price is paid
+     * per purchase and needs nothing but the purchase itself, so it is neither measured between two
+     * fill-ups nor restricted to full ones. Every refuel carrying a price is plotted, which is what
+     * makes a partial fill-up informative here, and the series tracks the price the driver paid at
+     * the pump rather than any consumption figure.
+     *
+     * Refuels without a price, or without a date to place them on the timeline, are skipped. The
+     * DAO returns them newest first, so the price the driver paid at the pump is plotted in the
+     * reverse order, oldest first, which is the direction the other two charts are drawn in too.
+     */
+    internal fun calculateDetailedFuelPriceChart(data: List<RefuelEvent>) {
+        _refuelStatistics.update { current ->
+            current.copy(fuelPriceChart = data.asReversed().mapNotNull(::createFuelPricePoint))
+        }
+    }
+
+    /**
+     * Turns one refuel into a plottable price point, or `null` when it cannot be plotted.
+     */
+    private fun createFuelPricePoint(event: RefuelEvent): TimelineDataPoint? {
+        val date = event.base.date ?: return null
+        val pricePerLiter = event.pricePerLiter ?: return null
+
+        return TimelineDataPoint(time = date, value = pricePerLiter)
+    }
+
+    /**
+     * Every interval of [data] that two consecutive full fill-ups delimit, in ascending mileage
+     * order.
+     *
+     * An interval opens at a full fill-up and closes at the next one. Returning the windows rather
+     * than the points lets the cost and consumption charts measure the very same fill-ups and share
+     * the walk over the events. Whether an interval is measurable is left to the point builders, and
+     * callers sort the resulting points by date: the intervals are measured in mileage order because
+     * that is what the ratios are built from, but a late or back-dated entry would bend a curve
+     * drawn in that order backwards on itself.
+     */
+    private fun intervals(data: List<RefuelEvent>): List<List<RefuelEvent>> {
         if (data.size < 2) {
             return emptyList()
         }
 
         // An event without a mileage cannot be placed between two fill-ups, so it takes no part in
-        // the intervals. The repository returns the events by descending mileage, so re-sort.
+        // the intervals. The DAO already returns them by descending mileage, so flipping the
+        // direction is enough to walk them in the ascending order the ratios are measured in.
         val events = data
             .filter { event -> event.base.mileage != null }
-            .sortedBy { event -> event.base.mileage }
+            .asReversed()
 
-        val points = mutableListOf<TimelineDataPoint>()
+        val intervals = mutableListOf<List<RefuelEvent>>()
         var index = 0
 
         while (index < events.size) {
-            val start = events[index]
-            if (!start.canAnchorInterval()) {
+            if (!events[index].canAnchorInterval()) {
                 index++
                 continue
             }
@@ -546,52 +652,43 @@ class OverviewScreenViewModel @Inject constructor(
                 break
             }
 
-            createDataPoint(events.subList(index, endIndex + 1))?.let(points::add)
+            intervals.add(events.subList(index, endIndex + 1))
 
             // Continue from the closing fill-up, which is the opening one of the next interval.
             index = endIndex
         }
 
-        // Intervals are measured in mileage order because that is what the ratio is built from, but
-        // the renderer draws them on a timeline and joins them in list order. The two orders only
-        // coincide when the driver logs entries as they go, so sort by date to keep a late or
-        // back-dated entry from bending the curve backwards on itself.
-        return points.sortedBy { point -> point.time }
+        return intervals
     }
 
     /**
-     * Turns one interval into a plottable point, or `null` when the interval cannot be measured.
+     * Distance covered by [interval], or `null` when it describes no measurable stretch.
      *
-     * [interval] spans from the opening full fill-up to the closing one, both included, and is
-     * already ordered by ascending mileage.
+     * [interval] is already ordered by ascending mileage and opens at a full fill-up, so both ends
+     * carry a mileage. Two fill-ups logged at the same mileage make any ratio built from them either
+     * infinite or meaningless, so they are rejected here rather than by each caller.
      */
-    private fun createDataPoint(interval: List<RefuelEvent>): TimelineDataPoint? {
+    private fun measurableDistance(interval: List<RefuelEvent>): Long? {
         val start = interval.first()
         val end = interval.last()
+        val distance = end.base.mileage!! - start.base.mileage!!
 
-        // Every event in the window contributes its volume, so a single missing amount makes the
-        // whole figure unreliable.
+        return distance.takeIf { value -> value > 0 }
+    }
+
+    /**
+     * Liquid refuelled over [interval], or `null` when any event of it is missing an amount.
+     *
+     * The opening full fill-up only serves as the starting point of the measurement, so only the
+     * liquid bought after it is summed: the tank was already full when the interval began.
+     */
+    private fun refuelledVolume(interval: List<RefuelEvent>): BigDecimal? {
         if (interval.any { event -> event.amountLiters == null }) {
             return null
         }
 
-        val distance = end.base.mileage!! - start.base.mileage!!
-
-        // Two fill-ups logged at the same mileage describe no driven distance, which would make
-        // the ratio either infinite or meaningless.
-        if (distance <= 0) {
-            return null
-        }
-
-        val date = end.base.date ?: return null
-
-        val volume = interval
+        return interval
             .drop(1)
             .sumOf { event -> event.amountLiters!! }
-
-        val value = units.value.fuelConsumption
-            .convertConsumption(volume, BigDecimal(distance))
-
-        return TimelineDataPoint(time = date, value = value)
     }
 }

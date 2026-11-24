@@ -35,4 +35,6 @@ data class RefuelStatistics(
     val fuelConsumption: BigDecimal? = null,
     val fuelCost: BigDecimal? = null,
     val fuelConsumptionChart: List<TimelineDataPoint> = emptyList(),
+    val fuelCostChart: List<TimelineDataPoint> = emptyList(),
+    val fuelPriceChart: List<TimelineDataPoint> = emptyList()
 )

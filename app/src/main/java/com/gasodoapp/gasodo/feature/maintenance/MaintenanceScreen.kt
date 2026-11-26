@@ -284,18 +284,14 @@ fun MaintenanceEventRow(
                     )
 
                     if (eventWithServices.event.base.mileage != null) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = eventWithServices.event.base.mileage.toDisplayString(),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = units.distanceLabel,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                        Text(
+                            text = stringResource(
+                                R.string.common_value_with_unit,
+                                eventWithServices.event.base.mileage.toDisplayString(),
+                                units.distanceLabel
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     } else {
                         // Spacer for displaying same size cards
                         Spacer(Modifier.height(MaterialTheme.typography.bodyMedium.lineHeight.value.dp))
@@ -305,24 +301,17 @@ fun MaintenanceEventRow(
                     MediumLabelText(stringResource(R.string.common_cost))
 
                     val total = eventWithServices.event.totalCost ?: BigDecimal.ZERO
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = total.toDisplayString(2),
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = units.currencyLabel,
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    Text(
+                        text = stringResource(
+                            R.string.common_value_with_unit,
+                            total.toDisplayString(2),
+                            units.currencyLabel
+                        ),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
             Row(

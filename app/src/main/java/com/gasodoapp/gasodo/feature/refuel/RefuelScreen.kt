@@ -285,81 +285,58 @@ fun RefuelEventRow(
                     )
 
                     if (refuelEvent.base.mileage != null) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = refuelEvent.base.mileage.toDisplayString(),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = units.distanceLabel,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                        Text(
+                            text = stringResource(
+                                R.string.common_value_with_unit,
+                                refuelEvent.base.mileage.toDisplayString(),
+                                units.distanceLabel
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
                 Column(Modifier.weight(0.7f)) {
                     MediumLabelText(stringResource(R.string.common_amount))
                     val amount = refuelEvent.amountLiters ?: BigDecimal.ZERO
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = amount.toDisplayString(2),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = units.liquidLabel,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    Text(
+                        text = stringResource(
+                            R.string.common_value_with_unit,
+                            amount.toDisplayString(2),
+                            units.liquidLabel
+                        ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
 
                 Column(Modifier.weight(0.5f)) {
                     MediumLabelText(stringResource(R.string.common_cost))
 
                     val total = refuelEvent.totalCost ?: BigDecimal.ZERO
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = total.toDisplayString(2),
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = units.currencyLabel,
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    Text(
+                        text = stringResource(
+                            R.string.common_value_with_unit,
+                            total.toDisplayString(2),
+                            units.currencyLabel
+                        ),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.primary
+                    )
 
                     val price = refuelEvent.pricePerLiter ?: BigDecimal.ZERO
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = price.toDisplayString(3),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = units.pricePerLiquidLabel,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = stringResource(
+                            R.string.common_value_with_unit,
+                            price.toDisplayString(3),
+                            units.pricePerLiquidLabel
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 

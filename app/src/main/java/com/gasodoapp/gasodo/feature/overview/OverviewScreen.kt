@@ -343,31 +343,34 @@ fun RefuelStatsCard(
             ) {
                 LabelAndValueSpacing {
                     LabelText(stringResource(R.string.overview_total_refuel_cost))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        ValueText(statistics.totalCost.toDisplayString(2))
-                        ValueText(units.currencyLabel)
-                    }
+                    ValueText(
+                        stringResource(
+                            R.string.common_value_with_unit,
+                            statistics.totalCost.toDisplayString(2),
+                            units.currencyLabel
+                        )
+                    )
                 }
                 LabelAndValueSpacing {
                     LabelText(stringResource(R.string.overview_total_refuelled))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        ValueText(statistics.totalLiters.toDisplayString(2))
-                        ValueText(units.liquidLabel)
-                    }
+                    ValueText(
+                        stringResource(
+                            R.string.common_value_with_unit,
+                            statistics.totalLiters.toDisplayString(2),
+                            units.liquidLabel
+                        )
+                    )
                 }
                 LabelAndValueSpacing {
                     LabelText(stringResource(R.string.overview_average_fuel_price))
                     if (averageCost != null) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            ValueText(averageCost.toDisplayString(2))
-                            ValueText(units.pricePerLiquidLabel)
-                        }
+                        ValueText(
+                            stringResource(
+                                R.string.common_value_with_unit,
+                                averageCost.toDisplayString(2),
+                                units.pricePerLiquidLabel
+                            )
+                        )
                     } else {
                         NoDataText()
                     }
@@ -381,12 +384,13 @@ fun RefuelStatsCard(
                 LabelAndValueSpacing {
                     LabelText(stringResource(R.string.overview_total_distance_travelled))
                     if (totalMileage != null) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            ValueText(totalMileage.toDisplayString())
-                            ValueText(units.distanceLabel)
-                        }
+                        ValueText(
+                            stringResource(
+                                R.string.common_value_with_unit,
+                                totalMileage.toDisplayString(),
+                                units.distanceLabel
+                            )
+                        )
                     } else {
                         NoDataText()
                     }
@@ -395,12 +399,13 @@ fun RefuelStatsCard(
                 LabelAndValueSpacing {
                     LabelText(stringResource(R.string.overview_average_fuel_consumption))
                     if (fuelConsumption != null) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            ValueText(fuelConsumption.toDisplayString(2))
-                            ValueText(units.consumptionLabel)
-                        }
+                        ValueText(
+                            stringResource(
+                                R.string.common_value_with_unit,
+                                fuelConsumption.toDisplayString(2),
+                                units.consumptionLabel
+                            )
+                        )
                     } else {
                         NoDataText()
                     }
@@ -408,10 +413,13 @@ fun RefuelStatsCard(
                 LabelAndValueSpacing {
                     LabelText(stringResource(R.string.overview_average_fuel_cost))
                     if (fuelCost != null) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            ValueText(fuelCost.toDisplayString(2))
-                            ValueText(units.costPerDistanceLabel)
-                        }
+                        ValueText(
+                            stringResource(
+                                R.string.common_value_with_unit,
+                                fuelCost.toDisplayString(2),
+                                units.costPerDistanceLabel
+                            )
+                        )
                     } else {
                         NoDataText()
                     }
@@ -442,7 +450,13 @@ fun MaintenanceStatsCard(
             ) {
                 LabelAndValueSpacing {
                     LabelText(stringResource(R.string.overview_total_maintenance_cost))
-                    ValueText("${statistics.totalCost.toDisplayString(2)} ${units.currencyLabel}")
+                    ValueText(
+                        stringResource(
+                            R.string.common_value_with_unit,
+                            statistics.totalCost.toDisplayString(2),
+                            units.currencyLabel
+                        )
+                    )
                 }
 
                 LabelAndValueSpacing {

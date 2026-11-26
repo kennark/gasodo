@@ -281,18 +281,14 @@ fun InspectionEventCard(
                     )
 
                     if (eventWithParts.event.base.mileage != null) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = eventWithParts.event.base.mileage.toDisplayString(),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = units.distanceLabel,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                        Text(
+                            text = stringResource(
+                                R.string.common_value_with_unit,
+                                eventWithParts.event.base.mileage.toDisplayString(),
+                                units.distanceLabel
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     } else {
                         // Spacer for displaying same size cards
                         Spacer(Modifier.height(MaterialTheme.typography.bodyMedium.lineHeight.value.dp))

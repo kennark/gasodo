@@ -45,6 +45,10 @@
     <string name="common_no_location_set">No location set</string>
     <string name="common_no_notes">No notes</string>
 
+    <!-- Joins a rendered number and the unit it is expressed in, for example "12.50 €".
+         The space is non-breaking so a unit never wraps away from its value. -->
+    <string name="common_value_with_unit">%1$s\u00A0%2$s</string>
+
     <!-- Delete confirmation dialog -->
     <string name="delete_dialog_title">Delete this event?</string>
     <string name="delete_dialog_message">Deleted items can not be recovered.</string>

@@ -288,7 +288,7 @@ fun MaintenanceEventRow(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = eventWithServices.event.base.mileage.toString(),
+                                text = eventWithServices.event.base.mileage.toDisplayString(),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(

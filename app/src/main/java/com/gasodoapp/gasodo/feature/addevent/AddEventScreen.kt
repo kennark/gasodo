@@ -543,7 +543,7 @@ fun RefuelForm(
                     value = amountState.text.toString().toBigDecimalOrNull()?.multiply(
                         pricePerLiterState.text.toString().toBigDecimalOrNull() ?: BigDecimal.ZERO
                     )?.toDisplayString(2)
-                        ?: "0.00",
+                        ?: BigDecimal.ZERO.toDisplayString(2),
                     onValueChange = {},
                     label = { Text(stringResource(R.string.add_event_total_cost)) },
                     readOnly = true,
@@ -577,7 +577,7 @@ fun RefuelForm(
                         amountState.text.toString().toBigDecimalOrNull() ?: BigDecimal.ONE,
                         BigDecimalUtils.SCALE, BigDecimalUtils.ROUNDING_MODE
                     )?.toDisplayString(3)
-                        ?: "0.000",
+                        ?: BigDecimal.ZERO.toDisplayString(3),
                     onValueChange = {},
                     label = {
                         Text(

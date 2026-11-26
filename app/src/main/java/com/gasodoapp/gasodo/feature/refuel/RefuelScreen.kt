@@ -289,7 +289,7 @@ fun RefuelEventRow(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = refuelEvent.base.mileage.toString(),
+                                text = refuelEvent.base.mileage.toDisplayString(),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(

@@ -59,6 +59,7 @@ import com.gasodoapp.gasodo.core.database.entity.InspectablePart
 import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.settings.Units
+import com.gasodoapp.gasodo.core.utils.toDisplayString
 import com.gasodoapp.gasodo.feature.navigation.AppOverflowMenu
 import com.gasodoapp.gasodo.feature.navigation.Destinations
 import com.gasodoapp.gasodo.ui.components.DeleteDialog
@@ -284,7 +285,7 @@ fun InspectionEventCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = eventWithParts.event.base.mileage.toString(),
+                                text = eventWithParts.event.base.mileage.toDisplayString(),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(

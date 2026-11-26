@@ -270,8 +270,12 @@ fun TimelineChart(
 
             val gridValue =
                 bounds.min.add(valueSpan.multiply(BigDecimal.valueOf(fraction.toDouble())))
-            val labelLayout =
-                textMeasurer.measure(gridValue.toDisplayString(valueDecimals), labelStyle)
+            // The gutter is a fixed width, so the axis labels skip digit grouping: a separator
+            // would push a four digit value past it and clip the label.
+            val labelLayout = textMeasurer.measure(
+                text = gridValue.toDisplayString(valueDecimals, groupingUsed = false),
+                style = labelStyle,
+            )
             drawText(
                 textLayoutResult = labelLayout,
                 topLeft = Offset(

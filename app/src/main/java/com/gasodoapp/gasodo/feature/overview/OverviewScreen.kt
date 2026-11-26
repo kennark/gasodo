@@ -384,7 +384,7 @@ fun RefuelStatsCard(
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            ValueText(totalMileage.toString())
+                            ValueText(totalMileage.toDisplayString())
                             ValueText(units.distanceLabel)
                         }
                     } else {

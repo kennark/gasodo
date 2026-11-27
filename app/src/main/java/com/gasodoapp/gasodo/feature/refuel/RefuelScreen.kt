@@ -86,15 +86,20 @@ fun RefuelScreen(
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
     val units by viewModel.units.collectAsStateWithLifecycle()
     val selection by viewModel.selection.collectAsStateWithLifecycle()
+    val expandedIds by viewModel.expandedIds.collectAsStateWithLifecycle()
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     // Back leaves selection mode instead of the screen, matching the clear button.
     BackHandler(enabled = selection.active) { viewModel.onClearSelection() }
 
-    // Leaving the screen always drops the selection, so coming back starts from a clean list.
+    // Leaving the screen always drops the selection and closes every card, so coming back starts
+    // from a clean, fully collapsed list.
     DisposableEffect(Unit) {
-        onDispose { viewModel.onClearSelection() }
+        onDispose {
+            viewModel.onClearSelection()
+            viewModel.onCollapseAll()
+        }
     }
 
     TopBarScaffold(
@@ -155,7 +160,9 @@ fun RefuelScreen(
             units = units,
             selection = selection,
             onEventTap = viewModel::onEventTap,
-            onEventLongPress = viewModel::onEventLongPress
+            onEventLongPress = viewModel::onEventLongPress,
+            expandedIds = expandedIds,
+            onToggleExpanded = viewModel::onToggleExpanded
         )
     }
 
@@ -183,6 +190,8 @@ private fun MainContent(
     selection: RefuelSelection = RefuelSelection(),
     onEventTap: (UUID) -> Unit = {},
     onEventLongPress: (UUID) -> Unit = {},
+    expandedIds: Set<UUID> = emptySet(),
+    onToggleExpanded: (UUID) -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier
@@ -206,7 +215,9 @@ private fun MainContent(
                     isSelected = refuel.id in selection.ids,
                     selectionMode = selection.active,
                     onClick = { onEventTap(refuel.id) },
-                    onLongClick = { onEventLongPress(refuel.id) }
+                    onLongClick = { onEventLongPress(refuel.id) },
+                    isExpanded = refuel.id in expandedIds,
+                    onToggleExpand = { onToggleExpanded(refuel.id) }
                 )
             } else {
                 // Show placeholder for empty slots while paging
@@ -236,9 +247,10 @@ fun RefuelEventRow(
     isSelected: Boolean = false,
     selectionMode: Boolean = false,
     onClick: () -> Unit = {},
-    onLongClick: () -> Unit = {}
+    onLongClick: () -> Unit = {},
+    isExpanded: Boolean = false,
+    onToggleExpand: () -> Unit = {},
 ) {
-    val isExpanded = remember { mutableStateOf(false) }
     val hapticFeedback = LocalHapticFeedback.current
 
     Card(
@@ -249,7 +261,7 @@ fun RefuelEventRow(
                 onClick = {
                     // In selection mode a tap toggles the selection; outside of it the whole
                     // card mimics the expand button.
-                    if (selectionMode) onClick() else isExpanded.value = !isExpanded.value
+                    if (selectionMode) onClick() else onToggleExpand()
                 },
                 onLongClick = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -372,25 +384,25 @@ fun RefuelEventRow(
                     }
                 }
                 val rotation by animateFloatAsState(
-                    targetValue = if (isExpanded.value) 180f else 0f,
+                    targetValue = if (isExpanded) 180f else 0f,
                     animationSpec = tween(durationMillis = 250)
                 )
                 // Expand button for showing additional fuel consumption info
                 FilledTonalIconButton(
-                    onClick = { isExpanded.value = !isExpanded.value },
+                    onClick = onToggleExpand,
                     modifier = Modifier.rotate(rotation)
                 ) {
                     Icon(
                         imageVector = expand_circle_down,
                         contentDescription = stringResource(
-                            if (isExpanded.value) R.string.cd_collapse_details
+                            if (isExpanded) R.string.cd_collapse_details
                             else R.string.cd_expand_details
                         )
                     )
                 }
             }
 
-            if (isExpanded.value) {
+            if (isExpanded) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -506,5 +518,31 @@ fun RefuelCardPreview() {
         onDeleteEvent = {},
         onNavigateToEdit = {},
         getSavedLocation = { return@RefuelEventRow SavedLocation(name = "name") }
+    )
+}
+
+/**
+ * Shows the card with its extra details revealed, so the expanded layout can be inspected.
+ */
+@Preview(wallpaper = Wallpapers.NONE)
+@Composable
+fun RefuelCardExpandedPreview() {
+    RefuelEventRow(
+        refuelEvent = RefuelEvent(
+            base = BaseColumns(
+                date = LocalDate.of(2024, 1, 15),
+                mileage = 123543,
+                notes = "Filled up before the long drive."
+            ),
+            amountLiters = BigDecimal.TEN,
+            pricePerLiter = BigDecimal("1.599"),
+            totalCost = BigDecimal("12.22"),
+            paymentMethod = PaymentMethod.CARD,
+            fullFillUp = true
+        ),
+        onDeleteEvent = {},
+        onNavigateToEdit = {},
+        getSavedLocation = { return@RefuelEventRow SavedLocation(name = "name") },
+        isExpanded = true
     )
 }

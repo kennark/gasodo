@@ -89,15 +89,20 @@ fun MaintenanceScreen(
     val pagedItems = viewModel.pagedItems.collectAsLazyPagingItems()
     val units by viewModel.units.collectAsStateWithLifecycle()
     val selection by viewModel.selection.collectAsStateWithLifecycle()
+    val expandedIds by viewModel.expandedIds.collectAsStateWithLifecycle()
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     // Back leaves selection mode instead of the screen, matching the clear button.
     BackHandler(enabled = selection.active) { viewModel.onClearSelection() }
 
-    // Leaving the screen always drops the selection, so coming back starts from a clean list.
+    // Leaving the screen always drops the selection and closes every card, so coming back starts
+    // from a clean, fully collapsed list.
     DisposableEffect(Unit) {
-        onDispose { viewModel.onClearSelection() }
+        onDispose {
+            viewModel.onClearSelection()
+            viewModel.onCollapseAll()
+        }
     }
 
     TopBarScaffold(
@@ -158,7 +163,9 @@ fun MaintenanceScreen(
             units = units,
             selection = selection,
             onEventTap = viewModel::onEventTap,
-            onEventLongPress = viewModel::onEventLongPress
+            onEventLongPress = viewModel::onEventLongPress,
+            expandedIds = expandedIds,
+            onToggleExpanded = viewModel::onToggleExpanded
         )
     }
 
@@ -186,6 +193,8 @@ fun MainContent(
     selection: MaintenanceSelection = MaintenanceSelection(),
     onEventTap: (UUID) -> Unit = {},
     onEventLongPress: (UUID) -> Unit = {},
+    expandedIds: Set<UUID> = emptySet(),
+    onToggleExpanded: (UUID) -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier
@@ -209,7 +218,9 @@ fun MainContent(
                     isSelected = event.event.id in selection.ids,
                     selectionMode = selection.active,
                     onClick = { onEventTap(event.event.id) },
-                    onLongClick = { onEventLongPress(event.event.id) }
+                    onLongClick = { onEventLongPress(event.event.id) },
+                    isExpanded = event.event.id in expandedIds,
+                    onToggleExpand = { onToggleExpanded(event.event.id) }
                 )
             }
         }
@@ -235,9 +246,10 @@ fun MaintenanceEventRow(
     isSelected: Boolean = false,
     selectionMode: Boolean = false,
     onClick: () -> Unit = {},
-    onLongClick: () -> Unit = {}
+    onLongClick: () -> Unit = {},
+    isExpanded: Boolean = false,
+    onToggleExpand: () -> Unit = {},
 ) {
-    val isExpanded = remember { mutableStateOf(false) }
     val hapticFeedback = LocalHapticFeedback.current
 
     Card(
@@ -248,7 +260,7 @@ fun MaintenanceEventRow(
                 onClick = {
                     // In selection mode a tap toggles the selection; outside of it the whole
                     // card mimics the expand button.
-                    if (selectionMode) onClick() else isExpanded.value = !isExpanded.value
+                    if (selectionMode) onClick() else onToggleExpand()
                 },
                 onLongClick = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -338,24 +350,24 @@ fun MaintenanceEventRow(
                     Spacer(Modifier)
 
                 val rotation by animateFloatAsState(
-                    targetValue = if (isExpanded.value) 180f else 0f,
+                    targetValue = if (isExpanded) 180f else 0f,
                     animationSpec = tween(durationMillis = 250)
                 )
                 // Expand button for showing additional info
                 FilledTonalIconButton(
-                    onClick = { isExpanded.value = !isExpanded.value },
+                    onClick = onToggleExpand,
                     modifier = Modifier.rotate(rotation)
                 ) {
                     Icon(
                         imageVector = expand_circle_down,
                         contentDescription = stringResource(
-                            if (isExpanded.value) R.string.cd_collapse_details
+                            if (isExpanded) R.string.cd_collapse_details
                             else R.string.cd_expand_details
                         )
                     )
                 }
             }
-            if (isExpanded.value) {
+            if (isExpanded) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)

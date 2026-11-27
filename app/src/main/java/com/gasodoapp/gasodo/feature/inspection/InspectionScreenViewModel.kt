@@ -8,6 +8,9 @@ import com.gasodoapp.gasodo.core.database.entity.SavedLocation
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
+import com.gasodoapp.gasodo.core.expansion.collapse
+import com.gasodoapp.gasodo.core.expansion.collapseAll
+import com.gasodoapp.gasodo.core.expansion.toggleExpanded
 import com.gasodoapp.gasodo.core.selection.SelectionState
 import com.gasodoapp.gasodo.core.selection.beginSelection
 import com.gasodoapp.gasodo.core.selection.clearSelection
@@ -53,8 +56,10 @@ class InspectionScreenViewModel @Inject constructor(
     }
 
     fun onDeleteInspectionEvent(eventWithParts: InspectionEventWithParts) {
+        val event = eventWithParts.event
+        _expandedIds.collapse(event.id)
         viewModelScope.launch {
-            inspectionRepository.delete(eventWithParts.event)
+            inspectionRepository.delete(event)
         }
     }
 
@@ -108,9 +113,36 @@ class InspectionScreenViewModel @Inject constructor(
         if (ids.isEmpty()) return
 
         onClearSelection()
+        _expandedIds.collapse(ids)
         viewModelScope.launch {
             inspectionRepository.deleteByIds(ids)
         }
+    }
+
+    // endregion
+
+    // region Expansion
+
+    private val _expandedIds = MutableStateFlow<Set<UUID>>(emptySet())
+
+    /**
+     * Which inspection events currently show their extra details. Held here rather than in the row
+     * composable so an expanded card stays open while it is scrolled out of the viewport and back.
+     */
+    val expandedIds: StateFlow<Set<UUID>> = _expandedIds.asStateFlow()
+
+    /**
+     * Opens [id] if it is closed and closes it if it is open.
+     */
+    fun onToggleExpanded(id: UUID) {
+        _expandedIds.toggleExpanded(id)
+    }
+
+    /**
+     * Closes every expanded card. Called when the screen goes away so coming back starts collapsed.
+     */
+    fun onCollapseAll() {
+        _expandedIds.collapseAll()
     }
 
     // endregion

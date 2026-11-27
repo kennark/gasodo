@@ -1,6 +1,7 @@
 package com.gasodoapp.gasodo.feature.inspection
 
 import androidx.paging.PagingData
+import com.gasodoapp.gasodo.core.database.entity.InspectionEvent
 import com.gasodoapp.gasodo.core.database.junctions.InspectionEventWithParts
 import com.gasodoapp.gasodo.core.database.repository.InspectionRepository
 import com.gasodoapp.gasodo.core.database.repository.SavedLocationRepository
@@ -233,4 +234,104 @@ class InspectionScreenViewModelTest {
         coVerify(exactly = 1) { inspectionRepository.delete(eventWithParts.event) }
         coVerify(exactly = 0) { inspectionRepository.deleteByIds(any()) }
     }
+
+    // region Expansion
+
+    @Test
+    fun `expanded ids start empty`() = runTest {
+        // Assert
+        assertThat(viewModel.expandedIds.value).isEmpty()
+    }
+
+    @Test
+    fun `onToggleExpanded opens a closed event`() = runTest {
+        // Arrange
+        val id = UUID.randomUUID()
+
+        // Act
+        viewModel.onToggleExpanded(id)
+
+        // Assert
+        assertThat(viewModel.expandedIds.value).containsExactly(id)
+    }
+
+    @Test
+    fun `onToggleExpanded closes an already open event`() = runTest {
+        // Arrange
+        val id = UUID.randomUUID()
+        viewModel.onToggleExpanded(id)
+
+        // Act
+        viewModel.onToggleExpanded(id)
+
+        // Assert
+        assertThat(viewModel.expandedIds.value).isEmpty()
+    }
+
+    @Test
+    fun `onToggleExpanded keeps several events open at once`() = runTest {
+        // Arrange
+        val first = UUID.randomUUID()
+        val second = UUID.randomUUID()
+
+        // Act
+        viewModel.onToggleExpanded(first)
+        viewModel.onToggleExpanded(second)
+
+        // Assert
+        assertThat(viewModel.expandedIds.value).containsExactly(first, second)
+    }
+
+    @Test
+    fun `onCollapseAll closes every open event`() = runTest {
+        // Arrange
+        viewModel.onToggleExpanded(UUID.randomUUID())
+        viewModel.onToggleExpanded(UUID.randomUUID())
+
+        // Act
+        viewModel.onCollapseAll()
+
+        // Assert
+        assertThat(viewModel.expandedIds.value).isEmpty()
+    }
+
+    @Test
+    fun `deleting a single event closes it if it was open`() = runTest {
+        // Arrange
+        val id = UUID.randomUUID()
+        val event = mockk<InspectionEvent>(relaxed = true)
+        every { event.id } returns id
+        val eventWithParts = mockk<InspectionEventWithParts>(relaxed = true)
+        every { eventWithParts.event } returns event
+        viewModel.onToggleExpanded(id)
+
+        // Act
+        viewModel.onDeleteInspectionEvent(eventWithParts)
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.expandedIds.value).isEmpty()
+    }
+
+    @Test
+    fun `onDeleteSelected closes every deleted event`() = runTest {
+        // Arrange
+        val first = UUID.randomUUID()
+        val second = UUID.randomUUID()
+        val kept = UUID.randomUUID()
+        viewModel.onToggleExpanded(first)
+        viewModel.onToggleExpanded(second)
+        viewModel.onToggleExpanded(kept)
+        viewModel.onEventLongPress(first)
+        viewModel.onEventLongPress(second)
+
+        // Act
+        viewModel.onDeleteSelected()
+        advanceUntilIdle()
+
+        // Assert
+        assertThat(viewModel.expandedIds.value).containsExactly(kept)
+    }
+
+    // endregion
 }

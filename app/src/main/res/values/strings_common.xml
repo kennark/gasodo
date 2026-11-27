@@ -39,11 +39,8 @@
     <string name="common_full_fill_up">Full Fill-Up</string>
     <string name="common_extra_details">Extra Details</string>
 
-    <!-- Placeholders shown when an optional value is not set -->
+    <!-- Placeholder shown when an optional value is not set -->
     <string name="common_no_value">-</string>
-    <string name="common_none_selected">None selected</string>
-    <string name="common_no_location_set">No location set</string>
-    <string name="common_no_notes">No notes</string>
 
     <!-- Joins a rendered number and the unit it is expressed in, for example "12.50 €".
          The space is non-breaking so a unit never wraps away from its value. -->

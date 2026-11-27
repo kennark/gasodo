@@ -66,7 +66,6 @@ import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.ExtraDataText
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
 import com.gasodoapp.gasodo.ui.components.NoDataCard
-import com.gasodoapp.gasodo.ui.components.NoDataText
 import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.close
@@ -362,79 +361,88 @@ fun InspectionEventCard(
                 }
             }
             if (isExpanded) {
+                // Only the extra data that is actually set is rendered, so an inspection without
+                // parts, a location or notes shows just the action buttons.
+                val hasParts = eventWithParts.parts.isNotEmpty()
+                val hasLocation = eventWithParts.event.base.savedLocationId != null
+                val hasNotes = eventWithParts.event.base.notes.isNotBlank()
+                val hasExtraData = hasParts || hasLocation || hasNotes
+
+                // Resolved here rather than per row so the query only runs for open cards. The
+                // visibility above is keyed off the id, so the layout does not shift once the
+                // name arrives.
+                var location: SavedLocation? by remember(
+                    eventWithParts.event.base.savedLocationId
+                ) {
+                    mutableStateOf(null)
+                }
+                LaunchedEffect(eventWithParts.event.base.savedLocationId) {
+                    location = eventWithParts.event.base.savedLocationId?.let {
+                        getSavedLocation(it)
+                    }
+                }
+
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.common_extra_details),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (hasExtraData) {
+                        Text(
+                            text = stringResource(R.string.common_extra_details),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
 
-                    if (eventWithParts.parts.isNotEmpty()) {
-                        Column(
-                            Modifier.fillMaxWidth()
-                        ) {
-                            MediumLabelText(stringResource(R.string.inspection_inspected_areas))
+                        if (hasParts) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                MediumLabelText(stringResource(R.string.inspection_inspected_areas))
 
-                            if (eventWithParts.parts.size > 3) {
-                                for (part in eventWithParts.parts.subList(0, 3)) {
-                                    ExtraDataText(part.partName)
-                                }
+                                if (eventWithParts.parts.size > 3) {
+                                    for (part in eventWithParts.parts.subList(0, 3)) {
+                                        ExtraDataText(part.partName)
+                                    }
 
-                                var showAllPartsDialog by remember { mutableStateOf(false) }
+                                    var showAllPartsDialog by remember { mutableStateOf(false) }
 
-                                TextButton(onClick = { showAllPartsDialog = true }) {
-                                    Text(
-                                        pluralStringResource(
-                                            R.plurals.inspection_show_all_areas,
-                                            eventWithParts.parts.size,
-                                            eventWithParts.parts.size
+                                    TextButton(onClick = { showAllPartsDialog = true }) {
+                                        Text(
+                                            pluralStringResource(
+                                                R.plurals.inspection_show_all_areas,
+                                                eventWithParts.parts.size,
+                                                eventWithParts.parts.size
+                                            )
                                         )
-                                    )
-                                }
-                                if (showAllPartsDialog)
-                                    InspectedPartsBottomSheet(
-                                        parts = eventWithParts.parts,
-                                        onDismissRequest = { showAllPartsDialog = false }
-                                    )
-                            } else {
-                                for (serviceType in eventWithParts.parts) {
-                                    ExtraDataText(serviceType.partName)
+                                    }
+                                    if (showAllPartsDialog)
+                                        InspectedPartsBottomSheet(
+                                            parts = eventWithParts.parts,
+                                            onDismissRequest = { showAllPartsDialog = false }
+                                        )
+                                } else {
+                                    for (serviceType in eventWithParts.parts) {
+                                        ExtraDataText(serviceType.partName)
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    Column(
-                        Modifier.fillMaxWidth()
-                    ) {
-                        var location: SavedLocation? by remember { mutableStateOf(null) }
-                        LaunchedEffect(eventWithParts) {
-                            location = eventWithParts.event.base.savedLocationId?.let {
-                                getSavedLocation(it)
+                        if (hasLocation) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                MediumLabelText(stringResource(R.string.common_location))
+                                location?.let { ExtraDataText(it.name) }
                             }
                         }
-                        MediumLabelText(stringResource(R.string.common_location))
 
-                        if (location == null)
-                            NoDataText(stringResource(R.string.common_no_location_set))
-                        else {
-                            ExtraDataText(location!!.name)
-                        }
-
-                    }
-
-                    Column(
-                        Modifier.fillMaxWidth()
-                    ) {
-                        MediumLabelText(stringResource(R.string.common_notes))
-                        eventWithParts.event.base.notes.let { notes ->
-                            if (notes.isNotEmpty()) {
-                                ExtraDataText(notes)
-                            } else {
-                                NoDataText(stringResource(R.string.common_no_notes))
+                        if (hasNotes) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                MediumLabelText(stringResource(R.string.common_notes))
+                                ExtraDataText(eventWithParts.event.base.notes)
                             }
                         }
                     }

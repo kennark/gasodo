@@ -62,7 +62,6 @@ import com.gasodoapp.gasodo.ui.components.ExtraDataText
 import com.gasodoapp.gasodo.ui.components.LoadingPlaceholder
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
 import com.gasodoapp.gasodo.ui.components.NoDataCard
-import com.gasodoapp.gasodo.ui.components.NoDataText
 import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.check_box
@@ -403,55 +402,60 @@ fun RefuelEventRow(
             }
 
             if (isExpanded) {
+                // Only the extra data that is actually set is rendered, so an event without a
+                // payment method, location or notes shows just the action buttons.
+                val hasPayment = refuelEvent.paymentMethod != null
+                val hasLocation = refuelEvent.base.savedLocationId != null
+                val hasNotes = refuelEvent.base.notes.isNotBlank()
+                val hasExtraData = hasPayment || hasLocation || hasNotes
+
+                // Resolved here rather than per row so the query only runs for open cards. The
+                // visibility above is keyed off the id, so the layout does not shift once the
+                // name arrives.
+                var location: SavedLocation? by remember(refuelEvent.base.savedLocationId) {
+                    mutableStateOf(null)
+                }
+                LaunchedEffect(refuelEvent.base.savedLocationId) {
+                    location = refuelEvent.base.savedLocationId?.let {
+                        getSavedLocation(it)
+                    }
+                }
+
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.common_extra_details),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (hasExtraData) {
+                        Text(
+                            text = stringResource(R.string.common_extra_details),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
 
-                    Column(
-                        Modifier.fillMaxWidth()
-                    ) {
-                        MediumLabelText(stringResource(R.string.common_payment))
-
-                        if (refuelEvent.paymentMethod != null)
-                            ExtraDataText(refuelEvent.paymentMethod.label())
-                        else
-                            NoDataText(stringResource(R.string.common_none_selected))
-                    }
-
-                    Column(
-                        Modifier.fillMaxWidth()
-                    ) {
-                        var location: SavedLocation? by remember { mutableStateOf(null) }
-                        LaunchedEffect(refuelEvent) {
-                            location = refuelEvent.base.savedLocationId?.let {
-                                getSavedLocation(it)
+                        if (hasPayment) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                MediumLabelText(stringResource(R.string.common_payment))
+                                ExtraDataText(refuelEvent.paymentMethod.label())
                             }
                         }
-                        MediumLabelText(stringResource(R.string.common_location))
 
-                        if (location == null)
-                            NoDataText(stringResource(R.string.common_no_location_set))
-                        else {
-                            ExtraDataText(location!!.name)
+                        if (hasLocation) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                MediumLabelText(stringResource(R.string.common_location))
+                                location?.let { ExtraDataText(it.name) }
+                            }
                         }
 
-                    }
-
-                    Column(
-                        Modifier.fillMaxWidth()
-                    ) {
-                        MediumLabelText(stringResource(R.string.common_notes))
-                        refuelEvent.base.notes.let { notes ->
-                            if (notes.isNotEmpty()) {
-                                ExtraDataText(notes)
-                            } else {
-                                NoDataText(stringResource(R.string.common_no_notes))
+                        if (hasNotes) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                MediumLabelText(stringResource(R.string.common_notes))
+                                ExtraDataText(refuelEvent.base.notes)
                             }
                         }
                     }
@@ -532,12 +536,39 @@ fun RefuelCardExpandedPreview() {
             base = BaseColumns(
                 date = LocalDate.of(2024, 1, 15),
                 mileage = 123543,
+                savedLocationId = UUID.randomUUID(),
                 notes = "Filled up before the long drive."
             ),
             amountLiters = BigDecimal.TEN,
             pricePerLiter = BigDecimal("1.599"),
             totalCost = BigDecimal("12.22"),
             paymentMethod = PaymentMethod.CARD,
+            fullFillUp = true
+        ),
+        onDeleteEvent = {},
+        onNavigateToEdit = {},
+        getSavedLocation = { return@RefuelEventRow SavedLocation(name = "name") },
+        isExpanded = true
+    )
+}
+
+/**
+ * Shows the expanded card when no payment method, location or notes are set: the extra details
+ * block disappears and only the action buttons remain.
+ */
+@Preview(wallpaper = Wallpapers.NONE)
+@Composable
+fun RefuelCardExpandedNoExtraDataPreview() {
+    RefuelEventRow(
+        refuelEvent = RefuelEvent(
+            base = BaseColumns(
+                date = LocalDate.of(2024, 1, 15),
+                mileage = 123543,
+            ),
+            amountLiters = BigDecimal.TEN,
+            pricePerLiter = BigDecimal("1.599"),
+            totalCost = BigDecimal("12.22"),
+            paymentMethod = null,
             fullFillUp = true
         ),
         onDeleteEvent = {},

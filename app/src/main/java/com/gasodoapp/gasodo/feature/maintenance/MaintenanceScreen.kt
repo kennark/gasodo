@@ -67,7 +67,6 @@ import com.gasodoapp.gasodo.ui.components.DeleteDialog
 import com.gasodoapp.gasodo.ui.components.ExtraDataText
 import com.gasodoapp.gasodo.ui.components.MediumLabelText
 import com.gasodoapp.gasodo.ui.components.NoDataCard
-import com.gasodoapp.gasodo.ui.components.NoDataText
 import com.gasodoapp.gasodo.ui.components.OverflowMenuItem
 import com.gasodoapp.gasodo.ui.components.TopBarScaffold
 import com.gasodoapp.gasodo.ui.icons.close
@@ -368,91 +367,98 @@ fun MaintenanceEventRow(
                 }
             }
             if (isExpanded) {
+                // Only the extra data that is actually set is rendered, so an event without
+                // services, a payment method, a location or notes shows just the action buttons.
+                val hasServices = eventWithServices.services.isNotEmpty()
+                val hasPayment = eventWithServices.event.paymentMethod != null
+                val hasLocation = eventWithServices.event.base.savedLocationId != null
+                val hasNotes = eventWithServices.event.base.notes.isNotBlank()
+                val hasExtraData = hasServices || hasPayment || hasLocation || hasNotes
+
+                // Resolved here rather than per row so the query only runs for open cards. The
+                // visibility above is keyed off the id, so the layout does not shift once the
+                // name arrives.
+                var location: SavedLocation? by remember(
+                    eventWithServices.event.base.savedLocationId
+                ) {
+                    mutableStateOf(null)
+                }
+                LaunchedEffect(eventWithServices.event.base.savedLocationId) {
+                    location = eventWithServices.event.base.savedLocationId?.let {
+                        getSavedLocation(it)
+                    }
+                }
+
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.common_extra_details),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (hasExtraData) {
+                        Text(
+                            text = stringResource(R.string.common_extra_details),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
 
-                    if (eventWithServices.services.isNotEmpty()) {
-                        Column(
-                            Modifier.fillMaxWidth()
-                        ) {
-                            MediumLabelText(stringResource(R.string.maintenance_done_work))
+                        if (hasServices) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                MediumLabelText(stringResource(R.string.maintenance_done_work))
 
-                            if (eventWithServices.services.size > 3) {
-                                for (serviceType in eventWithServices.services.subList(0, 3)) {
-                                    ExtraDataText(serviceType.serviceName)
-                                }
+                                if (eventWithServices.services.size > 3) {
+                                    for (serviceType in eventWithServices.services.subList(0, 3)) {
+                                        ExtraDataText(serviceType.serviceName)
+                                    }
 
-                                var showDoneWorkDialog by remember { mutableStateOf(false) }
+                                    var showDoneWorkDialog by remember { mutableStateOf(false) }
 
-                                TextButton(onClick = { showDoneWorkDialog = true }) {
-                                    Text(
-                                        pluralStringResource(
-                                            R.plurals.maintenance_show_all_actions,
-                                            eventWithServices.services.size,
-                                            eventWithServices.services.size
+                                    TextButton(onClick = { showDoneWorkDialog = true }) {
+                                        Text(
+                                            pluralStringResource(
+                                                R.plurals.maintenance_show_all_actions,
+                                                eventWithServices.services.size,
+                                                eventWithServices.services.size
+                                            )
                                         )
-                                    )
-                                }
-                                if (showDoneWorkDialog)
-                                    DoneTasksBottomSheet(
-                                        doneWork = eventWithServices.services,
-                                        onDismissRequest = { showDoneWorkDialog = false }
-                                    )
-                            } else {
-                                for (serviceType in eventWithServices.services) {
-                                    ExtraDataText(serviceType.serviceName)
+                                    }
+                                    if (showDoneWorkDialog)
+                                        DoneTasksBottomSheet(
+                                            doneWork = eventWithServices.services,
+                                            onDismissRequest = { showDoneWorkDialog = false }
+                                        )
+                                } else {
+                                    for (serviceType in eventWithServices.services) {
+                                        ExtraDataText(serviceType.serviceName)
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    Column(
-                        Modifier.fillMaxWidth()
-                    ) {
-                        MediumLabelText(stringResource(R.string.common_payment))
-
-                        if (eventWithServices.event.paymentMethod != null)
-                            ExtraDataText(eventWithServices.event.paymentMethod.label())
-                        else
-                            NoDataText(stringResource(R.string.common_none_selected))
-                    }
-
-                    Column(
-                        Modifier.fillMaxWidth()
-                    ) {
-                        var location: SavedLocation? by remember { mutableStateOf(null) }
-
-                        LaunchedEffect(eventWithServices) {
-                            location = eventWithServices.event.base.savedLocationId?.let {
-                                getSavedLocation(it)
+                        if (hasPayment) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                MediumLabelText(stringResource(R.string.common_payment))
+                                ExtraDataText(eventWithServices.event.paymentMethod.label())
                             }
                         }
-                        MediumLabelText(stringResource(R.string.common_location))
 
-                        if (location == null)
-                            NoDataText(stringResource(R.string.common_no_location_set))
-                        else {
-                            ExtraDataText(location!!.name)
+                        if (hasLocation) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                MediumLabelText(stringResource(R.string.common_location))
+                                location?.let { ExtraDataText(it.name) }
+                            }
                         }
 
-                    }
-
-                    Column(
-                        Modifier.fillMaxWidth()
-                    ) {
-                        MediumLabelText(stringResource(R.string.common_notes))
-                        eventWithServices.event.base.notes.let { notes ->
-                            if (notes.isNotEmpty()) {
-                                ExtraDataText(notes)
-                            } else {
-                                NoDataText(stringResource(R.string.common_no_notes))
+                        if (hasNotes) {
+                            Column(
+                                Modifier.fillMaxWidth()
+                            ) {
+                                MediumLabelText(stringResource(R.string.common_notes))
+                                ExtraDataText(eventWithServices.event.base.notes)
                             }
                         }
                     }

@@ -245,7 +245,11 @@ fun MaintenanceEventRow(
             .fillMaxWidth()
             .semantics { selected = isSelected }
             .combinedClickable(
-                onClick = onClick,
+                onClick = {
+                    // In selection mode a tap toggles the selection; outside of it the whole
+                    // card mimics the expand button.
+                    if (selectionMode) onClick() else isExpanded.value = !isExpanded.value
+                },
                 onLongClick = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     onLongClick()
